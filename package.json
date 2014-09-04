@@ -1,0 +1,45 @@
+{
+  "name": "nschema",
+  "description": "NSchema",
+  "version": "0.0.1",
+  "author": "Eduardo Burgos <eburgos@gmail.com>",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/ninejs/nschema"
+  },
+  "main": "lib/nschema",
+  "dojoBuild": "./build/dojo.js",
+  "dependencies": {
+    "minimist": "^0.2.0",
+    "ejs": "^1.0.0"
+  },
+  "devDependencies": {
+    "ninejs": "*",
+    "grunt": "^0.4.5",
+    "underscore": "^1.6.0",
+    "kew": "^0.4.0",
+    "grunt-contrib-watch": "^0.6.1",
+    "grunt-mocha-test": "^0.11.0",
+    "grunt-contrib-jshint": "^0.10.0",
+    "blanket": "^1.1.6"
+  },
+  "bin": {
+    "nschema": "./bin/nschema"
+  },
+  "component": {
+    "scripts": {}
+  },
+  "scripts": {},
+  "contributors": [
+    "Eduardo Burgos <eburgos@gmail.com> (http://www.eduardoburgos.com/)"
+  ],
+  "readmeFilename": "README.md",
+  "keywords": [
+    "schema",
+    "json",
+    "services",
+    "ninejs",
+    "javascript"
+  ],
+  "license": "MIT"
+}

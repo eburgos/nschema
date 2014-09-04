@@ -1,0 +1,8 @@
+node_modules
+generated/test1/schema
+generated/test1/packages
+generated/test1/obj
+.idea
+generated/test1/bin
+coverage.html
+nschema.iml

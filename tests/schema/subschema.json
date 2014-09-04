@@ -1,0 +1,28 @@
+{
+	"$namespace": "Invoicing",
+	"$type": "bundle",
+	"list": [
+		{
+			"$type": "object",
+			"name": "InvoiceDetail",
+			"properties": {
+				"productId": {
+					"description": "Product\"s key",
+					"type": "int"
+				},
+				"description": {
+					"description": "Product description",
+					"type": "string"
+				},
+				"quantity": {
+					"description": "Quantity",
+					"type": "float"
+				},
+				"unitPrice": {
+					"description": "Unit Price",
+					"type": "float"
+				}
+			}
+		}
+	]
+}

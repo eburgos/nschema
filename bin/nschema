@@ -1,0 +1,14 @@
+#!/usr/bin/env node
+'use strict';
+
+var argv = require('minimist')(process.argv.slice(2)),
+	files = argv._,
+	nschema = require('../lib/nschema'),
+	path = require('path');
+files.forEach(function (item) {
+	if (item.indexOf('/') !== 0) {
+		item = path.resolve(process.cwd(), item);
+	}
+	var r = require(item);
+	nschema.generate({ $nschemaLocation: path.dirname(item) }, r);
+});

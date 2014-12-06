@@ -8,6 +8,19 @@
     <RootNamespace>test1</RootNamespace>
     <AssemblyName>test1</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <BuildOrder>
+      <BuildOrder>
+        <String>Script.fsx</String>
+        <String>schema/NSchema.Model.Invoicing/InvoiceDetail.fs</String>
+        <String>schema/NSchema.Model.Invoicing/Invoice.fs</String>
+        <String>schema/NSchema.Model.Invoicing/AuthenticationStatus.fs</String>
+        <String>schema/NSchema.Model.Invoicing/UserInfo.fs</String>
+        <String>schema/server/NSchema.Model.Invoicing/InvoiceServiceConsumer.fs</String>
+        <String>schema/client/NSchema.Model.Invoicing/InvoiceService.fs</String>
+        <String>ServiceConsumerImpl.fs</String>
+        <String>Test.fs</String>
+      </BuildOrder>
+    </BuildOrder>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -38,24 +51,25 @@
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Numerics" />
-    <Reference Include="Newtonsoft.Json">
-      <HintPath>packages\Newtonsoft.Json.6.0.4\lib\net40\Newtonsoft.Json.dll</HintPath>
-    </Reference>
-    <Reference Include="RabbitMQ.Client">
-      <HintPath>packages\RabbitMQ.Client.3.3.2\lib\net30\RabbitMQ.Client.dll</HintPath>
-    </Reference>
     <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="RabbitMQ.Client">
+      <HintPath>packages\RabbitMQ.Client.3.4.0\lib\net35\RabbitMQ.Client.dll</HintPath>
+    </Reference>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>packages\Newtonsoft.Json.6.0.6\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Script.fsx" />
     <Compile Include="schema\NSchema.Model.Invoicing\InvoiceDetail.fs">
     </Compile>
     <Compile Include="schema\NSchema.Model.Invoicing\Invoice.fs" />
-    <Compile Include="schema\client\NSchema.Model.Invoicing\InvoiceService.fs" />
-    <Compile Include="schema\server\NSchema.Model.Invoicing\InvoiceServiceConsumer.fs" />
-    <Compile Include="Test.fs" />
     <Compile Include="schema\NSchema.Model.Invoicing\AuthenticationStatus.fs" />
     <Compile Include="schema\NSchema.Model.Invoicing\UserInfo.fs" />
+    <Compile Include="schema\client\NSchema.Model.Invoicing\InvoiceService.fs" />
+    <Compile Include="schema\server\NSchema.Model.Invoicing\InvoiceServiceConsumer.fs" />
+    <Compile Include="ServiceConsumerImpl.fs" />
+    <Compile Include="Test.fs" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\..\Microsoft SDKs\F#\3.0\Framework\v4.0\Microsoft.FSharp.Targets" />
   <ItemGroup>

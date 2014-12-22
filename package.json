@@ -5,7 +5,7 @@
   "author": "Eduardo Burgos <eburgos@gmail.com>",
   "repository": {
     "type": "git",
-    "url": "git://github.com/ninejs/nschema"
+    "url": "git://github.com/eburgos/nschema"
   },
   "main": "lib/nschema",
   "dojoBuild": "./build/dojo.js",

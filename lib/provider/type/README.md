@@ -1,10 +1,10 @@
-NSchema types
+NineSchema types
 ==========================
 
 Types can be one of:
 
 * bundle
-    Defines a series of nschema definitions that must be executed in sequence.
+    Defines a series of nineschema definitions that must be executed in sequence.
     **Structure:**
         {
             '$type': 'bundle',

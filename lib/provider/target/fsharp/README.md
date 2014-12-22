@@ -1,4 +1,4 @@
-Targetting F# with NSchema
+Targetting F# with NineSchema
 ==========================
 
 Binds available:

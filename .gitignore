@@ -7,3 +7,4 @@ generated/test1/bin
 coverage.html
 nschema.iml
 *.v11.suo
+/npm-debug.log

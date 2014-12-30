@@ -1,7 +1,7 @@
 {
   "name": "nineschema",
   "description": "NineSchema",
-  "version": "0.0.1",
+  "version": "0.0.3",
   "author": "Eduardo Burgos <eburgos@gmail.com>",
   "repository": {
     "type": "git",
@@ -11,13 +11,13 @@
   "dojoBuild": "./build/dojo.js",
   "dependencies": {
     "minimist": "^0.2.0",
-    "ejs": "^1.0.0"
+    "ejs": "^1.0.0",
+    "kew": "^0.4.0",
+    "ninejs": "*"
   },
   "devDependencies": {
-    "ninejs": "*",
     "grunt": "^0.4.5",
     "underscore": "^1.6.0",
-    "kew": "^0.4.0",
     "grunt-contrib-watch": "^0.6.1",
     "grunt-mocha-test": "^0.11.0",
     "grunt-contrib-jshint": "^0.10.0",

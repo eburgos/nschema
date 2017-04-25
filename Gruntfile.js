@@ -9,6 +9,7 @@ function exports(grunt) {
 		phantomWatch = ['nineplate/tests/phantomTest.js'],
 		underscore = require('underscore');
 
+	require('load-grunt-tasks')(grunt);
 	// Project configuration.
 	grunt.initConfig({
 		mocha: { //Phantomjs
@@ -43,57 +44,38 @@ function exports(grunt) {
 			}
 		},
 		watch: {
-			jshint : {
-				files : jsFiles,
-				tasks : 'jshint'
-			},
 			phantom: {
 				files: underscore.union(phantomWatch, jsFiles),
 				tasks: ['mocha']
 			},
 			test: {
 				files: underscore.union(testFiles, jsFiles),
-				tasks: ['jshint', 'mochaTest:watch', 'mocha']
+				tasks: ['mochaTest:watch', 'mocha']
 			}
 
 		},
-		jshint: {
-			files: jsFiles,
-			options: {
-				bitwise : true,
-				camelcase : true,
-				forin : true,
-				indent : true,
-				noempty : true,
-				nonew : true,
-				plusplus : true,
-				maxdepth : 8,
-				maxcomplexity : 10,
-				strict : true,
-				quotmark : 'single',
-				regexp : true,
-				unused : 'strict',
-				curly : true,
-				eqeqeq : true,
-				immed : true,
-				latedef : true,
-				newcap : true,
-				noarg : true,
-				sub : true,
-				undef : true,
-				boss : true,
-				eqnull : true,
-				node : true,
-				dojo : false,
-				passfail : false,
-				trailing : true,
-				scripturl : true,
-				shadow : true,
-				browser : false,
-				smarttabs : true,
-				globals : {
-					localStorage : true,
-					define : true
+		ts: {
+			check : {
+				tsconfig: './tsconfig.json',
+				options: {
+					"compiler": (process.env.TS_COMPILER || "./node_modules/typescript/bin/tsc"),
+					"noEmit": true
+				}
+			},
+			compile : {
+				tsconfig: './tsconfig.json',
+				options: {
+					"compiler": (process.env.TS_COMPILER || "./node_modules/typescript/bin/tsc"),
+					"noResolve": true,
+					"declaration": true,
+					"failOnTypeErrors": false
+				}
+			},
+			gencheck : {
+				tsconfig: './generated/typescriptClient/tsconfig.json',
+				options: {
+					"compiler": (process.env.TS_COMPILER || "./node_modules/typescript/bin/tsc"),
+					"noEmit": true
 				}
 			}
 		},
@@ -112,7 +94,7 @@ function exports(grunt) {
 	grunt.registerTask('test', ['mochaTest', 'mocha']);
 	grunt.registerTask('cover', ['jscoverage', 'mochaTest:cover']);
 	// Default task.
-	grunt.registerTask('default', ['jshint', 'jscoverage', 'test']);
+	grunt.registerTask('default', ['ts', 'jscoverage', 'test']);
 }
 
 module.exports = exports;

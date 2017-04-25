@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "module": "umd",
+    "noImplicitAny": true,
+    "removeComments": true,
+    "preserveConstEnums": true,
+    "sourceMap": true,
+    "target": "es6",
+    "isolatedModules": false,
+    "moduleResolution": "node",
+    "noLib": false,
+    "noEmitOnError": false,
+    "typeRoots": ["../../node_modules/@types"],
+    "types": []
+  }
+}

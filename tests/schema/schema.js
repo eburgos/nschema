@@ -41,7 +41,7 @@ module.exports = {
 							'type': {
 								// If namespace is not present it is assumed as if the type belongs to your namespace.
 								// Empty namespaces must be defined as ''
-//								'namespace': 'NSchema.Model.Invoicing',
+								'namespace': 'NSchema.Model.InvoicingDetail',
 								'name': 'InvoiceDetail',
 								// This tells that 'details' is a list of InvoiceDetail
 								'modifier': 'list'
@@ -85,15 +85,23 @@ module.exports = {
 						{
 							'description': 'Your login that you registered',
 							'name': 'userName',
-							'type': 'string'
+							'type': 'string',
+							'paramType': 'query'
 						},
 						{
 							'description': 'Your secret password',
 							'name': 'password',
-							'type': 'string'
+							'type': 'string',
+							'paramType': 'query'
 						}
 					]
 				},
+			]
+		},
+		{
+			$namespace: 'Services',
+			$type: 'bundle',
+			list: [
 				// Finally our first service
 				{
 					'$target': [
@@ -109,6 +117,23 @@ module.exports = {
 							'$fileName': 'InvoiceServiceConsumer.fs',
 							'language': 'fsharp',
 							'bind': 'amqpRpc'
+						},
+						{
+							'serviceType': 'producer',
+							'location': './generated/typescriptClient/schema/client',
+							'language': 'typescript',
+							'bind': 'rest',
+							$namespaceMapping: {
+								'@angular/core': '@angular/core',
+								'@angular/http': '@angular/http',
+								'rxjs/Rx': 'rxjs/Rx'
+							}
+						},
+						{
+							'serviceType': 'consumer',
+							'location': './generated/typescriptClient/schema/server',
+							'language': 'typescript',
+							'bind': 'rest'
 						}
 					],
 					'$type': 'service',
@@ -182,10 +207,89 @@ module.exports = {
 									}
 								]
 							}
+						},
+						'AllParametersOperation': {
+							'description': 'Tests an operation that has parameters of all kinds',
+							method: 'post',
+							route: 'parameters/{routeParameter1}/all',
+							'inMessage': {
+								// This message inherits AuthMessage
+								'$extends': {
+									'name': 'AuthMessage',
+									'namespace': 'NSchema.Model.Invoicing'
+								},
+								data: [
+									{
+										'description': 'Header parameter',
+										'name': 'headerParameter1',
+										'type': 'string',
+										'paramType': 'header'
+									},
+									{
+										'description': 'Get parameter',
+										'name': 'getParameter1',
+										'type': 'int',
+										'paramType': 'query'
+									},
+									{
+										'description': 'route parameter',
+										'name': 'routeParameter1',
+										'type': 'int',
+										'paramType': 'query'
+									},
+									{
+										'description': 'body parameter',
+										'name': 'bodyParameter1',
+										'type': 'string',
+										'paramType': 'body'
+									},
+									{
+										'description': 'body parameter 2',
+										'name': 'bodyParameter2',
+										'type': {
+											'name': 'Invoice',
+											'namespace': 'NSchema.Model.Invoicing'
+										},
+										'paramType': 'body'
+									}
+								]
+							},
+							'outMessage': {
+								'data': [
+									{
+										'description': 'List of invoices',
+										'type': {
+											'name': 'Invoice',
+											'namespace': 'NSchema.Model.Invoicing',
+											'modifier': 'list'
+										}
+									},
+									{
+										'description': 'error message',
+										'type': 'string',
+										paramType: 'header'
+									},
+									{
+										name: 'instanceName',
+										'description': 'Instance name who took the message',
+										'type': 'string',
+										paramType: 'header'
+									}
+								]
+							}
 						}
 					}
 				}
-			]
+			],
+			'$target': [{
+				location: './generated/typescriptClient/schema',
+				language: 'typescript',
+				$namespaceMapping: {
+					'@angular/core': '@angular/core',
+					'@angular/http': '@angular/http',
+					'rxjs/Rx': 'rxjs/Rx'
+				}
+			}]
 		}
 	],
 	// Target generation location
@@ -194,12 +298,20 @@ module.exports = {
 	'namespace': 'NSchema.Model',
 	// Schema. Schema used for services and messages (assuming you are generating XML based ones).
 	// This doesn't mean anything important regarding code generation or how code is going to be generated.
-	'schema': 'http://ninejs.org/nschema/2014',
+	'schema': 'http://ninejs.org/nineschema/2017',
 	// Available default targets can be found in lib/provider/target. The names are the same as it's filename
 	// 'javascript' and 'fsharp' are valid values
 	// This property can either be an array or a single string
 	'$target': [{
 		location: './generated/test1/schema',
 		language: 'fsharp'
+	},{
+		location: './generated/typescriptClient/schema',
+		language: 'typescript',
+		$namespaceMapping: {
+			'@angular/core': '@angular/core',
+			'@angular/http': '@angular/http',
+			'rxjs/Rx': 'rxjs/Rx'
+		}
 	}]
 };

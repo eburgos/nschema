@@ -27,6 +27,7 @@ export function processMessage(newConfig: NSchemaMessage, nschema: NSchemaInterf
 		else {
 			throw new Error('Could not find a message to extend: namespace=\'' + newConfig.$extends.namespace + '\', name=\'' + newConfig.$extends.name + '\'');
 		}
+		newConfig.$extends = null;
 	}
 
 	newConfig.data.forEach(function (par) {

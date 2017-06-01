@@ -143,7 +143,7 @@ export class TypeScript {
 					return 'number';
 				case 'string':
 					return 'string';
-				case 'boolean':
+				case 'bool':
 					return 'boolean';
 			}
 			return 'string';

@@ -126,8 +126,13 @@ export class TypeScript {
 			else {
 				filepath = path.resolve(location, config.namespace, (config.$fileName || (config.name + '.ts')));
 			}
-			console.log('writing to file: ' + filepath);
-			return nschema.writeFile(filepath, result).then(null, function (err) {
+			console.log('typescript: writing to file: ' + filepath);
+			return nschema.writeFile(filepath, result).then(_ => {
+                return {
+                    generated: result,
+                    config: config
+                };
+			}, function (err) {
 				console.log('error: ');
 				console.log(err);
 			});
@@ -145,6 +150,8 @@ export class TypeScript {
 					return 'string';
 				case 'bool':
 					return 'boolean';
+                case 'Date':
+                    return 'Date';
 			}
 			return 'string';
 		};

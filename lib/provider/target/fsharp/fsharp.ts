@@ -78,7 +78,7 @@ export class FSharp {
 		else {
 			filepath = path.resolve(location, config.namespace, (config.$fileName || (config.name + '.fs')));
 		}
-		console.log('writing to file: ' + filepath);
+		console.log('fsharp: writing to file: ' + filepath);
 		return nschema.writeFile(filepath, result).then(null, function (err) {
 			console.log('error: ');
 			console.log(err);

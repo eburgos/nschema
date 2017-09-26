@@ -284,7 +284,9 @@ module.exports = {
 			'$target': [{
 				location: './generated/typescriptClient/schema',
 				language: 'typescript',
+				$restClientStrategy: 'NineJS',
 				$namespaceMapping: {
+					'ninejs/request': 'ninejs/request',
 					'@angular/core': '@angular/core',
 					'@angular/http': '@angular/http',
 					'rxjs/Rx': 'rxjs/Rx'
@@ -308,7 +310,9 @@ module.exports = {
 	},{
 		location: './generated/typescriptClient/schema',
 		language: 'typescript',
+		$restClientStrategy: 'NineJS',
 		$namespaceMapping: {
+			'ninejs/request': 'ninejs/request',
 			'@angular/core': '@angular/core',
 			'@angular/http': '@angular/http',
 			'rxjs/Rx': 'rxjs/Rx'

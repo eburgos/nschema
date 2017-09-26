@@ -74,7 +74,7 @@ function execute (parentConfig: Definition, nschema: NSchemaInterface) {
         else {
             filepath = path.resolve(location, (config.$fileName || (config.namespace + '.ts')));
         }
-        console.log('writing to file: ' + filepath);
+        console.log('bundle: writing to file: ' + filepath);
         return nschema.writeFile(filepath, result).then(null, function (err) {
             console.log('error: ');
             console.log(err);
@@ -85,7 +85,9 @@ function execute (parentConfig: Definition, nschema: NSchemaInterface) {
 let bundle: NSchemaCustomPlugin = {
     type: '*',
     serviceType: '*',
-    bind: '*',
+    bind: function (bindName: string) {
+        return bindName !== 'rest-serverless';
+    },
     name: 'bundle-typescript-objects',
     language: 'typescript',
     description: 'Handles the concept of namespacing (TypeScript only) in the generation process',

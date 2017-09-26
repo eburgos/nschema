@@ -17,6 +17,8 @@ import {
 declare let require: (name: string) => any;
 let indent = 0;
 let utils: Utils = {
+	relativePath: path.relative,
+	resolvePath: path.resolve,
 	i: function (amount: number, seed: string) {
 		var r = '';
 		for (var cnt = 0; cnt < (amount || 0); cnt += 1) {
@@ -260,7 +262,10 @@ export default class NSchema implements NSchemaInterface {
 			var p;
 			for (p in obj) {
 				if (obj.hasOwnProperty(p) && isValidProperty(p)) {
-					if ((tgt[p] !== obj[p]) && (tgt[p] !== '*')) {
+					if (typeof(tgt[p]) === 'function') {
+						return tgt[p](obj[p]);
+					}
+					else if ((tgt[p] !== obj[p]) && (tgt[p] !== '*')) {
 						return false;
 					}
 				}
@@ -353,12 +358,12 @@ export default class NSchema implements NSchemaInterface {
 		var dirname = path.dirname(filename);
 		createDirectorySync(dirname);
 		let result = defer();
-		fs.writeFile(filename, content, (err: Error, data: any) => {
+		fs.writeFile(filename, content, null, (err: Error) => {
 			if (err) {
 				result.reject(err);
 			}
 			else {
-				result.resolve(data);
+				result.resolve(null);
 			}
 		});
 		return result.promise;

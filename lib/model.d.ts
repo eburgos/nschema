@@ -1,6 +1,8 @@
 /// <reference types="ejs" />
 import { TemplateFunction } from "ejs";
 export interface Utils {
+    relativePath: (from: string, to: string) => string;
+    resolvePath: (...args: string[]) => string;
     i: (amount: number, seed: string) => string;
     clone: (obj: any) => any;
 }
@@ -75,8 +77,17 @@ export interface NSchemaOperation extends Definition {
     inMessage: NSchemaMessage;
     outMessage: NSchemaMessage;
 }
+export interface NSchemaRestOperation extends NSchemaOperation {
+    route: string;
+    method: string;
+}
 export interface NSchemaService extends Definition {
-    operations: NSchemaOperation[];
+    operations: {
+        [name: string]: NSchemaOperation;
+    };
+}
+export interface NSchemaRestService extends NSchemaService {
+    routePrefix?: string;
 }
 export interface NSchemaContext {
     objects: NSchemaObject[];

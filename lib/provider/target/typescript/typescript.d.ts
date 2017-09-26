@@ -19,7 +19,10 @@ export interface TypeScriptTarget extends Target {
 }
 export declare class TypeScript {
     init(nschema: NSchemaInterface): any;
-    generate(nschema: NSchemaInterface, _nsconfig: NineSchemaConfig, template: TemplateFunction, target: Target): Promise<any>;
+    generate(nschema: NSchemaInterface, _nsconfig: NineSchemaConfig, template: TemplateFunction, target: Target): Promise<void | {
+        generated: any;
+        config: TypeScriptConfig;
+    }>;
     typeName($nschemaType: any, $nschema: NSchemaInterface, namespace: string, name: string, context: any): string;
 }
 declare let typescript: TypeScript;

@@ -93,9 +93,9 @@ function serverlessPostGen(result: { generated: any, config: TypeScriptConfig } 
 	fs.writeFileSync(filePath, yaml.safeDump(serverlessYml));
 
     let imports = computeImportMatrix(config.namespace, target.$namespaceMapping || {}, result.config.$context);
-    result.generated = imports + result.generated;
+    result.generated = imports + '\n' + result.generated;
 
-    var filepath,
+    var filepath: string,
         location = target.location;
     if (location.indexOf('.') === 0) {
         filepath = path.resolve(process.cwd(), location, config.namespace, (target.$fileName || (config.name + '.ts')));
@@ -105,7 +105,17 @@ function serverlessPostGen(result: { generated: any, config: TypeScriptConfig } 
     }
     console.log('typescript: writing again to file: ' + filepath);
     return nschema.writeFile(filepath, result.generated).then(_ => {
-        return result;
+		let template = templates['consumer-serverless'];
+        let tempConfig: any = config.$u.clone(config);
+        tempConfig.$skipWrite = true;
+        return baseGenerate(tempConfig, nschema, target, template, typescript).then ((exportsResult: any) => {
+            let imports = computeImportMatrix(config.namespace, target.$namespaceMapping || {}, exportsResult.config.$context);
+            exportsResult.generated = imports + '\n' + exportsResult.generated;
+            let newFilePath = path.resolve(path.dirname(filepath), path.basename(filepath, path.extname(filepath)) + 'Base' + path.extname(filepath));
+            return nschema.writeFile(newFilePath, exportsResult.generated).then(_ => {
+                return result;
+            });
+        });
     });
 }
 
@@ -118,7 +128,8 @@ class NRest {
 		let typescript = this.typescript;
 		
 		templates['consumer'] = nschema.buildTemplate(path.resolve(__dirname, 'serviceConsumer.ejs'));
-        templates['consumer-serverless'] = nschema.buildTemplate(path.resolve(__dirname, 'serviceConsumer-serverless.ejs'));
+        templates['consumer-serverless'] = nschema.buildTemplate(path.resolve(__dirname, 'serviceConsumerBase-serverless.ejs'));
+        templates['consumer-serverless-exports'] = nschema.buildTemplate(path.resolve(__dirname, 'serviceConsumer-serverless.ejs'));
 		templates['producer'] = nschema.buildTemplate(path.resolve(__dirname, 'serviceProducer.ejs'));
 		[
 			{
@@ -129,7 +140,7 @@ class NRest {
 			},
 			{
 				type: 'consumer',
-				template: 'consumer-serverless',
+				template: 'consumer-serverless-exports',
 				bind: 'rest-serverless',
 				postGen: serverlessPostGen
 			},

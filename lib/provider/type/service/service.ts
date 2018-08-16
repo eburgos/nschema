@@ -1,55 +1,63 @@
-
 /**
- @module nschema/provider/type/service
- @author Eduardo Burgos <eburgos@gmail.com>
+ * @module nschema/provider/type/service
+ *  @author Eduardo Burgos <eburgos@gmail.com>
  */
 
-import {processMessage} from "../message/message"
-import {Definition, NSchemaInterface, NSchemaPlugin, NSchemaService, Target} from "../../../model";
-import {all} from "ninejs/core/deferredUtils";
+import {
+  Definition,
+  NSchemaInterface,
+  NSchemaPlugin,
+  NSchemaService,
+  Target
+} from "../../../model";
+import { processMessage } from "../message/message";
 
+function execute(origParentConfig: Definition, nschema: NSchemaInterface) {
+  const parentConfig: NSchemaService = origParentConfig as NSchemaService;
 
-function execute (origParentConfig: Definition, nschema: NSchemaInterface) {
-	let parentConfig: NSchemaService = origParentConfig as NSchemaService;
-	var operations;
-	if (parentConfig.operations) {
-		operations = parentConfig.operations;
-		for (var p in operations) {
-			if (operations.hasOwnProperty(p)) {
-				processMessage(operations[p].inMessage, nschema);
-				processMessage(operations[p].outMessage, nschema);
-			}
-		}
-	}
-	nschema.registerService(parentConfig);
-	var newConfig = nschema.objClone(parentConfig);
-	var target: Target | Target[] = newConfig.$target;
-	let targetArr: Target[];
-	if (!nschema.isArray(target)) {
-		targetArr = [target];
-	}
-	else {
-		targetArr = target;
-	}
+  if (parentConfig.operations) {
+    const operations = parentConfig.operations;
+    for (const p in operations) {
+      if (operations.hasOwnProperty(p)) {
+        processMessage(operations[p].inMessage, nschema);
+        processMessage(operations[p].outMessage, nschema);
+      }
+    }
+  }
+  nschema.registerService(parentConfig);
+  const newConfig = nschema.objClone(parentConfig);
+  const target: Target | Target[] = newConfig.$target;
+  const targetArr: Target[] = (() => {
+    if (!nschema.isArray(target)) {
+      return [target];
+    } else {
+      return target;
+    }
+  })();
 
-	var r = targetArr.map(function (item) {
-		item.type = 'service';
-		var targetImplementation = nschema.getTarget(item);
-		return targetImplementation.generate(newConfig, nschema, item);
-	});
-	
-	return all(r);
+  const r = targetArr.map(item => {
+    item.type = "service";
+    const targetImplementation = nschema.getTarget(item);
+    if (targetImplementation) {
+      return targetImplementation.generate(newConfig, nschema, item);
+    } else {
+      console.error("Service not found: ", item);
+      throw new Error("Service not found");
+    }
+  });
+
+  return Promise.all(r);
 }
 
-let service: NSchemaPlugin = {
-	type: 'type',
-	name: 'service',
-	description: 'Handles service generation',
-	init: function (nschema:NSchemaInterface) {
-		nschema.register('type', this);
-		return Promise.resolve(null);
-	},
-	execute: execute
+const service: NSchemaPlugin = {
+  description: "Handles service generation",
+  execute,
+  name: "service",
+  type: "type",
+  init(nschema: NSchemaInterface) {
+    nschema.register("type", this);
+    return Promise.resolve(null);
+  }
 };
 
 export default service;

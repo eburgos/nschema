@@ -1,49 +1,59 @@
-import {Definition, NSchemaInterface, NSchemaPlugin, Target} from "../../../model";
-import {defer, all} from "ninejs/core/deferredUtils";
 /**
- @module nschema/provider/type/object
- @author Eduardo Burgos <eburgos@gmail.com>
+ * @module nschema/provider/type/object
+ * @author Eduardo Burgos <eburgos@gmail.com>
  */
 
-function execute (parentConfig: Definition, nschema: NSchemaInterface) {
-	nschema.registerObject(parentConfig);
-	var _defer = defer();
-	process.nextTick(function () {
-		var newConfig = nschema.objClone(parentConfig);
-		newConfig.$subType = newConfig.$subType || '';
+import {
+  Definition,
+  NSchemaInterface,
+  NSchemaPlugin,
+  Target
+} from "../../../model";
 
-		var target: Target | Target[] = newConfig.$target;
-		let targetArr: Target[];
-		if (target) {
-			if (!nschema.isArray(target)) {
-				targetArr = [target];
-			}
-			else {
-				targetArr = target;
-			}
-			var result = targetArr.map(function (item) {
-				item.type = 'object';
-				return nschema.getTarget(item).generate(newConfig, nschema, item);
-			});
-			all(result).then(arr => {
-				_defer.resolve(arr);
-			});
-		}
-		else {
-			_defer.resolve(false);
-		}
-	});
-	return _defer.promise;
+function execute(parentConfig: Definition, nschema: NSchemaInterface) {
+  nschema.registerObject(parentConfig);
+
+  return new Promise<any>((resolve, reject) => {
+    process.nextTick(() => {
+      const newConfig = nschema.objClone(parentConfig);
+      newConfig.$subType = newConfig.$subType || "";
+
+      const target: Target | Target[] = newConfig.$target;
+      let targetArr: Target[];
+      if (target) {
+        if (!nschema.isArray(target)) {
+          targetArr = [target];
+        } else {
+          targetArr = target;
+        }
+        const result = targetArr.map(item => {
+          item.type = "object";
+          const foundTarget = nschema.getTarget(item);
+          if (foundTarget) {
+            return foundTarget.generate(newConfig, nschema, item);
+          } else {
+            console.error("Target not found: ", item);
+            throw new Error("Target not found");
+          }
+        });
+        Promise.all(result).then(arr => {
+          resolve(arr);
+        }, reject);
+      } else {
+        resolve(false);
+      }
+    });
+  });
 }
 
-let obj: NSchemaPlugin = {
-	type: 'type',
-	name: 'object',
-	description: 'Generates classes and objects',
-	init: function (nschema: NSchemaInterface) {
-		return nschema.register('type', this);
-	},
-	execute: execute
+const obj: NSchemaPlugin = {
+  description: "Generates classes and objects",
+  execute,
+  name: "object",
+  type: "type",
+  init(nschema: NSchemaInterface) {
+    return nschema.register("type", this);
+  }
 };
 
 export default obj;

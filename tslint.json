@@ -1,0 +1,48 @@
+{
+  "extends": "./node_modules/tslint/lib/configs/recommended",
+  "exclude": ["generated"],
+  "rules": {
+    "max-line-length": false,
+    "arrow-parens": false,
+    "trailing-comma": false,
+    "interface-name": false,
+    "new-parens": true,
+    "no-arg": true,
+    "no-bitwise": true,
+    "no-conditional-assignment": true,
+    "no-consecutive-blank-lines": false,
+    "no-console": {
+      "severity": "warning",
+      "options": ["debug", "info", "log", "time", "timeEnd", "trace"]
+    },
+    "object-literal-key-quotes": false,
+    "no-unused-expression": true,
+    "no-unused-variable": true,
+    "comment-format": true,
+    "prefer-const": true,
+    "prefer-method-signature": true,
+    "prefer-readonly": true,
+    "prefer-template": true,
+    "prefer-function-over-method": true,
+    "completed-docs": {
+      "severity": "warning",
+      "options": [
+        "classes",
+        "enums",
+        "enum-members",
+        "functions",
+        "interfaces",
+        "methods",
+        "namespaces",
+        "properties",
+        "types",
+        "variables"
+      ]
+    }
+  },
+  "jsRules": {
+    "max-line-length": {
+      "options": [120]
+    }
+  }
+}

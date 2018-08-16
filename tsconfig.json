@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "module": "umd",
+    "module": "es6",
     "noImplicitAny": true,
     "removeComments": true,
     "preserveConstEnums": true,
@@ -10,30 +10,13 @@
     "moduleResolution": "node",
     "noLib": false,
     "noEmitOnError": false,
-    "typeRoots": ["node_modules/@types"],
-    "types": []
+    "strict": true,
+    "strictNullChecks": true,
+    "noImplicitThis": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noErrorTruncation": true
   },
-  "files": [
-    "cli.ts",
-    "lib/model.ts",
-    "lib/nschema.ts",
-    "lib/provider/source/json/json.ts",
 
-    "lib/provider/target/fsharp/fsharp.ts",
-    "lib/provider/target/fsharp/bind/amqpRpc/amqpRpc.ts",
-    "lib/provider/target/fsharp/bind/object/object.ts",
-    "lib/provider/target/fsharp/bind/rest/rest.ts",
-
-    "lib/provider/target/typescript/typescript.ts",
-    "lib/provider/target/typescript/bind/bundle/bundle.ts",
-    "lib/provider/target/typescript/bind/amqpRpc/amqpRpc.ts",
-    "lib/provider/target/typescript/bind/object/object.ts",
-    "lib/provider/target/typescript/bind/rest/rest.ts",
-    "lib/provider/type/bundle/bundle.ts",
-    "lib/provider/type/clean/clean.ts",
-    "lib/provider/type/import/import.ts",
-    "lib/provider/type/message/message.ts",
-    "lib/provider/type/object/object.ts",
-    "lib/provider/type/service/service.ts"
-  ]
+  "exclude": ["generated", "node_modules"]
 }

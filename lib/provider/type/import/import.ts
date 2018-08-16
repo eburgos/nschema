@@ -1,31 +1,34 @@
 /**
- @module nschema/provider/type/import
- @author Eduardo Burgos <eburgos@gmail.com>
+ * @module nschema/provider/type/import
+ * @author Eduardo Burgos <eburgos@gmail.com>
  */
-import path = require('path')
-import {Definition, NSchemaInterface, NSchemaPlugin} from "../../../model";
 
-declare let require: (name: string) => any;
+import * as path from "path";
+import { Definition, NSchemaInterface, NSchemaPlugin } from "../../../model";
 
-function execute (parentConfig: Definition, nschema: NSchemaInterface) {
-	var location = parentConfig.$importLocation,
-		newConfig;
-	location = path.resolve(parentConfig.$nschemaLocation || '', location);
-	newConfig = require(location);
-	if (!newConfig) {
-		throw new Error('Invalid import location: ' + location);
-	}
-	return nschema.generate(parentConfig, newConfig);
+declare const require: (name: string) => any;
+
+function execute(parentConfig: Definition, nschema: NSchemaInterface) {
+  const location = parentConfig.$importLocation || "";
+  const newLocation = path.resolve(
+    parentConfig.$nschemaLocation || "",
+    location
+  );
+  const newConfig = require(newLocation);
+  if (!newConfig) {
+    throw new Error(`Invalid import location: ${location}`);
+  }
+  return nschema.generate(parentConfig, newConfig);
 }
-let _import: NSchemaPlugin = {
-	type: 'type',
-	name: 'import',
-	description: 'Reference external files in your NSchema tasks',
-	init: function (nschema: NSchemaInterface) {
-		nschema.register('type', this);
-		return Promise.resolve(null);
-	},
-	execute: execute
+const $import: NSchemaPlugin = {
+  description: "Reference external files in your NSchema tasks",
+  execute,
+  name: "import",
+  type: "type",
+  init(nschema: NSchemaInterface) {
+    nschema.register("type", this);
+    return Promise.resolve(null);
+  }
 };
 
-export default _import;
+export default $import;

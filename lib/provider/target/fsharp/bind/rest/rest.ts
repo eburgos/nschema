@@ -24,9 +24,12 @@ function baseGenerate(
 
 const templates: { [name: string]: TemplateFunction } = {};
 
-class NRest {
-  public fsharp: FSharp;
+export class NRest {
+  public fsharp: FSharp | undefined;
   public init(nschema: NSchemaInterface) {
+    if (!this.fsharp) {
+      throw new Error("Argument exception");
+    }
     const fsharp = this.fsharp;
 
     templates.consumer = nschema.buildTemplate(

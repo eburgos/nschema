@@ -1,3 +1,3 @@
 import { NSchemaPlugin } from "../../../model";
-declare let obj: NSchemaPlugin;
+declare const obj: NSchemaPlugin;
 export default obj;

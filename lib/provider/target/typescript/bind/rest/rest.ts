@@ -18,10 +18,40 @@ import {
 } from "../../../../../model";
 import { TypeScript, TypeScriptConfig } from "../../typescript";
 
+export interface TypeScriptRestTarget extends Target {
+  $typeScriptRest?: {
+    requestModule: string;
+  };
+}
+
+export function checkAndFixTarget(
+  target: Target,
+  namespaceMapping: { [name: string]: string }
+): TypeScriptRestTarget {
+  const r: TypeScriptRestTarget = {
+    $typeScriptRest: { requestModule: "axios" },
+    ...target
+  };
+  if (!r.$typeScriptRest) {
+    throw new Error("Invalid target for TypeScript Rest");
+  }
+  if (!r.$typeScriptRest.requestModule) {
+    throw new Error("Invalid target requestModule for TypeScript Rest");
+  }
+  if (namespaceMapping) {
+    if (!namespaceMapping[r.$typeScriptRest.requestModule]) {
+      //If there is no mapping already set for request module then leave it as it is to avoid a local relative reference
+      namespaceMapping[r.$typeScriptRest.requestModule] =
+        r.$typeScriptRest.requestModule;
+    }
+  }
+  return r;
+}
+
 function baseGenerate(
   config: Definition,
   nschema: NSchemaInterface,
-  target: Target,
+  target: TypeScriptRestTarget,
   template: TemplateFunction,
   typescript: TypeScript
 ) {
@@ -61,10 +91,10 @@ function computeImportMatrix(
     .join("\n");
 }
 
-function serverlessPostGen(
+async function serverlessPostGen(
   result: { generated: any; config: TypeScriptConfig } | any,
   nschema: NSchemaInterface,
-  target: Target,
+  target: TypeScriptRestTarget,
   config: NSchemaRestService,
   template: TemplateFunction,
   typescript: TypeScript
@@ -141,48 +171,48 @@ function serverlessPostGen(
         );
 
   console.log(`typescript: writing again to file: ${filepath}`);
-  return nschema.writeFile(filepath, result.generated).then(_ => {
-    const thisTemplate = templates["consumer-serverless"];
-    const tempConfig: any = config.$u.clone(config);
-    tempConfig.$skipWrite = true;
-    return baseGenerate(
-      tempConfig,
-      nschema,
-      target,
-      thisTemplate,
-      typescript
-    ).then((exportsResult: any) => {
-      const thisImports = computeImportMatrix(
-        config.namespace || "",
-        target.$namespaceMapping || {},
-        exportsResult.config.$context
-      );
-      exportsResult.generated = `${thisImports}${"\n"}${
-        exportsResult.generated
-      }`;
-      const newFilePath = path.resolve(
-        path.dirname(filepath),
-        path.basename(
-          filepath,
-          `${path.extname(filepath)}Base${path.extname(filepath)}`
-        )
-      );
-      return nschema
-        .writeFile(newFilePath, exportsResult.generated)
-        .then(_2 => {
-          return result;
-        });
-    });
-  });
+  await nschema.writeFile(filepath, result.generated);
+
+  const thisTemplate = templates["consumer-serverless"];
+  const tempConfig: any = config.$u.clone(config);
+  tempConfig.$skipWrite = true;
+  const exportsResult: any = await baseGenerate(
+    tempConfig,
+    nschema,
+    checkAndFixTarget(target, target.$namespaceMapping || {}),
+    thisTemplate,
+    typescript
+  );
+
+  const thisImports = computeImportMatrix(
+    config.namespace || "",
+    target.$namespaceMapping || {},
+    exportsResult.config.$context
+  );
+  exportsResult.generated = `${thisImports}${"\n"}${exportsResult.generated}`;
+  const newFilePath = path.resolve(
+    path.dirname(filepath),
+    `${path.basename(`${filepath}`, path.extname(filepath))}Base${path.extname(
+      filepath
+    )}`
+  );
+
+  console.log(`typescript: writing again to file: ${newFilePath}`);
+  await nschema.writeFile(newFilePath, exportsResult.generated);
+
+  return result;
 }
 
-class NRest {
-  public language: "typescript";
-  public name: "rest";
-  public type: "service";
-  public typescript: TypeScript;
+export class NRest {
+  public language = "typescript";
+  public name = "rest";
+  public type = "service";
+  public typescript: TypeScript | undefined = undefined;
   public init(nschema: NSchemaInterface) {
-    const typescript = this.typescript;
+    if (!this.typescript) {
+      throw new Error("Argument exception");
+    }
+    const typescript: TypeScript = this.typescript as TypeScript;
 
     templates.consumer = nschema.buildTemplate(
       path.resolve(__dirname, "serviceConsumer.ejs")
@@ -196,66 +226,71 @@ class NRest {
     templates.producer = nschema.buildTemplate(
       path.resolve(__dirname, "serviceProducer.ejs")
     );
-    [
-      {
-        bind: "rest",
-        postGen: undefined,
-        template: "consumer",
-        type: "consumer"
-      },
-      {
-        bind: "rest-serverless",
-        postGen: serverlessPostGen,
-        template: "consumer-serverless-exports",
-        type: "consumer"
-      },
-      {
-        bind: "rest",
-        postGen: undefined,
-        template: "producer",
-        type: "producer"
-      }
-    ].forEach(serviceType => {
-      nschema.registerTarget({
-        bind: serviceType.bind,
-        description: "Rest services in typescript",
-        language: "typescript",
-        name: "typescript/rest",
-        serviceType: serviceType.type,
-        type: "service",
-        generate(
-          config: Definition,
-          thisNschema: NSchemaInterface,
-          target: Target
-        ) {
-          let p = baseGenerate(
-            config,
-            thisNschema,
-            target,
-            templates[serviceType.template],
-            typescript
-          );
-          if (serviceType.postGen) {
-            p = p.then((result: any) => {
-              if (serviceType.postGen) {
-                return serviceType.postGen(
-                  result,
-                  thisNschema,
-                  target,
-                  config as NSchemaService,
-                  templates[serviceType.template],
-                  typescript
-                );
-              } else {
-                throw new Error("Not possible");
-              }
-            });
-          }
-          return p;
+    return Promise.all(
+      [
+        {
+          bind: "rest",
+          postGen: undefined,
+          template: "consumer",
+          type: "consumer"
+        },
+        {
+          bind: "rest-serverless",
+          postGen: serverlessPostGen,
+          template: "consumer-serverless-exports",
+          type: "consumer"
+        },
+        {
+          bind: "rest",
+          postGen: undefined,
+          template: "producer",
+          type: "producer"
         }
-      });
-    });
-    return Promise.resolve(null);
+      ].map(serviceType => {
+        return nschema.registerTarget({
+          bind: serviceType.bind,
+          description: "Rest services in typescript",
+          language: "typescript",
+          name: "typescript/rest",
+          serviceType: serviceType.type,
+          type: "service",
+          generate(
+            config: Definition,
+            thisNschema: NSchemaInterface,
+            target: Target
+          ) {
+            const newTarget = checkAndFixTarget(
+              target,
+              target.$namespaceMapping || {}
+            );
+            let p = baseGenerate(
+              config,
+              thisNschema,
+              newTarget,
+              templates[serviceType.template],
+              typescript
+            );
+            if (serviceType.postGen) {
+              p = p.then((result: any) => {
+                if (serviceType.postGen) {
+                  return serviceType.postGen(
+                    result,
+                    thisNschema,
+                    newTarget,
+                    config as NSchemaService,
+                    templates[serviceType.template],
+                    typescript
+                  );
+                } else {
+                  throw new Error("Not possible");
+                }
+              });
+            }
+            return p;
+          }
+        });
+      })
+    );
   }
 }
 

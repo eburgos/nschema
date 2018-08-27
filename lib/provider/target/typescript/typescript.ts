@@ -20,6 +20,8 @@ const modifierMap = (modifier: string) => {
       return "[]";
     case "array":
       return "[]";
+    case "option":
+      return "| undefined";
     default:
       return modifier;
   }
@@ -164,7 +166,8 @@ export class TypeScript {
     $nschema: NSchemaInterface,
     namespace: string,
     name: string,
-    context: any
+    context: any,
+    addFlowComment?: boolean
   ) {
     let result: string;
     const typeMap = (t: string) => {
@@ -206,10 +209,14 @@ export class TypeScript {
         : $modifier;
 
       modifierArr.forEach(item => {
-        result += ` ${modifierMap(item)}`;
+        result = `(${result} ${modifierMap(item)})`;
       });
     }
-    return result;
+    if (addFlowComment) {
+      return `${result} /* :${result} */`;
+    } else {
+      return result;
+    }
   }
 }
 

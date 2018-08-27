@@ -1,3 +1,3 @@
 import { SourceBind } from "../../../model";
-declare let source: SourceBind;
+declare const source: SourceBind;
 export default source;

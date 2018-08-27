@@ -24,8 +24,11 @@ function baseGenerate(
 const templates: any = {};
 
 export class NObject {
-  public typescript: TypeScript;
+  public typescript: TypeScript | undefined = undefined;
   public init(nschema: NSchemaInterface) {
+    if (!this.typescript) {
+      throw new Error("Argument exception");
+    }
     const typescript = this.typescript;
     templates.object = nschema.buildTemplate(
       path.resolve(__dirname, "class.ejs")

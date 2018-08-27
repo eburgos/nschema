@@ -19,9 +19,12 @@ function baseGenerate(
 
 const templates: { [name: string]: TemplateFunction } = {};
 
-class AmqpRpc {
-  public typescript: TypeScript;
+export class AmqpRpc {
+  public typescript: TypeScript | undefined;
   public init(nschema: NSchemaInterface) {
+    if (!this.typescript) {
+      throw new Error("Argument exception");
+    }
     const typescript = this.typescript;
     templates.consumer = nschema.buildTemplate(
       path.resolve(__dirname, "serviceConsumer.ejs")

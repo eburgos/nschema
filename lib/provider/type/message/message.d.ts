@@ -1,4 +1,4 @@
 import { NSchemaInterface, NSchemaMessage, NSchemaPlugin } from "../../../model";
 export declare function processMessage(newConfig: NSchemaMessage, nschema: NSchemaInterface): void;
-declare let message: NSchemaPlugin;
+declare const message: NSchemaPlugin;
 export default message;

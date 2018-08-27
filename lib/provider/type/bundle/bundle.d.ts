@@ -1,3 +1,3 @@
 import { NSchemaPlugin } from "../../../model";
-declare let bundle: NSchemaPlugin;
+declare const bundle: NSchemaPlugin;
 export default bundle;

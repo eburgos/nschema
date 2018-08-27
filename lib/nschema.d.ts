@@ -1,43 +1,55 @@
-/// <reference types="ejs" />
-import ejs = require('ejs');
-import { Definition, NineSchemaConfig, NSchemaInterface, SourceBind, TargetBind, NSchemaPlugin } from './model';
+/// <reference types="node" />
+import * as ejs from "ejs";
+import * as path from "path";
+import { Definition, NineSchemaConfig, NSchemaContext, NSchemaInterface, NSchemaMessage, NSchemaObject, NSchemaPlugin, NSchemaService, SourceBind, TargetBind } from "./model";
 export default class NSchema implements NSchemaInterface {
-    dirname: string;
-    register(type: string, obj: NSchemaPlugin): Promise<any>;
-    registerSource(obj: SourceBind): Promise<any>;
-    registerTarget(obj: TargetBind): Promise<any>;
-    registerService(serviceConfig: Definition): void;
-    registerObject(typeConfig: Definition): void;
-    getObject(ns: string, name: string): any;
-    getMessage(ns: string, name: string): any;
-    registerMessage(typeConfig: Definition): void;
-    getService(ns: string, name: string): any;
-    getTarget(obj: any): TargetBind;
-    sources: {
-        [name: string]: SourceBind;
+    path: typeof path;
+    isArray: (obj: any) => obj is any[];
+    objClone: (obj: any) => any;
+    require: ((name: string) => any) | undefined;
+    mixinRecursive: (obj: any, target: any, filter?: (o: any, t: any, p: string) => boolean) => void;
+    appendFile: (filename: string, content: string, callback: (err: Error, data?: any) => void) => void;
+    ejs: typeof ejs;
+    ejsSettings: {
+        client: boolean;
+        close: string;
+        debug: boolean;
+        open: string;
+    };
+    utils: {
+        initialCaps(n: string): string;
     };
     targets: TargetBind[];
-    types: any;
-    context: any;
-    dotSettings: any;
-    loadDefer: Promise<any>;
-    globalConfig: NineSchemaConfig;
-    verbose: boolean;
+    private sources;
+    private customPlugins;
+    private dotSettings;
+    private loadDefer;
+    private globalConfig;
+    private verbose;
+    private mTypes;
+    private mContext;
     constructor();
-    require: (name: string) => any;
-    path: any;
-    isArray: (obj: any) => obj is any[];
-    objClone: any;
-    mixinRecursive: any;
-    writeFile(filename: string, content: string): Promise<any>;
-    appendFile: any;
-    ejs: any;
-    ejsSettings: any;
-    utils: any;
-    init(loadPath?: string): Promise<any>;
+    types(): {
+        [name: string]: NSchemaPlugin;
+    };
+    context(): NSchemaContext;
+    register(type: string, obj: NSchemaPlugin): Promise<null>;
+    registerSource(obj: SourceBind): Promise<null>;
+    registerTarget(obj: TargetBind): Promise<null>;
+    registerService(serviceConfig: NSchemaService): void;
+    registerObject(typeConfig: NSchemaObject): void;
+    getObject(ns: string, name: string): NSchemaObject | undefined;
+    getMessage(ns: string, name: string): NSchemaMessage | undefined;
+    registerMessage(typeConfig: Definition): void;
+    getService(ns: string, name: string): NSchemaService | undefined;
+    getCustomPlugin(name: string, obj: any): NSchemaPlugin | undefined;
+    getTarget(obj: any): TargetBind;
     buildTemplate(filename: string): ejs.TemplateFunction;
-    generate(parentConfig: NineSchemaConfig, config: Definition): any;
-    walk(dir: string, done: (err: Error, data?: string[]) => void): void;
+    writeFile(filename: string, content: string): Promise<void>;
+    init(loadPath?: string): Promise<NSchema>;
+    generate(parentConfig: NineSchemaConfig, config: Definition): Promise<any>;
+    walk(dir: string, done: (err: Error | undefined, data?: string[]) => void): void;
 }
 export declare function generate(parentConfig: NineSchemaConfig, config: Definition): Promise<any>;
-export declare function features(): Promise<any>;
+export declare function features(): Promise<void>;
+export declare function getConfig(nschemaLocation: string): NineSchemaConfig;

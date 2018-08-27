@@ -1,3 +1,3 @@
 import { NSchemaPlugin } from "../../../model";
-declare let service: NSchemaPlugin;
+declare const service: NSchemaPlugin;
 export default service;

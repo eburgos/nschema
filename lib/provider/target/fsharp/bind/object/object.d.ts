@@ -1,8 +1,8 @@
 import { NSchemaInterface } from "../../../../../model";
 import { FSharp } from "../../fsharp";
 export declare class NObject {
-    fsharp: FSharp;
+    fsharp: FSharp | undefined;
     init(nschema: NSchemaInterface): Promise<boolean>;
 }
-declare let obj: NObject;
+declare const obj: NObject;
 export default obj;

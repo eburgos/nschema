@@ -1,6 +1,5 @@
-/// <reference types="ejs" />
-import { Definition, NineSchemaConfig, NSchemaInterface, Target } from '../../../model';
-import { TemplateFunction } from 'ejs';
+import { TemplateFunction } from "ejs";
+import { Definition, NineSchemaConfig, NSchemaInterface, Target } from "../../../model";
 export interface TypeScriptContext {
     imports: {
         [name: string]: {
@@ -13,17 +12,17 @@ export interface TypeScriptConfig extends Definition {
     $context: TypeScriptContext;
     $skipWrite: boolean;
 }
-export declare type RestClientStrategy = 'Angular2';
+export declare type RestClientStrategy = "Angular2";
 export interface TypeScriptTarget extends Target {
     restClientStrategy?: RestClientStrategy;
 }
 export declare class TypeScript {
-    init(nschema: NSchemaInterface): any;
-    generate(nschema: NSchemaInterface, _nsconfig: NineSchemaConfig, template: TemplateFunction, target: Target): Promise<void | {
-        generated: any;
+    init(nschema: NSchemaInterface): Promise<any>;
+    generate(nschema: NSchemaInterface, $nsconfig: NineSchemaConfig, template: TemplateFunction, target: Target): Promise<void | {
         config: TypeScriptConfig;
+        generated: string;
     }>;
-    typeName($nschemaType: any, $nschema: NSchemaInterface, namespace: string, name: string, context: any): string;
+    typeName($nschemaType: any, $nschema: NSchemaInterface, namespace: string, name: string, context: any, addFlowComment?: boolean): string;
 }
-declare let typescript: TypeScript;
+declare const typescript: TypeScript;
 export default typescript;

@@ -11,6 +11,7 @@ import {
   NineSchemaConfig,
   NSchemaContext,
   NSchemaInterface,
+  NSchemaMessage,
   NSchemaObject,
   NSchemaPlugin,
   NSchemaService,
@@ -170,14 +171,22 @@ function registerBasicTypes(nschema: NSchema) {
 
 export default class NSchema implements NSchemaInterface {
   public path = path;
-  public isArray = isArray;
-  public objClone = objClone;
+  public isArray: (obj: any) => obj is any[] = isArray;
+  public objClone: (obj: any) => any = objClone;
 
-  public require: (name: string) => any;
+  public require: ((name: string) => any) | undefined = undefined;
 
-  public mixinRecursive = mixinRecursive;
+  public mixinRecursive: (
+    obj: any,
+    target: any,
+    filter?: (o: any, t: any, p: string) => boolean
+  ) => void = mixinRecursive;
 
-  public appendFile = appendFile;
+  public appendFile: (
+    filename: string,
+    content: string,
+    callback: (err: Error, data?: any) => void
+  ) => void = appendFile;
   public ejs = ejs;
   public ejsSettings = {
     client: true,
@@ -198,9 +207,9 @@ export default class NSchema implements NSchemaInterface {
   private sources: { [name: string]: SourceBind } = {};
   private customPlugins: { [name: string]: NSchemaPlugin[] } = {};
   private dotSettings: any = {};
-  private loadDefer: Promise<NSchema>;
-  private globalConfig: NineSchemaConfig;
-  private verbose: boolean;
+  private loadDefer: Promise<NSchema> | undefined = undefined;
+  private globalConfig: NineSchemaConfig | undefined = undefined;
+  private verbose: boolean = false;
 
   private mTypes: { [name: string]: NSchemaPlugin } = {};
   private mContext: NSchemaContext = {
@@ -300,7 +309,7 @@ export default class NSchema implements NSchemaInterface {
     return undefined;
   }
 
-  public getMessage(ns: string, name: string) {
+  public getMessage(ns: string, name: string): NSchemaMessage | undefined {
     const r = this.context().messages.filter((t: Definition) => {
       return (
         (t.namespace || "") === (ns || "") && (t.name || "") === (name || "")
@@ -361,7 +370,6 @@ export default class NSchema implements NSchemaInterface {
   public getTarget(obj: any): TargetBind {
     const targets = this.targets.filter((target: TargetBind) => {
       const tgt: any = target;
-
       for (const p in obj) {
         if (obj.hasOwnProperty(p) && isValidProperty(p)) {
           if (tgt[p] !== obj[p]) {
@@ -383,6 +391,7 @@ export default class NSchema implements NSchemaInterface {
   public buildTemplate(filename: string) {
     const tpl = fs.readFileSync(filename, { encoding: "utf-8" });
     this.dotSettings.filename = filename;
+
     const compiled = ejs.compile(tpl, this.dotSettings);
 
     return compiled;

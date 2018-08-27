@@ -6,6 +6,7 @@ import {
   NSchemaPlugin
 } from "../../../../../model";
 import { TypeScriptConfig, TypeScriptContext } from "../../typescript";
+import { checkAndFixTarget } from "../rest/rest";
 
 const excludedConfigNames = ["$type", "$namespace", "list"];
 
@@ -28,13 +29,15 @@ function computeImportMatrix(
       });
     });
   });
-  return `${Object.keys(rootContext.imports)
+  const result = Object.keys(rootContext.imports)
     .filter(p => !!p && p !== localNamespace)
     .map(p => {
       return `import { ${Object.keys(rootContext.imports[p]).join(
         ", "
       )} } from '${namespaceMapping[p] || `./${p}`}'`;
-    })
+    });
+  return `${result.join("\n")}${"\n"}${result
+    .map(r => `/*:: ${r} */`)
     .join("\n")}${"\n"}`;
 }
 
@@ -42,29 +45,41 @@ async function execute(parentConfig: Definition, nschema: NSchemaInterface) {
   // According from how this bundle is implemented I will always get 1 target here
   const config: any = parentConfig;
   const target = config.$target[0];
+
   const namespaceMapping = target.$namespaceMapping || {};
+  const newTarget = checkAndFixTarget(target, namespaceMapping);
+
   const arr = parentConfig.list || [];
-  const r = arr.map((cur: TypeScriptConfig) => {
-    const t = cur.$skipWrite;
-    cur.$skipWrite = true;
+
+  const r = arr.map((cur: Definition) => {
+    const tsDefinition = cur as TypeScriptConfig;
+    const t = tsDefinition.$skipWrite;
+    tsDefinition.$skipWrite = true;
     return nschema.generate(parentConfig, cur).then(result => {
-      cur.$skipWrite = t;
+      tsDefinition.$skipWrite = t;
       return result;
     });
   });
-  const dblarr = await Promise.all(r);
+  const dblarr: Array<any | any[]> = await Promise.all(r);
 
-  const reducedArr: any[] = dblarr.reduce((acc, next: any[]) => {
-    if (nschema.isArray(next)) {
-      return acc.concat(
-        next.filter(item => {
-          return item && item.generated;
-        })
-      );
-    } else {
-      return acc;
-    }
-  }, []);
+  const reducedArr: any[] = dblarr.reduce(
+    (acc: any | any[], next: any | any[]) => {
+      if (nschema.isArray(next)) {
+        return acc.concat(
+          next.filter(item => {
+            return item && item.generated;
+          })
+        );
+      } else {
+        if (next && next.generated) {
+          return acc.concat([next]);
+        } else {
+          return acc;
+        }
+      }
+    },
+    []
+  );
   const results = reducedArr.map(item => {
     return item.generated;
   });
@@ -79,15 +94,17 @@ async function execute(parentConfig: Definition, nschema: NSchemaInterface) {
     namespaceMapping
   );
 
-  result = `${imports}${"\n"}${result}`;
+  result = `/* @flow */
 
-  const location = target.location;
+${imports}${"\n"}${result}`;
+
+  const location = newTarget.location;
   const filepath =
     location.indexOf(".") === 0
       ? path.resolve(
           process.cwd(),
           location,
-          target.$fileName || `${config.namespace}.ts`
+          newTarget.$fileName || `${config.namespace}.ts`
         )
       : path.resolve(location, config.$fileName || `${config.namespace}.ts`);
 

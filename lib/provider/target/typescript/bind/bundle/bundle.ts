@@ -2,43 +2,35 @@ import * as path from "path";
 import {
   Definition,
   NSchemaCustomPlugin,
-  NSchemaInterface,
-  NSchemaPlugin
+  NSchemaInterface
 } from "../../../../../model";
-import { TypeScriptConfig, TypeScriptContext } from "../../typescript";
+import { computeImportMatrix } from "../../helpers";
+import { buildTypeScriptContext, TypeScriptContext } from "../../typescript";
 import { checkAndFixTarget } from "../rest/rest";
 
 const excludedConfigNames = ["$type", "$namespace", "list"];
 
-function computeImportMatrix(
-  arr: TypeScriptConfig[],
+function computeBundleImportMatrix(
+  arr: TypeScriptContext[],
   localNamespace: string,
   namespaceMapping: { [name: string]: string }
 ) {
   const rootContext: TypeScriptContext = {
-    imports: {}
+    ...buildTypeScriptContext(),
+    skipWrite: true
   };
   arr.forEach(item => {
-    Object.keys(item.$context.imports).forEach(p => {
+    Object.keys(item.imports).forEach(p => {
       if (!rootContext.imports[p]) {
         rootContext.imports[p] = {};
       }
-      const ns = item.$context.imports[p];
+      const ns = item.imports[p];
       Object.keys(ns).forEach(name => {
-        rootContext.imports[p][name] = true;
+        rootContext.imports[p][name] = item.imports[p][name];
       });
     });
   });
-  const result = Object.keys(rootContext.imports)
-    .filter(p => !!p && p !== localNamespace)
-    .map(p => {
-      return `import { ${Object.keys(rootContext.imports[p]).join(
-        ", "
-      )} } from '${namespaceMapping[p] || `./${p}`}'`;
-    });
-  return `${result.join("\n")}${"\n"}${result
-    .map(r => `/*:: ${r} */`)
-    .join("\n")}${"\n"}`;
+  return computeImportMatrix(localNamespace, namespaceMapping, rootContext);
 }
 
 async function execute(parentConfig: Definition, nschema: NSchemaInterface) {
@@ -52,13 +44,7 @@ async function execute(parentConfig: Definition, nschema: NSchemaInterface) {
   const arr = parentConfig.list || [];
 
   const r = arr.map((cur: Definition) => {
-    const tsDefinition = cur as TypeScriptConfig;
-    const t = tsDefinition.$skipWrite;
-    tsDefinition.$skipWrite = true;
-    return nschema.generate(parentConfig, cur).then(result => {
-      tsDefinition.$skipWrite = t;
-      return result;
-    });
+    return nschema.generate(parentConfig, cur, { skipWrite: true });
   });
   const dblarr: Array<any | any[]> = await Promise.all(r);
 
@@ -67,7 +53,7 @@ async function execute(parentConfig: Definition, nschema: NSchemaInterface) {
       if (nschema.isArray(next)) {
         return acc.concat(
           next.filter(item => {
-            return item && item.generated;
+            return item && item.generated && item.context;
           })
         );
       } else {
@@ -87,9 +73,8 @@ async function execute(parentConfig: Definition, nschema: NSchemaInterface) {
     return Promise.resolve(false);
   }
   let result = results.join("\n");
-
-  const imports = computeImportMatrix(
-    reducedArr.map(item => item.config),
+  const imports = computeBundleImportMatrix(
+    reducedArr.map(item => item.context),
     config.namespace,
     namespaceMapping
   );

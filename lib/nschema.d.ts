@@ -25,7 +25,6 @@ export default class NSchema implements NSchemaInterface {
     private dotSettings;
     private loadDefer;
     private globalConfig;
-    private verbose;
     private mTypes;
     private mContext;
     constructor();
@@ -40,14 +39,14 @@ export default class NSchema implements NSchemaInterface {
     registerObject(typeConfig: NSchemaObject): void;
     getObject(ns: string, name: string): NSchemaObject | undefined;
     getMessage(ns: string, name: string): NSchemaMessage | undefined;
-    registerMessage(typeConfig: Definition): void;
+    registerMessage(typeConfig: NSchemaMessage): void;
     getService(ns: string, name: string): NSchemaService | undefined;
     getCustomPlugin(name: string, obj: any): NSchemaPlugin | undefined;
     getTarget(obj: any): TargetBind;
     buildTemplate(filename: string): ejs.TemplateFunction;
     writeFile(filename: string, content: string): Promise<void>;
     init(loadPath?: string): Promise<NSchema>;
-    generate(parentConfig: NineSchemaConfig, config: Definition): Promise<any>;
+    generate(parentConfig: NineSchemaConfig, config: Definition, context: any | undefined): Promise<any>;
     walk(dir: string, done: (err: Error | undefined, data?: string[]) => void): void;
 }
 export declare function generate(parentConfig: NineSchemaConfig, config: Definition): Promise<any>;

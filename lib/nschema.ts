@@ -6,6 +6,7 @@
 import * as ejs from "ejs";
 import * as fs from "fs";
 import * as path from "path";
+import { LogLevel, writeError, writeLog } from "./logging";
 import {
   Definition,
   NineSchemaConfig,
@@ -22,6 +23,7 @@ import {
 
 declare let require: (name: string) => any;
 
+//TODO: Remove this and export individually when EJS is out
 const utils: Utils = {
   relativePath: path.relative,
   resolvePath: path.resolve,
@@ -209,7 +211,6 @@ export default class NSchema implements NSchemaInterface {
   private dotSettings: any = {};
   private loadDefer: Promise<NSchema> | undefined = undefined;
   private globalConfig: NineSchemaConfig | undefined = undefined;
-  private verbose: boolean = false;
 
   private mTypes: { [name: string]: NSchemaPlugin } = {};
   private mContext: NSchemaContext = {
@@ -320,7 +321,7 @@ export default class NSchema implements NSchemaInterface {
     }
     return undefined;
   }
-  public registerMessage(typeConfig: Definition) {
+  public registerMessage(typeConfig: NSchemaMessage) {
     const t = this.getMessage(typeConfig.namespace || "", typeConfig.name);
     if (t && !t.$nschemaRegistered) {
       throw new Error(
@@ -457,7 +458,7 @@ export default class NSchema implements NSchemaInterface {
           })
       )
         .catch(err => {
-          console.log(err);
+          console.error(err);
           throw err;
         })
         .then(() => {
@@ -470,21 +471,13 @@ export default class NSchema implements NSchemaInterface {
 
   public generate(
     parentConfig: NineSchemaConfig,
-    config: Definition
+    config: Definition,
+    context: any | undefined
   ): Promise<any> {
-    // TOOD: Remove this when you are sure
-    // if (!config) {
-    //   config = {...parentConfig};
-    //   mixinRecursive(config, parentConfig);
-    //   parentConfig = this.globalConfig || {};
-    // }
     config.i = 0; //Starts with indent = 0
     config.$u = utils;
     const type = config.$type || "";
 
-    if (this.verbose) {
-      console.log(`loading nschema provider: ${type}`);
-    }
     const typeProvider = this.types()[type];
     if (!typeProvider) {
       throw new Error(`Unknown nschema type provider: ${type}`);
@@ -492,7 +485,7 @@ export default class NSchema implements NSchemaInterface {
     const newConfig: Definition = objClone(parentConfig);
     mixinRecursive(newConfig, config);
     if (typeProvider.execute) {
-      return typeProvider.execute(newConfig, this);
+      return typeProvider.execute(newConfig, this, context);
     } else {
       return Promise.resolve();
     }
@@ -543,18 +536,15 @@ export async function generate(
     const nschema = await n.init();
 
     try {
-      return await nschema.generate(parentConfig, config);
+      return await nschema.generate(parentConfig, config, undefined);
     } catch (err) {
-      console.log("NSchema failed to generate");
-      console.log(err);
-      if (err.stack) {
-        console.log(err.stack);
-      }
+      writeError("NSchema failed to generate");
+      writeError(err);
       throw err;
     }
   } catch (err) {
-    console.log("failed to load NSchema");
-    console.log(err);
+    writeError("failed to load NSchema");
+    writeError(err);
     throw err;
   }
 }
@@ -564,24 +554,25 @@ export function features() {
   return n
     .init()
     .catch((err: Error) => {
-      console.log("failed to load NSchema");
-      console.log(err);
+      writeError("failed to load NSchema");
+      writeError(err);
       throw err;
     })
     .then((nschema: NSchema) => {
       const version: string = require("../package.json").version;
-      console.log(`NineSchema version ${version}`);
-      console.log();
-      console.log("Available bindings:");
-      console.log();
+      writeLog(LogLevel.Default, `NineSchema version ${version}`);
+      writeLog(LogLevel.Default, "");
+      writeLog(LogLevel.Default, "Available bindings:");
+      writeLog(LogLevel.Default, "");
       nschema.targets.forEach(target => {
-        console.log(`	serviceType: '${target.serviceType}'`);
-        console.log(`	language: '${target.language}'`);
-        console.log(`	bind: '${target.bind}'`);
-        console.log(
+        writeLog(LogLevel.Default, `	serviceType: '${target.serviceType}'`);
+        writeLog(LogLevel.Default, `	language: '${target.language}'`);
+        writeLog(LogLevel.Default, `	bind: '${target.bind}'`);
+        writeLog(
+          LogLevel.Default,
           `	description: ${target.description || "No description provided"}`
         );
-        console.log();
+        writeLog(LogLevel.Default, "");
       });
     });
 }

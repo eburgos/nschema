@@ -11,9 +11,12 @@ import {
 
 const excludedConfigNames = ["$type", "$namespace", "list"];
 
-function execute(parentConfig: Definition, nschema: NSchemaInterface) {
+function execute(
+  parentConfig: Definition,
+  nschema: NSchemaInterface,
+  context: object
+) {
   const arr = parentConfig.list || [];
-  const len = arr.length;
 
   const newConfig = nschema.objClone(parentConfig);
   //getting new config
@@ -34,9 +37,11 @@ function execute(parentConfig: Definition, nschema: NSchemaInterface) {
         newConfig.$target = [tgt];
         if (customBundle) {
           if (customBundle.execute) {
-            return customBundle.execute(newConfig, nschema).then(() => {
-              newConfig.$target = tempTargets;
-            });
+            return customBundle
+              .execute(newConfig, nschema, context)
+              .then(() => {
+                newConfig.$target = tempTargets;
+              });
           } else {
             throw new Error("custom bundle without execute");
           }
@@ -54,7 +59,7 @@ function execute(parentConfig: Definition, nschema: NSchemaInterface) {
 
   return arr.reduce((acc, next) => {
     return acc.then(() => {
-      return nschema.generate(newConfig, next);
+      return nschema.generate(newConfig, next, context);
     });
   }, resultPromise);
 }

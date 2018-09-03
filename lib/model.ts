@@ -15,10 +15,12 @@ export interface NineSchemaConfig {
 	Indentation size
 	 */
   i: number;
+  //TODO: Remove this when EJS is out
   /*
 	Utilities to help you templating
 	 */
   $u: Utils;
+  //TODO: Remove this when EJS is out
   /*
 	reference to NSchema itself. Useful in templates.
 	 */
@@ -50,13 +52,17 @@ export interface NSchemaInterface {
   registerSource(obj: SourceBind): Promise<any>;
   register(type: string, obj: NSchemaPlugin): Promise<any>;
 
-  generate(parentConfig: NineSchemaConfig, config: Definition): Promise<any>;
+  generate(
+    parentConfig: NineSchemaConfig,
+    config: Definition,
+    context: object
+  ): Promise<any>;
 
   registerService(serviceConfig: Definition): void;
   registerObject(typeConfig: Definition): void;
   registerMessage(typeConfig: Definition): void;
   getObject(ns: string, name: string): Definition | undefined;
-  getMessage(ns: string, name: string): Definition | undefined;
+  getMessage(ns: string, name: string): NSchemaMessage | undefined;
   getService(ns: string, name: string): Definition | undefined;
   getTarget(obj: any): TargetBind | undefined;
   getCustomPlugin(name: string, obj: any): NSchemaPlugin | undefined;
@@ -80,7 +86,11 @@ export interface NSchemaPlugin extends Initializable {
   name: string;
   description: string;
   language?: string;
-  execute?(config: Definition, nschema: NSchemaInterface): Promise<any>;
+  execute?(
+    config: Definition,
+    nschema: NSchemaInterface,
+    context: any | undefined
+  ): Promise<any>;
 }
 export interface NSchemaCustomPlugin extends NSchemaPlugin {
   [name: string]: any;
@@ -96,7 +106,8 @@ export interface TargetBind extends NSchemaPlugin {
   generate(
     config: NineSchemaConfig,
     nschema: NSchemaInterface,
-    target: Target
+    target: Target,
+    context: any | undefined
   ): Promise<any>;
 }
 
@@ -109,12 +120,16 @@ export interface NSchemaObject extends Definition {
   $extends?: Identifier;
 }
 
+// TODO: Make this a type, not any
+export type NSchemaMessageArgument = any;
+
 export interface NSchemaMessage extends Definition {
   $extends?: Identifier;
-  data?: any[];
+  data: NSchemaMessageArgument[];
 }
 
 export interface NSchemaOperation extends Definition {
+  description?: string;
   inMessage: NSchemaMessage;
   outMessage: NSchemaMessage;
 }
@@ -129,6 +144,7 @@ export interface NSchemaService extends Definition {
 }
 
 export interface NSchemaRestService extends NSchemaService {
+  operations: { [name: string]: NSchemaRestOperation };
   routePrefix?: string;
 }
 
@@ -136,6 +152,12 @@ export interface NSchemaContext {
   objects: NSchemaObject[];
   messages: NSchemaMessage[];
   services: NSchemaService[];
+}
+
+export interface NSchemaType {
+  name: string;
+  namespace: string;
+  modifier?: string;
 }
 
 export interface Definition extends NineSchemaConfig {

@@ -16,9 +16,10 @@ function baseGenerate(
   nschema: NSchemaInterface,
   target: Target,
   template: TemplateFunction,
-  typescript: TypeScript
+  typescript: TypeScript,
+  context: object
 ) {
-  return typescript.generate(nschema, config, template, target);
+  return typescript.generate(nschema, config, template, target, context);
 }
 
 const templates: any = {};
@@ -41,14 +42,16 @@ export class NObject {
       generate(
         config: NineSchemaConfig,
         thisNschema: NSchemaInterface,
-        target: Target
+        target: Target,
+        context: object
       ) {
         return baseGenerate(
           config,
           thisNschema,
           target,
           templates.object,
-          typescript
+          typescript,
+          context
         );
       }
     });

@@ -10,9 +10,17 @@ import {
   NSchemaService,
   Target
 } from "../../../model";
+import {
+  buildTypeScriptContext,
+  TypeScriptContext
+} from "../../target/typescript/typescript";
 import { processMessage } from "../message/message";
 
-function execute(origParentConfig: Definition, nschema: NSchemaInterface) {
+function execute(
+  origParentConfig: Definition,
+  nschema: NSchemaInterface,
+  providedContext: any
+) {
   const parentConfig: NSchemaService = origParentConfig as NSchemaService;
 
   if (parentConfig.operations) {
@@ -39,7 +47,12 @@ function execute(origParentConfig: Definition, nschema: NSchemaInterface) {
     item.type = "service";
     const targetImplementation = nschema.getTarget(item);
     if (targetImplementation) {
-      return targetImplementation.generate(newConfig, nschema, item);
+      return targetImplementation.generate(
+        newConfig,
+        nschema,
+        item,
+        providedContext
+      );
     } else {
       console.error("Service not found: ", item);
       throw new Error("Service not found");

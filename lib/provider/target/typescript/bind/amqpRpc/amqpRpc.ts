@@ -12,9 +12,10 @@ function baseGenerate(
   nschema: NSchemaInterface,
   target: Target,
   template: TemplateFunction,
-  typescript: TypeScript
+  typescript: TypeScript,
+  context: object
 ) {
-  return typescript.generate(nschema, config, template, target);
+  return typescript.generate(nschema, config, template, target, context);
 }
 
 const templates: { [name: string]: TemplateFunction } = {};
@@ -44,14 +45,16 @@ export class AmqpRpc {
         generate(
           config: Definition,
           thisNschema: NSchemaInterface,
-          target: Target
+          target: Target,
+          context: object
         ) {
           return baseGenerate(
             config,
             thisNschema,
             target,
             templates[serviceType],
-            typescript
+            typescript,
+            context
           );
         }
       });

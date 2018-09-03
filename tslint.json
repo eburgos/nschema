@@ -24,6 +24,7 @@
     "prefer-readonly": true,
     "prefer-template": true,
     "prefer-function-over-method": true,
+    "variable-name": false,
     "completed-docs": {
       "severity": "warning",
       "options": [

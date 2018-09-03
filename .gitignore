@@ -2,7 +2,7 @@
 .tscache
 coverage.html
 node_modules
-nschema.iml
+ignored
 generated/test1/obj
 generated/test1/packages
 generated/test1/schema

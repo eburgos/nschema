@@ -5,10 +5,14 @@
 import { TemplateFunction } from "ejs";
 import * as fs from "fs";
 import * as path from "path";
+import { LogLevel, writeLog } from "../../../logging";
 import {
   Definition,
   NineSchemaConfig,
   NSchemaInterface,
+  NSchemaMessage,
+  NSchemaMessageArgument,
+  NSchemaType,
   Target
 } from "../../../model";
 
@@ -28,27 +32,25 @@ const modifierMap = (modifier: string) => {
 };
 
 export interface TypeScriptContext {
+  hasTypeScript: true;
+  id: number;
   imports: {
     [name: string]: {
-      [name: string]: boolean;
+      [name: string]: string | boolean;
     };
   };
-}
 
-export interface TypeScriptConfig extends Definition {
   /*
-	Reference to typescript class. This is internal to TypeScript generation.
+	 *  Reference to typescript class. This is internal to TypeScript generation.
 	 */
-  $typescript: TypeScript;
-  $context: TypeScriptContext;
-  $skipWrite: boolean;
+  typescript: TypeScript;
+
+  skipWrite?: boolean;
 }
 
-export type RestClientStrategy = "Angular2";
-//NineJs;
-
-export interface TypeScriptTarget extends Target {
-  restClientStrategy?: RestClientStrategy;
+export enum RestClientStrategy {
+  Default = "Default",
+  Angular2 = "Angular2"
 }
 
 export class TypeScript {
@@ -98,35 +100,34 @@ export class TypeScript {
         return arguments[0];
       },
       err => {
-        console.log(err);
+        throw new Error(err);
       }
     );
   }
+  // tslint:disable-next-line:prefer-function-over-method
   public generate(
     nschema: NSchemaInterface,
     $nsconfig: NineSchemaConfig,
     template: TemplateFunction,
-    target: Target
+    target: Target,
+    providedContext: any | undefined
   ) {
     const nsconfig: any = $nsconfig.$u.clone($nsconfig);
-    const config: TypeScriptConfig = nsconfig as TypeScriptConfig;
+    const config: Definition = nsconfig as Definition;
     config.$nschema = nschema;
-    config.$typescript = this;
     config.$target = target;
-    if (typeof config.$skipWrite === "undefined") {
-      config.$skipWrite = false;
-    }
-    if (config.$context) {
-      throw new Error("must not have a $context variable");
-    }
-    config.$context = {
+
+    const context: TypeScriptContext = {
+      ...buildTypeScriptContext(),
+      ...providedContext,
       imports: {}
     };
-    const result = template(config);
+    const result = template({ ...config, $context: context });
 
-    if (config.$skipWrite) {
+    if (context.skipWrite) {
       return Promise.resolve({
         config,
+        context,
         generated: result
       });
     } else {
@@ -145,27 +146,27 @@ export class TypeScript {
               config.$fileName || `${config.name}.ts`
             );
 
-      console.log(`typescript: writing to file: ${filepath}`);
+      writeLog(LogLevel.Default, `typescript: writing to file: ${filepath}`);
       return nschema.writeFile(filepath, result).then(
         _ => {
           return {
             config,
+            context,
             generated: result
           };
         },
         err => {
-          console.log("error: ");
-          console.log(err);
+          throw new Error(err);
         }
       );
     }
   }
   // tslint:disable-next-line:prefer-function-over-method
   public typeName(
-    $nschemaType: any,
+    $nschemaType: string | NSchemaType | undefined,
     $nschema: NSchemaInterface,
     namespace: string,
-    name: string,
+    _name: string,
     context: any,
     addFlowComment?: boolean
   ) {
@@ -202,7 +203,11 @@ export class TypeScript {
     } else {
       result = typeMap("string");
     }
-    if ($nschemaType && $nschemaType.modifier) {
+    if (
+      $nschemaType &&
+      typeof $nschemaType === "object" &&
+      $nschemaType.modifier
+    ) {
       const $modifier = $nschemaType.modifier;
       const modifierArr: string[] = !$nschema.isArray($modifier)
         ? [$modifier]
@@ -221,5 +226,83 @@ export class TypeScript {
 }
 
 const typescript = new TypeScript();
+
+function getDataItems(
+  nschema: NSchemaInterface,
+  nsMessage: NSchemaMessage
+): NSchemaMessageArgument[] {
+  const r: NSchemaMessageArgument = [];
+  if (nsMessage.$extends) {
+    const parent = nschema.getMessage(
+      nsMessage.$extends.namespace || "",
+      nsMessage.$extends.name
+    );
+    if (parent) {
+      getDataItems(nschema, parent).forEach(i => {
+        r.push(i);
+      });
+    } else {
+      throw new Error(
+        `could not find parent: ns="${nsMessage.$extends.namespace ||
+          ""}" name="${nsMessage.$extends.name}"`
+      );
+    }
+  }
+  (nsMessage.data || []).map(item => {
+    r.push(item);
+  });
+  return r;
+}
+
+export function messageType(
+  nschema: NSchemaInterface,
+  $context: TypeScriptContext,
+  addFlowComment: boolean,
+  message: NSchemaMessage
+): string {
+  const typeSeparator = ", ";
+
+  const dataItems = getDataItems(nschema, message);
+  if (dataItems.length === 0) {
+    return "void";
+  } else if (dataItems.length === 1) {
+    const item = dataItems[0];
+    return `${typescript.typeName(
+      item.type,
+      nschema,
+      "",
+      "",
+      $context,
+      addFlowComment
+    )}`;
+  } else {
+    return (
+      `{ ${dataItems
+        .map((item, $i) => {
+          return `${item.name || `item${$i}`}: ${typescript.typeName(
+            item.type,
+            nschema,
+            "",
+            "",
+            $context,
+            addFlowComment
+          )}`;
+        })
+        .join(typeSeparator)} }` || "void"
+    );
+  }
+}
+
+let count = 0;
+
+export function buildTypeScriptContext(): TypeScriptContext {
+  return {
+    hasTypeScript: true,
+    id: count++,
+    imports: {},
+    skipWrite: false,
+    typescript
+  };
+}
 
 export default typescript;

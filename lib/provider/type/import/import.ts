@@ -8,7 +8,11 @@ import { Definition, NSchemaInterface, NSchemaPlugin } from "../../../model";
 
 declare const require: (name: string) => any;
 
-function execute(parentConfig: Definition, nschema: NSchemaInterface) {
+function execute(
+  parentConfig: Definition,
+  nschema: NSchemaInterface,
+  context: object
+) {
   const location = parentConfig.$importLocation || "";
   const newLocation = path.resolve(
     parentConfig.$nschemaLocation || "",
@@ -18,7 +22,7 @@ function execute(parentConfig: Definition, nschema: NSchemaInterface) {
   if (!newConfig) {
     throw new Error(`Invalid import location: ${location}`);
   }
-  return nschema.generate(parentConfig, newConfig);
+  return nschema.generate(parentConfig, newConfig, context);
 }
 const $import: NSchemaPlugin = {
   description: "Reference external files in your NSchema tasks",

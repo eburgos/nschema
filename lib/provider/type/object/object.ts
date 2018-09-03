@@ -10,7 +10,11 @@ import {
   Target
 } from "../../../model";
 
-function execute(parentConfig: Definition, nschema: NSchemaInterface) {
+function execute(
+  parentConfig: Definition,
+  nschema: NSchemaInterface,
+  context: object
+) {
   nschema.registerObject(parentConfig);
 
   return new Promise<any>((resolve, reject) => {
@@ -30,7 +34,7 @@ function execute(parentConfig: Definition, nschema: NSchemaInterface) {
           item.type = "object";
           const foundTarget = nschema.getTarget(item);
           if (foundTarget) {
-            return foundTarget.generate(newConfig, nschema, item);
+            return foundTarget.generate(newConfig, nschema, item, context);
           } else {
             console.error("Target not found: ", item);
             throw new Error("Target not found");

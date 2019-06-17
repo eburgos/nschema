@@ -3,7 +3,6 @@
  */
 
 "use strict";
-import { TemplateFunction } from "ejs";
 import * as fs from "fs";
 import * as yaml from "js-yaml";
 import * as path from "path";
@@ -13,7 +12,10 @@ import {
   NSchemaInterface,
   NSchemaRestOperation,
   NSchemaRestService,
-  Target
+  Target,
+  NSchemaMessageArgument,
+  NSchemaType,
+  NSchemaService
 } from "../../../../../model";
 import { computeImportMatrix } from "../../helpers";
 import {
@@ -22,9 +24,11 @@ import {
   TypeScript,
   TypeScriptContext
 } from "../../typescript";
+import { render as renderConsumer } from "./serviceConsumer";
 import { render as renderServerlessConsumer } from "./serviceConsumer-serverless";
 import { render as renderServerlessConsumerBase } from "./serviceConsumerBase-serverless";
 import { render as renderProducer } from "./serviceProducer";
+import { clone } from "../../../../../utils";
 
 export interface TypeScriptRestTarget extends Target {
   $restClientStrategy?: RestClientStrategy;
@@ -38,6 +42,12 @@ export interface TypeScriptServerlessRest extends TypeScriptRestTarget {
     implementation: string;
     yamlPath: string;
   };
+}
+
+export interface RestMessageArgument extends NSchemaMessageArgument {
+  headerName?: string;
+  paramType?: "header" | "query";
+  realType?: NSchemaType;
 }
 
 export function checkAndFixTarget(
@@ -64,8 +74,10 @@ export function checkAndFixTarget(
   return r;
 }
 
+type TemplateFunction = (data: any | undefined) => string;
+
 function baseGenerate(
-  config: Definition,
+  config: NSchemaService,
   nschema: NSchemaInterface,
   target: TypeScriptRestTarget,
   template: TemplateFunction,
@@ -166,7 +178,7 @@ async function serverlessPostGen(
   await nschema.writeFile(filepath, result.generated);
 
   const thisTemplate = templates["consumer-serverless"];
-  const tempConfig: any = config.$u.clone(config);
+  const tempConfig: any = clone(config);
   context.skipWrite = true;
   const exportsResult: any = await baseGenerate(
     tempConfig,
@@ -209,28 +221,28 @@ export class NRest {
     }
     const typescript: TypeScript = this.typescript as TypeScript;
 
-    templates.consumer = nschema.buildTemplate(
-      path.resolve(__dirname, "serviceConsumer.ejs")
-    );
-    (templates["consumer-serverless"] = (data: any) => {
+    templates.consumer = (data: any) => {
+      return renderConsumer(nschema, data.$context, data, data.$target);
+    };
+    // nschema.buildTemplate(
+    //   path.resolve(__dirname, "serviceConsumer.ejs")
+    // );
+    templates["consumer-serverless"] = (data: any) => {
       return renderServerlessConsumerBase(
         nschema,
         data.$context,
         data,
         data.$target
       );
-    }),
-      // nschema.buildTemplate(
-      //   path.resolve(__dirname, "serviceConsumerBase-serverless.ejs")
-      // );
-      (templates["consumer-serverless-exports"] = (data: any) => {
-        return renderServerlessConsumer(
-          nschema,
-          data.$context,
-          data,
-          data.$target
-        );
-      });
+    };
+    templates["consumer-serverless-exports"] = (data: any) => {
+      return renderServerlessConsumer(
+        nschema,
+        data.$context,
+        data,
+        data.$target
+      );
+    };
     templates.producer = (data: any) => {
       return renderProducer(nschema, data.$context, data, data.$target);
     };
@@ -272,7 +284,7 @@ export class NRest {
           serviceType: serviceType.type,
           type: "service",
           async generate(
-            config: Definition,
+            config: NSchemaService,
             thisNschema: NSchemaInterface,
             target: Target,
             providedContext: TypeScriptContext | undefined

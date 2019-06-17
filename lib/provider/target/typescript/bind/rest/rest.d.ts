@@ -1,4 +1,4 @@
-import { NSchemaInterface, Target } from "../../../../../model";
+import { NSchemaInterface, Target, NSchemaMessageArgument, NSchemaType } from "../../../../../model";
 import { RestClientStrategy, TypeScript } from "../../typescript";
 export interface TypeScriptRestTarget extends Target {
     $restClientStrategy?: RestClientStrategy;
@@ -11,6 +11,11 @@ export interface TypeScriptServerlessRest extends TypeScriptRestTarget {
         implementation: string;
         yamlPath: string;
     };
+}
+export interface RestMessageArgument extends NSchemaMessageArgument {
+    headerName?: string;
+    paramType?: "header" | "query";
+    realType?: NSchemaType;
 }
 export declare function checkAndFixTarget(target: Target, namespaceMapping: {
     [name: string]: string;

@@ -37,10 +37,11 @@ export function processMessage(
       nschema
     );
     if (eMsg) {
-      Array.prototype.splice.apply(
-        newConfig.data,
-        [0, 0].concat(eMsg.data || [])
-      );
+      Array.prototype.splice.apply(newConfig.data, [
+        0,
+        0,
+        ...(eMsg.data || [])
+      ]);
     } else {
       throw new Error(
         `Could not find a message to extend: namespace='${

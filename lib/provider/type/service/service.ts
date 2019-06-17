@@ -4,20 +4,15 @@
  */
 
 import {
-  Definition,
   NSchemaInterface,
   NSchemaPlugin,
   NSchemaService,
   Target
 } from "../../../model";
-import {
-  buildTypeScriptContext,
-  TypeScriptContext
-} from "../../target/typescript/typescript";
 import { processMessage } from "../message/message";
 
 function execute(
-  origParentConfig: Definition,
+  origParentConfig: any,
   nschema: NSchemaInterface,
   providedContext: any
 ) {

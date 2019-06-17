@@ -2,7 +2,6 @@
  * @module nschema/provider/target/javascript/javascript
  * @author Eduardo Burgos <eburgos@gmail.com>
  */
-import { TemplateFunction } from "ejs";
 import * as fs from "fs";
 import * as path from "path";
 import { LogLevel, writeLog } from "../../../logging";
@@ -13,12 +12,18 @@ import {
   NSchemaMessage,
   NSchemaMessageArgument,
   NSchemaType,
-  Target
+  Target,
+  TemplateFunction,
+  NSchemaPrimitiveType,
+  shouldNever,
+  NSchemaModifier
 } from "../../../model";
+import { isArray } from "util";
+import { clone } from "../../../utils";
 
 declare let require: (name: string) => any;
 
-const modifierMap = (modifier: string) => {
+function modifierMap(modifier: NSchemaModifier): string {
   switch (modifier) {
     case "list":
       return "[]";
@@ -27,9 +32,9 @@ const modifierMap = (modifier: string) => {
     case "option":
       return "| undefined";
     default:
-      return modifier;
+      return typeName(modifier);
   }
-};
+}
 
 export interface TypeScriptContext {
   hasTypeScript: true;
@@ -41,8 +46,8 @@ export interface TypeScriptContext {
   };
 
   /*
-	 *  Reference to typescript class. This is internal to TypeScript generation.
-	 */
+   *  Reference to typescript class. This is internal to TypeScript generation.
+   */
   typescript: TypeScript;
 
   skipWrite?: boolean;
@@ -54,6 +59,7 @@ export enum RestClientStrategy {
 }
 
 export class TypeScript {
+  public typeName = typeName;
   public init(nschema: NSchemaInterface) {
     const providerPath = path.resolve(__dirname, "bind");
     const self = this;
@@ -107,12 +113,12 @@ export class TypeScript {
   // tslint:disable-next-line:prefer-function-over-method
   public generate(
     nschema: NSchemaInterface,
-    $nsconfig: NineSchemaConfig,
+    $nsconfig: any,
     template: TemplateFunction,
     target: Target,
     providedContext: any | undefined
   ) {
-    const nsconfig: any = $nsconfig.$u.clone($nsconfig);
+    const nsconfig: any = clone($nsconfig);
     const config: Definition = nsconfig as Definition;
     config.$nschema = nschema;
     config.$target = target;
@@ -122,7 +128,11 @@ export class TypeScript {
       ...providedContext,
       imports: {}
     };
-    const result = template({ ...config, $context: context });
+    const result = template({
+      ...config,
+      ...{ $nschema: nschema },
+      $context: context
+    });
 
     if (context.skipWrite) {
       return Promise.resolve({
@@ -161,67 +171,69 @@ export class TypeScript {
       );
     }
   }
-  // tslint:disable-next-line:prefer-function-over-method
-  public typeName(
-    $nschemaType: string | NSchemaType | undefined,
-    $nschema: NSchemaInterface,
-    namespace: string,
-    _name: string,
-    context: any,
-    addFlowComment?: boolean
-  ) {
-    let result: string;
-    const typeMap = (t: string) => {
-      switch (t) {
-        case "int":
-          return "number";
-        case "float":
-          return "number";
-        case "string":
-          return "string";
-        case "bool":
-          return "boolean";
-        case "Date":
-          return "Date";
-      }
-      return "string";
-    };
-    if (typeof $nschemaType === "string") {
-      result = typeMap($nschemaType);
-    } else if (typeof $nschemaType === "object") {
-      let ns = $nschemaType.namespace;
-      if (typeof ns === "undefined") {
-        ns = namespace || "";
-      }
-      if (ns !== namespace) {
-        if (!context.imports[ns]) {
-          context.imports[ns] = {};
-        }
-        context.imports[ns][$nschemaType.name] = true;
-      }
-      result = $nschemaType.name;
-    } else {
-      result = typeMap("string");
-    }
-    if (
-      $nschemaType &&
-      typeof $nschemaType === "object" &&
-      $nschemaType.modifier
-    ) {
-      const $modifier = $nschemaType.modifier;
-      const modifierArr: string[] = !$nschema.isArray($modifier)
-        ? [$modifier]
-        : $modifier;
+}
 
-      modifierArr.forEach(item => {
-        result = `(${result} ${modifierMap(item)})`;
-      });
+function typeName(
+  $nschemaType: NSchemaType,
+  _nschema?: NSchemaInterface,
+  namespace?: string,
+  _name?: string,
+  context?: any,
+  addFlowComment?: boolean
+) {
+  let result: string;
+  const typeMap = (t: NSchemaPrimitiveType) => {
+    switch (t) {
+      case "int":
+        return "number";
+      case "float":
+        return "number";
+      case "string":
+        return "string";
+      case "bool":
+        return "boolean";
+      case "date":
+        return "Date";
+      default:
+        shouldNever(t);
     }
-    if (addFlowComment) {
-      return `${result} /* :${result} */`;
-    } else {
-      return result;
+    return "string";
+  };
+  if (typeof $nschemaType === "string") {
+    result = typeMap($nschemaType);
+  } else if (typeof $nschemaType === "object") {
+    let ns = $nschemaType.namespace;
+    if (typeof ns === "undefined") {
+      ns = namespace || "";
     }
+    if (ns !== namespace && context) {
+      if (!context.imports[ns]) {
+        context.imports[ns] = {};
+      }
+      context.imports[ns][$nschemaType.name] = true;
+    }
+    result = $nschemaType.name;
+  } else {
+    result = typeMap("string");
+  }
+  if (
+    $nschemaType &&
+    typeof $nschemaType === "object" &&
+    $nschemaType.modifier
+  ) {
+    const $modifier = $nschemaType.modifier;
+    const modifierArr: NSchemaModifier[] = !isArray($modifier)
+      ? [$modifier]
+      : $modifier;
+
+    modifierArr.forEach(item => {
+      result = `(${result} ${modifierMap(item)})`;
+    });
+  }
+  if (addFlowComment) {
+    return `${result} /* :${result} */`;
+  } else {
+    return result;
   }
 }
 
@@ -231,7 +243,7 @@ function getDataItems(
   nschema: NSchemaInterface,
   nsMessage: NSchemaMessage
 ): NSchemaMessageArgument[] {
-  const r: NSchemaMessageArgument = [];
+  const r: NSchemaMessageArgument[] = [];
   if (nsMessage.$extends) {
     const parent = nschema.getMessage(
       nsMessage.$extends.namespace || "",

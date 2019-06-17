@@ -2,9 +2,13 @@
  * Created by eburgos on 6/13/14.
  */
 "use strict";
-import { TemplateFunction } from "ejs";
 import * as path from "path";
-import { Definition, NSchemaInterface, Target } from "../../../../../model";
+import {
+  Definition,
+  NSchemaInterface,
+  Target,
+  TemplateFunction
+} from "../../../../../model";
 import { FSharp } from "../../fsharp";
 
 function baseGenerate(

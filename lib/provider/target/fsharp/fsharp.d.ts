@@ -1,5 +1,4 @@
-import { TemplateFunction } from "ejs";
-import { Definition, NineSchemaConfig, NSchemaInterface, Target } from "../../../model";
+import { Definition, NineSchemaConfig, NSchemaInterface, Target, TemplateFunction } from "../../../model";
 export interface FSharpConfig extends Definition {
     $fsharp: FSharp;
 }

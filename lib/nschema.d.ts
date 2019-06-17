@@ -3,12 +3,12 @@ import * as ejs from "ejs";
 import * as path from "path";
 import { Definition, NineSchemaConfig, NSchemaContext, NSchemaInterface, NSchemaMessage, NSchemaObject, NSchemaPlugin, NSchemaService, SourceBind, TargetBind } from "./model";
 export default class NSchema implements NSchemaInterface {
-    path: typeof path;
-    isArray: (obj: any) => obj is any[];
     objClone: (obj: any) => any;
+    isArray: (obj: any) => obj is any[];
+    path: typeof path;
     require: ((name: string) => any) | undefined;
     mixinRecursive: (obj: any, target: any, filter?: (o: any, t: any, p: string) => boolean) => void;
-    appendFile: (filename: string, content: string, callback: (err: Error, data?: any) => void) => void;
+    appendFile: (filename: string, content: string, callback: (err: NodeJS.ErrnoException | null) => void) => void;
     ejs: typeof ejs;
     ejsSettings: {
         client: boolean;

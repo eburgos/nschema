@@ -1,49 +1,104 @@
 {
   "extends": "./node_modules/tslint/lib/configs/recommended",
-  "exclude": ["generated"],
   "rules": {
-    "max-line-length": false,
     "arrow-parens": false,
-    "trailing-comma": false,
+    "comment-format": true,
+    "cyclomatic-complexity": {
+      "options": [17],
+      "severity": "error"
+    },
     "interface-name": false,
+    "max-line-length": false,
     "new-parens": true,
-    "no-arg": true,
+    "no-arg": {
+      "severity": "error"
+    },
     "no-bitwise": true,
-    "no-conditional-assignment": true,
-    "no-consecutive-blank-lines": false,
+    "no-conditional-assignment": {
+      "severity": "error"
+    },
+    "no-consecutive-blank-lines": true,
     "no-console": {
-      "severity": "warning",
+      "severity": "error",
       "options": ["debug", "info", "log", "time", "timeEnd", "trace"]
     },
+    "no-unused-expression": {
+      "severity": "error"
+    },
     "object-literal-key-quotes": false,
-    "no-unused-expression": true,
-    "no-unused-variable": true,
-    "comment-format": true,
-    "prefer-const": true,
-    "prefer-method-signature": true,
-    "prefer-readonly": true,
-    "prefer-template": true,
-    "prefer-function-over-method": true,
+    "object-literal-sort-keys": {
+      "severity": "error"
+    },
+    "trailing-comma": false,
+    "member-ordering": {
+      "options": {
+        "order": [
+          "public-static-field",
+          "public-instance-field",
+          "public-constructor",
+          "private-static-field",
+          "private-instance-field",
+          "private-constructor",
+          "public-instance-method",
+          "protected-instance-method",
+          "private-instance-method"
+        ],
+        "alphabetize": true
+      },
+      "severity": "error"
+    },
+    "prefer-const": {
+      "severity": "error"
+    },
+    "prefer-method-signature": {
+      "severity": "error"
+    },
+    "prefer-readonly": {
+      "severity": "error"
+    },
+    "prefer-template": {
+      "severity": "error"
+    },
+    "prefer-function-over-method": {
+      "severity": "error"
+    },
+    "semicolon": false,
     "variable-name": false,
     "completed-docs": {
-      "severity": "warning",
-      "options": [
-        "classes",
-        "enums",
-        "enum-members",
-        "functions",
-        "interfaces",
-        "methods",
-        "namespaces",
-        "properties",
-        "types",
-        "variables"
-      ]
-    }
+      "severity": "error",
+      "options": {
+        "classes": { "visibilities": ["exported"] },
+        "enums": { "visibilities": ["exported"] },
+        "enum-members": { "visibilities": ["exported"] },
+        "functions": { "visibilities": ["exported"] },
+        "interfaces": { "visibilities": ["exported"] },
+        "methods": { "privacies": ["public"] },
+        "namespaces": { "visibilities": ["all"] },
+        "types": { "visibilities": ["exported"] },
+        "variables": { "visibilities": ["exported"] }
+      }
+    },
+    "promise-function-async": {
+      "severity": "error"
+    },
+    "ban-comma-operator": {
+      "severity": "error"
+    },
+    "curly": {
+      "severity": "error"
+    },
+    "no-empty": {
+      "severity": "warning"
+    },
+    "jsx-no-multiline-js": false,
+    "jsx-no-lambda": false
   },
   "jsRules": {
     "max-line-length": {
       "options": [120]
     }
+  },
+  "linterOptions": {
+    "exclude": ["generated"]
   }
 }

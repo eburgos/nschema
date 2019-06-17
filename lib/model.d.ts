@@ -1,51 +1,51 @@
-import { TemplateFunction } from "ejs";
+import NSchema from "./nschema";
 export interface Utils {
+    clone(obj: any): any;
+    i(amount: number, seed: string): string;
     relativePath(from: string, to: string): string;
     resolvePath(...args: string[]): string;
-    i(amount: number, seed: string): string;
-    clone(obj: any): any;
 }
 export interface NineSchemaConfig {
-    $nschemaLocation?: string;
-    i: number;
-    $u: Utils;
-    $nschema?: NSchemaInterface;
-    $target?: Target;
-    target?: Target[];
-    list?: Definition[];
     $importLocation?: string;
+    $nschema?: NSchemaInterface;
+    $nschemaLocation?: string;
+    $target?: Target;
+    $u: Utils;
+    i: number;
+    list?: Definition[];
+    target?: Target[];
 }
 export interface NSchemaInterface {
-    context(): NSchemaContext;
-    types(): {
-        [name: string]: NSchemaPlugin;
-    };
-    registerTarget(obj: TargetBind): Promise<any>;
-    registerSource(obj: SourceBind): Promise<any>;
-    register(type: string, obj: NSchemaPlugin): Promise<any>;
-    generate(parentConfig: NineSchemaConfig, config: Definition, context: object): Promise<any>;
-    registerService(serviceConfig: Definition): void;
-    registerObject(typeConfig: Definition): void;
-    registerMessage(typeConfig: Definition): void;
-    getObject(ns: string, name: string): Definition | undefined;
-    getMessage(ns: string, name: string): NSchemaMessage | undefined;
-    getService(ns: string, name: string): Definition | undefined;
-    getTarget(obj: any): TargetBind | undefined;
-    getCustomPlugin(name: string, obj: any): NSchemaPlugin | undefined;
     buildTemplate(filename: string): TemplateFunction;
-    writeFile(filename: string, content: string): Promise<any>;
+    context(): NSchemaContext;
+    generate(parentConfig: NineSchemaConfig, config: Definition, context: object): Promise<any>;
+    getCustomPlugin(name: string, obj: any): NSchemaPlugin | undefined;
+    getMessage(ns: string, name: string): NSchemaMessage | undefined;
+    getObject(ns: string, name: string): NSchemaObject | undefined;
+    getService(ns: string, name: string): NSchemaService | undefined;
+    getTarget(obj: any): TargetBind | undefined;
     isArray(obj: any): obj is any[];
     mixinRecursive(obj: any, target: any, filter?: (o: any, t: any, p: string) => boolean): void;
     objClone(obj: any): any;
+    register(type: string, obj: NSchemaPlugin): Promise<any>;
+    registerMessage(typeConfig: NSchemaMessage): void;
+    registerObject(typeConfig: Definition): void;
+    registerService(serviceConfig: NSchemaService): void;
+    registerSource(obj: SourceBind): Promise<any>;
+    registerTarget(obj: TargetBind): Promise<any>;
+    types(): {
+        [name: string]: NSchemaPlugin;
+    };
+    writeFile(filename: string, content: string): Promise<any>;
 }
 export interface Initializable {
     init?(nschema: NSchemaInterface): Promise<any>;
 }
 export interface NSchemaPlugin extends Initializable {
-    type: string;
-    name: string;
     description: string;
     language?: string;
+    name: string;
+    type: string;
     execute?(config: Definition, nschema: NSchemaInterface, context: any | undefined): Promise<any>;
 }
 export interface NSchemaCustomPlugin extends NSchemaPlugin {
@@ -55,33 +55,50 @@ export interface SourceBind extends NSchemaPlugin {
     getData(payload: string): Promise<any>;
 }
 export interface TargetBind extends NSchemaPlugin {
-    language: string;
     bind?: string;
+    language: string;
     serviceType?: string;
-    generate(config: NineSchemaConfig, nschema: NSchemaInterface, target: Target, context: any | undefined): Promise<any>;
+    generate(config: any, nschema: NSchemaInterface, target: Target, context: any | undefined): Promise<any>;
 }
 export interface Identifier {
     name: string;
     namespace: string;
 }
-export interface NSchemaObject extends Definition {
+export interface NSchemaObject extends Registerable {
     $extends?: Identifier;
+    name: string;
+    namespace?: string;
 }
-export declare type NSchemaMessageArgument = any;
-export interface NSchemaMessage extends Definition {
+export interface NSchemaMessageArgument {
+    description?: string;
+    name: string;
+    type: NSchemaType;
+}
+interface Registerable {
+    $nschemaRegistered?: boolean;
+}
+export interface NSchemaMessage extends Registerable {
     $extends?: Identifier;
     data: NSchemaMessageArgument[];
+    description?: string;
+    name?: string;
+    namespace?: string;
 }
-export interface NSchemaOperation extends Definition {
+export interface NSchemaOperation {
     description?: string;
     inMessage: NSchemaMessage;
+    name: string;
     outMessage: NSchemaMessage;
 }
 export interface NSchemaRestOperation extends NSchemaOperation {
-    route: string;
     method: string;
+    route: string;
 }
-export interface NSchemaService extends Definition {
+export interface NSchemaService extends Registerable {
+    $fileName?: string;
+    description?: string;
+    name: string;
+    namespace?: string;
     operations: {
         [name: string]: NSchemaOperation;
     };
@@ -93,30 +110,56 @@ export interface NSchemaRestService extends NSchemaService {
     routePrefix?: string;
 }
 export interface NSchemaContext {
-    objects: NSchemaObject[];
     messages: NSchemaMessage[];
+    objects: NSchemaObject[];
     services: NSchemaService[];
 }
-export interface NSchemaType {
+export interface NSchemaTypeDefinition {
+    modifier?: NSchemaModifier | NSchemaModifier[];
     name: string;
     namespace: string;
-    modifier?: string;
 }
+export declare type NSchemaModifier = "list" | "array" | "option" | NSchemaTypeDefinition;
+export declare type NSchemaPrimitiveType = "string" | "int" | "float" | "bool" | "date";
+export declare type NSchemaType = NSchemaTypeDefinition | NSchemaPrimitiveType;
 export interface Definition extends NineSchemaConfig {
-    $type?: string;
-    namespace?: string;
-    $namespace?: string;
-    name: string;
     $fileName?: string;
+    $namespace?: string;
     $nschemaRegistered?: boolean;
+    $type?: string;
+    name: string;
+    namespace?: string;
 }
 export interface Target {
-    type?: string;
-    name: string;
-    description: string;
-    location: string;
     $fileName?: string;
     $namespaceMapping?: {
         [name: string]: string;
     };
+    description: string;
+    location: string;
+    name: string;
+    type?: string;
 }
+interface DataContext {
+    $context: NSchemaContext;
+    $i: Utils;
+    $nschema: NSchema;
+    $nschemaLocation?: string;
+    $nschemaRegistered?: boolean;
+    $target?: any[];
+    $type?: string | any;
+    $u: any;
+    description: string;
+    list?: any[];
+    location: string;
+    name: string;
+    namespace?: string;
+    operations: NSchemaOperation[];
+    schema: any;
+    [name: string]: any;
+}
+export declare type TemplateFunction = (data: DataContext | {
+    [name: string]: any;
+}) => string;
+export declare function shouldNever(t: never): void;
+export {};

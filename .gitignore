@@ -1,4 +1,5 @@
 .idea
+.history
 .tscache
 coverage.html
 node_modules

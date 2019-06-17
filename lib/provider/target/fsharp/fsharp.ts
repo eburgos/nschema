@@ -2,14 +2,14 @@
  * @module nschema/provider/target/javascript/javascript
  * @author Eduardo Burgos <eburgos@gmail.com>
  */
-import { TemplateFunction } from "ejs";
 import * as fs from "fs";
 import * as path from "path";
 import {
   Definition,
   NineSchemaConfig,
   NSchemaInterface,
-  Target
+  Target,
+  TemplateFunction
 } from "../../../model";
 
 declare let require: (name: string) => any;

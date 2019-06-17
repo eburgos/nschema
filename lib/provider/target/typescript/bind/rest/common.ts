@@ -1,21 +1,16 @@
-import {
-  NSchemaMessageArgument,
-  NSchemaRestOperation
-} from "../../../../../model";
+import { isArray } from "util";
+import { NSchemaRestOperation } from "../../../../../model";
 import { caseInsensitiveSorter } from "../../../../../utils";
+import { RestMessageArgument } from "./rest";
 
-export interface RestParam {
-  name: string;
-  headerName?: string;
-  realType: { name: string };
-  type: {
-    namespace: string;
-    name: string;
-  };
-}
-
-export function realTypeMap(p: RestParam, expr: string) {
-  switch ((p.realType || { name: undefined }).name) {
+export function realTypeMap(p: RestMessageArgument, expr: string) {
+  const realType =
+    typeof p.realType === "string"
+      ? { name: p.realType }
+      : p.realType
+      ? p.realType
+      : { name: null };
+  switch (realType.name) {
     case "string":
       return expr;
     case "int":
@@ -36,15 +31,16 @@ export function getHttpVerb(v: string) {
   return v;
 }
 
-export function getType(p: NSchemaMessageArgument) {
+export function getType(p: RestMessageArgument) {
   return typeof p.type === "string" ? { namespace: "", name: p.type } : p.type;
 }
 
-export function includeInRoute(p: NSchemaMessageArgument, route: string) {
+export function includeInRoute(p: RestMessageArgument, route: string) {
   const t = getType(p);
+
   return (
     route.indexOf(`{${p.name}}`) >= 0 &&
-    (!p.modifier || !p.modifier.length) &&
+    (!t.modifier || (isArray(t.modifier) && !t.modifier.length)) &&
     t.namespace === "" &&
     (t.name === "string" ||
       t.name === "int" ||
@@ -53,11 +49,11 @@ export function includeInRoute(p: NSchemaMessageArgument, route: string) {
       t.name === "date")
   );
 }
-export function includeInQuery(p: NSchemaMessageArgument) {
+export function includeInQuery(p: RestMessageArgument) {
   const t = getType(p);
   return (
     p.paramType === "query" &&
-    (!p.modifier || !p.modifier.length) &&
+    (!t.modifier || (isArray(t.modifier) && !t.modifier.length)) &&
     t.namespace === "" &&
     (t.name === "string" ||
       t.name === "int" ||
@@ -66,19 +62,12 @@ export function includeInQuery(p: NSchemaMessageArgument) {
       t.name === "date")
   );
 }
-export function includeInHeader(p: NSchemaMessageArgument) {
-  const t = getType(p);
+export function includeInHeader(p: RestMessageArgument) {
   return p.paramType === "header";
 }
 
 export function identityStr(src: string) {
   return src;
-}
-
-export function wrap(left: string, right: string) {
-  return (src: string) => {
-    return `${left}${src}${right}`;
-  };
 }
 
 export function addSpace(str: string) {
@@ -102,13 +91,13 @@ export function getOperationDetails(operation: NSchemaRestOperation) {
   const route = operation.route || operation.name;
   const method = (operation.method || "get").toLowerCase();
 
-  let allParams = inMessage.data.slice(0);
+  let allParams: RestMessageArgument[] = inMessage.data.slice(0);
   const allOutParams = outMessage.data.slice(0);
-  const paramsInRoute = allParams
+  const paramsInRoute: RestMessageArgument[] = allParams
     .filter(p => includeInRoute(p, route))
     .map(p => {
       return {
-        name: p.name,
+        ...p,
         realType: getType(p),
         type: {
           name: "string",
@@ -119,25 +108,26 @@ export function getOperationDetails(operation: NSchemaRestOperation) {
   allParams = allParams.filter(p => {
     return !includeInRoute(p, route);
   });
-  const paramsInQuery = allParams.filter(includeInQuery).map(p => {
-    return {
-      name: p.name,
-      realType: getType(p),
-      type: {
-        name: "string",
-        namespace: ""
-      }
-    };
-  });
+  const paramsInQuery: RestMessageArgument[] = allParams
+    .filter(includeInQuery)
+    .map(p => {
+      return {
+        ...p,
+        realType: getType(p),
+        type: {
+          name: "string",
+          namespace: ""
+        }
+      };
+    });
   allParams = allParams.filter(p => {
     return !includeInQuery(p);
   });
-  const paramsInHeader: RestParam[] = allParams
+  const paramsInHeader: RestMessageArgument[] = allParams
     .filter(includeInHeader)
     .map(p => {
       return {
-        headerName: p.headerName,
-        name: p.name,
+        ...p,
         realType: getType(p),
         type: {
           name: "string",

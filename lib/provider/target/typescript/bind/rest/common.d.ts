@@ -1,48 +1,23 @@
-import { NSchemaMessageArgument, NSchemaRestOperation } from "../../../../../model";
-export interface RestParam {
-    name: string;
-    headerName?: string;
-    realType: {
-        name: string;
-    };
-    type: {
-        namespace: string;
-        name: string;
-    };
-}
-export declare function realTypeMap(p: RestParam, expr: string): string | null;
+import { NSchemaRestOperation } from "../../../../../model";
+import { RestMessageArgument } from "./rest";
+export declare function realTypeMap(p: RestMessageArgument, expr: string): string | null;
 export declare function getHttpVerb(v: string): string;
-export declare function getType(p: NSchemaMessageArgument): any;
-export declare function includeInRoute(p: NSchemaMessageArgument, route: string): boolean;
-export declare function includeInQuery(p: NSchemaMessageArgument): boolean;
-export declare function includeInHeader(p: NSchemaMessageArgument): boolean;
+export declare function getType(p: RestMessageArgument): import("../../../../../model").NSchemaTypeDefinition;
+export declare function includeInRoute(p: RestMessageArgument, route: string): boolean;
+export declare function includeInQuery(p: RestMessageArgument): boolean;
+export declare function includeInHeader(p: RestMessageArgument): boolean;
 export declare function identityStr(src: string): string;
-export declare function wrap(left: string, right: string): (src: string) => string;
 export declare function addSpace(str: string): string;
 export declare function sortAlphabetically(arr: string[]): string[];
 export declare function getOperationDetails(operation: NSchemaRestOperation): {
-    bodyArguments: any[];
-    headerArguments: RestParam[];
+    bodyArguments: RestMessageArgument[];
+    headerArguments: RestMessageArgument[];
     inMessage: import("../../../../../model").NSchemaMessage;
     method: string;
-    outBodyArguments: any[];
-    outHeaderArguments: any[];
+    outBodyArguments: import("../../../../../model").NSchemaMessageArgument[];
+    outHeaderArguments: import("../../../../../model").NSchemaMessageArgument[];
     outMessage: import("../../../../../model").NSchemaMessage;
-    queryArguments: {
-        name: any;
-        realType: any;
-        type: {
-            name: string;
-            namespace: string;
-        };
-    }[];
+    queryArguments: RestMessageArgument[];
     route: string;
-    routeArguments: {
-        name: any;
-        realType: any;
-        type: {
-            name: string;
-            namespace: string;
-        };
-    }[];
+    routeArguments: RestMessageArgument[];
 };

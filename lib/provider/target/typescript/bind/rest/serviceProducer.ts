@@ -14,10 +14,10 @@ import {
   addSpace,
   getOperationDetails,
   identityStr,
-  sortAlphabetically,
-  wrap
+  sortAlphabetically
 } from "./common";
-import { TypeScriptRestTarget } from "./rest";
+import { TypeScriptRestTarget, RestMessageArgument } from "./rest";
+import { wrap } from "../../../../../utils";
 
 function requestArgsType() {
   return `{
@@ -32,10 +32,10 @@ function requestArgsType() {
 function buildRequest(
   method: string,
   route: string,
-  paramsInQuery: NSchemaMessageArgument[],
-  paramsInBody: NSchemaMessageArgument[],
-  paramsInHeader: NSchemaMessageArgument[],
-  paramsInRoute: NSchemaMessageArgument[]
+  paramsInQuery: RestMessageArgument[],
+  paramsInBody: RestMessageArgument[],
+  paramsInHeader: RestMessageArgument[],
+  paramsInRoute: RestMessageArgument[]
 ) {
   return `{
       data: ${
@@ -211,10 +211,10 @@ const bodyPart = {
   [RestClientStrategy.Angular2]: (
     method: string,
     route: string,
-    paramsInQuery: NSchemaMessageArgument[],
-    paramsInBody: NSchemaMessageArgument[],
-    paramsInHeader: NSchemaMessageArgument[],
-    paramsInRoute: NSchemaMessageArgument[],
+    paramsInQuery: RestMessageArgument[],
+    paramsInBody: RestMessageArgument[],
+    paramsInHeader: RestMessageArgument[],
+    paramsInRoute: RestMessageArgument[],
     _nschema: NSchemaInterface,
     _context: TypeScriptContext,
     _outMessage: NSchemaMessage,
@@ -239,19 +239,19 @@ const bodyPart = {
         .join(",\n                ")}
     });
 ${
-      ["get", "delete", "head"].indexOf(method.toLowerCase()) < 0
-        ? `${
-            paramsInBody.length
-              ? `
+  ["get", "delete", "head"].indexOf(method.toLowerCase()) < 0
+    ? `${
+        paramsInBody.length
+          ? `
 let $body = JSON.stringify(${paramsInBody.length > 1 ? `[` : ``}${paramsInBody
-                  .map(d => {
-                    return d.name;
-                  })
-                  .join(", ")}${paramsInBody.length > 1 ? `]` : ``});`
-              : `let $body = "";`
-          }`
-        : ``
-    }
+              .map(d => {
+                return d.name;
+              })
+              .join(", ")}${paramsInBody.length > 1 ? `]` : ``});`
+          : `let $body = "";`
+      }`
+    : ``
+}
 
     return this.http.${method.toLowerCase()}(this.$endpointUrl + [${paramsInRoute
       .map(p => {
@@ -338,16 +338,16 @@ function renderOperations(
      "\n   * "
    )}
 ${inMessage.data
-        .map(par => {
-          return `   * @param ${par.name} -${addSpace(
-            (par.description || "")
-              .split("\n")
-              .map((doc: string) => doc.trim())
-              .join("\n   * ")
-          )}
+  .map(par => {
+    return `   * @param ${par.name} -${addSpace(
+      (par.description || "")
+        .split("\n")
+        .map((doc: string) => doc.trim())
+        .join("\n   * ")
+    )}
 `;
-        })
-        .join("")}   * @returns${addSpace(
+  })
+  .join("")}   * @returns${addSpace(
         (outMessage.data.length > 1 ? wrap("[", "]") : identityStr)(
           outMessage.data
             .map(d => {
@@ -415,19 +415,19 @@ export function render(
       ? ``
       : `/* @flow */
 ${computeImportMatrix(
-          config.namespace || "",
-          target.$namespaceMapping || {},
-          context
-        )}`
+  config.namespace || "",
+  target.$namespaceMapping || {},
+  context
+)}`
   }${classHeader[restClientStrategy](context)}
 export class ${config.name} {
 ${constructorPart[restClientStrategy]()}
 ${renderOperations(
-    nschema,
-    context,
-    config,
-    deferredType,
-    restClientStrategy
-  )}${errorHandlerPart[restClientStrategy]()}}
+  nschema,
+  context,
+  config,
+  deferredType,
+  restClientStrategy
+)}${errorHandlerPart[restClientStrategy]()}}
 `;
 }

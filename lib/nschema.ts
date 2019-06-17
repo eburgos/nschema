@@ -114,7 +114,7 @@ function mixinRecursive(
 function appendFile(
   filename: string,
   content: string,
-  callback: (err: Error, data?: any) => void
+  callback: (err: NodeJS.ErrnoException | null) => void
 ) {
   const dirname = path.dirname(filename);
   try {
@@ -142,39 +142,47 @@ function registerBasicTypes(nschema: NSchema) {
   [
     {
       $type: "object",
+      $u: utils,
       bind: {},
+      i: 0,
       name: "int",
       namespace: "",
       properties: {}
     },
     {
       $type: "object",
+      $u: utils,
       bind: {},
+      i: 0,
       name: "float",
       namespace: "",
       properties: {}
     },
     {
       $type: "object",
+      $u: utils,
       bind: {},
+      i: 0,
       name: "string",
       namespace: "",
       properties: {}
     },
     {
       $type: "object",
+      $u: utils,
       bind: {},
+      i: 0,
       name: "boolean",
       namespace: "",
       properties: {}
     }
-  ].forEach(nschema.registerObject.bind(nschema));
+  ].forEach(item => nschema.registerObject(item));
 }
 
 export default class NSchema implements NSchemaInterface {
-  public path = path;
-  public isArray: (obj: any) => obj is any[] = isArray;
   public objClone: (obj: any) => any = objClone;
+  public isArray: (obj: any) => obj is any[] = isArray;
+  public path = path;
 
   public require: ((name: string) => any) | undefined = undefined;
 
@@ -187,7 +195,7 @@ export default class NSchema implements NSchemaInterface {
   public appendFile: (
     filename: string,
     content: string,
-    callback: (err: Error, data?: any) => void
+    callback: (err: NodeJS.ErrnoException | null) => void
   ) => void = appendFile;
   public ejs = ejs;
   public ejsSettings = {
@@ -299,7 +307,7 @@ export default class NSchema implements NSchemaInterface {
   }
 
   public getObject(ns: string, name: string) {
-    const r = this.context().objects.filter((t: Definition) => {
+    const r = this.context().objects.filter(t => {
       return (
         (t.namespace || "") === (ns || "") && (t.name || "") === (name || "")
       );
@@ -311,7 +319,7 @@ export default class NSchema implements NSchemaInterface {
   }
 
   public getMessage(ns: string, name: string): NSchemaMessage | undefined {
-    const r = this.context().messages.filter((t: Definition) => {
+    const r = this.context().messages.filter(t => {
       return (
         (t.namespace || "") === (ns || "") && (t.name || "") === (name || "")
       );
@@ -322,7 +330,10 @@ export default class NSchema implements NSchemaInterface {
     return undefined;
   }
   public registerMessage(typeConfig: NSchemaMessage) {
-    const t = this.getMessage(typeConfig.namespace || "", typeConfig.name);
+    const t = this.getMessage(
+      typeConfig.namespace || "",
+      typeConfig.name || ""
+    );
     if (t && !t.$nschemaRegistered) {
       throw new Error(
         `message ${typeConfig.namespace || ""}::${typeConfig.name ||
@@ -333,7 +344,7 @@ export default class NSchema implements NSchemaInterface {
     typeConfig.$nschemaRegistered = true;
   }
   public getService(ns: string, name: string) {
-    const r = this.context().services.filter((t: Definition) => {
+    const r = this.context().services.filter(t => {
       return (t.namespace || "") === ns && (t.name || "") === name;
     });
     if (r.length) {
@@ -404,13 +415,18 @@ export default class NSchema implements NSchemaInterface {
     const dirname = path.dirname(filename);
     createDirectorySync(dirname);
     return new Promise<void>((resolve, reject) => {
-      fs.writeFile(filename, content, null, (err: Error) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve();
+      fs.writeFile(
+        filename,
+        content,
+        null,
+        (err: NodeJS.ErrnoException | null) => {
+          if (err) {
+            reject(err);
+          } else {
+            resolve();
+          }
         }
-      });
+      );
     });
   }
 
@@ -496,7 +512,7 @@ export default class NSchema implements NSchemaInterface {
   ) {
     let results: string[] = [];
     const self = this;
-    fs.readdir(dir, (err: Error, list: string[]) => {
+    fs.readdir(dir, (err: NodeJS.ErrnoException | null, list: string[]) => {
       if (err) {
         return done(err);
       }
@@ -508,7 +524,7 @@ export default class NSchema implements NSchemaInterface {
           return done(undefined, results);
         }
         file = `${dir}/${file}`;
-        fs.stat(file, ($err: Error, stat) => {
+        fs.stat(file, ($err: NodeJS.ErrnoException | null, stat) => {
           /* jshint unused: true */
           if (stat && stat.isDirectory()) {
             self.walk(file, ($err2, res) => {

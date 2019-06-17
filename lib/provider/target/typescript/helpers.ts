@@ -1,5 +1,4 @@
-import { caseInsensitiveSorter, isRelativePath } from "../../../utils";
-import { wrap } from "./bind/rest/common";
+import { caseInsensitiveSorter, isRelativePath, wrap } from "../../../utils";
 import { TypeScriptContext } from "./typescript";
 
 const moduleSort = (a: { modulePath: string }, b: { modulePath: string }) => {
@@ -17,14 +16,38 @@ const moduleSort = (a: { modulePath: string }, b: { modulePath: string }) => {
 };
 
 const importsSort = caseInsensitiveSorter((item: string) => item);
+const noWrap = wrap("", "");
+const curlyWrap = wrap("{ ", " }");
 
 function renderImport(importNames: string[], modulePath: string) {
+  const starred = importNames.filter(n => n[0] === "*");
+  const normalExports = importNames.filter(n => n[0] !== "*");
+
+  return `${
+    starred.length ? renderImportLine(starred, modulePath, noWrap) : ""
+  }${
+    normalExports.length
+      ? `${starred.length ? "\n" : ""}${renderImportLine(
+          normalExports,
+          modulePath,
+          curlyWrap
+        )}`
+      : ""
+  }`;
+}
+
+function renderImportLine(
+  importNames: string[],
+  modulePath: string,
+  wrapFn: (s: string) => string
+): string {
   if (importNames.length === 0) {
     return `import "${modulePath}"`;
   }
-  const tryImport = `import { ${importNames.join(
-    ", "
-  )} } from "${modulePath}";`;
+
+  const tryImport = `import ${wrapFn(
+    importNames.join(", ")
+  )} from "${modulePath}";`;
   if (tryImport.length < 82) {
     return tryImport;
   } else {
@@ -75,8 +98,8 @@ export function computeImportMatrix(
   const lines = sortedImports.map(p => {
     const sorted = Object.keys(p.imports);
     sorted.sort(importsSort);
-    const importNames = sorted.map(
-      k => (typeof p.imports[k] === "string" ? `${k} as ${p.imports[k]}` : k)
+    const importNames = sorted.map(k =>
+      typeof p.imports[k] === "string" ? `${k} as ${p.imports[k]}` : k
     );
     return renderImport(importNames, p.modulePath);
   });

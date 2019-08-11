@@ -1,4 +1,4 @@
 #!/usr/bin/env node --harmony
-'use strict';
+"use strict";
 
-require('../cli');
+require("../build/cli");

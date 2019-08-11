@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "declaration": true,
+    "declaration": false,
     "module": "commonjs",
     "noImplicitAny": true,
     "removeComments": true,
@@ -16,7 +16,8 @@
     "noImplicitThis": true,
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
-    "noErrorTruncation": true
+    "noErrorTruncation": true,
+    "outDir": "build"
   },
 
   "exclude": ["generated", "node_modules"]

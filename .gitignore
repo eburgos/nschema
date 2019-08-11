@@ -1,9 +1,6 @@
-.idea
-.history
-.tscache
 coverage.html
 node_modules
-ignored
+src/ignored
 generated/test1/obj
 generated/test1/packages
 generated/test1/schema
@@ -11,4 +8,4 @@ generated/test1/test1.userprefs
 generated/typescriptClient/schema
 generated/test1/bin
 *.v11.suo
-/npm-debug.log
+npm-debug.log

@@ -15,3 +15,4 @@ const clean = {
 };
 const list = [clean, routeGuideServices_1.default];
 module.exports = { $type, location, namespace, schema, $target, list };
+//# sourceMappingURL=routeGuide.js.map

@@ -64,3 +64,4 @@ exports.default = {
     namespace: "route_guide",
     schema: "http://io.grpc.examples.routeguide/model/"
 };
+//# sourceMappingURL=routeGuideServices.js.map

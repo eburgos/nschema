@@ -1,5 +1,5 @@
 {
-  "extends": "./node_modules/tslint/lib/configs/recommended",
+  "extends": ["tslint:recommended"],
   "rules": {
     "arrow-parens": false,
     "comment-format": true,
@@ -67,15 +67,15 @@
     "completed-docs": {
       "severity": "error",
       "options": {
-        "classes": { "visibilities": ["exported"] },
-        "enums": { "visibilities": ["exported"] },
-        "enum-members": { "visibilities": ["exported"] },
-        "functions": { "visibilities": ["exported"] },
-        "interfaces": { "visibilities": ["exported"] },
-        "methods": { "privacies": ["public"] },
-        "namespaces": { "visibilities": ["all"] },
-        "types": { "visibilities": ["exported"] },
-        "variables": { "visibilities": ["exported"] }
+        "classes": { "visibilities": "exported" },
+        "enums": { "visibilities": "exported" },
+        "enum-members": { "visibilities": "exported" },
+        "functions": { "visibilities": "exported" },
+        "interfaces": { "visibilities": "exported" },
+        "methods": { "privacies": "public" },
+        "namespaces": { "visibilities": "all" },
+        "types": { "visibilities": "exported" },
+        "variables": { "visibilities": "exported" }
       }
     },
     "promise-function-async": {

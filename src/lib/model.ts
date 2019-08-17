@@ -1,71 +1,22 @@
-import NSchema from "./nschema";
-
-/**
- * Utilities used normally from within an EJS template
- *
- * @export
- * @interface Utils
- */
-export interface Utils {
-  clone(obj: any): any;
-  i(amount: number, seed: string): string;
-  relativePath(from: string, to: string): string;
-  resolvePath(...args: string[]): string;
-}
-
-/**
- * NineSchema configuration
- *
- * @export
- * @interface NineSchemaConfig
- */
-export interface NineSchemaConfig {
-  $importLocation?: string;
-  //TODO: Remove this when EJS is out
-  /*
-   * reference to NSchema itself. Useful in templates.
-   */
-  $nschema?: NSchemaInterface;
-  /*
-   * file path location
-   */
-  $nschemaLocation?: string;
-  /*
-   * Reference to current generation target
-   */
-  $target?: Target;
-  //TODO: Remove this when EJS is out
-  /*
-   * Utilities to help you templating
-   */
-  $u: Utils;
-  /*
-   * Indentation size
-   */
-  i: number;
-  /*
-   * List of children (if applies)
-   */
-  list?: Definition[];
-  /*
-   Target (if applies)
-  */
-  target?: Target[];
-}
+import { BundleTask } from "./provider/type/bundle";
+import { CleanTask } from "./provider/type/clean";
+import { ImportTask } from "./provider/type/import";
+import { AnonymousMessage, MessageTask } from "./provider/type/message";
+import { ObjectTask } from "./provider/type/object";
+import { ServiceTask } from "./provider/type/service";
 
 export interface NSchemaInterface {
-  buildTemplate(filename: string): TemplateFunction;
   context(): NSchemaContext;
 
   generate(
-    parentConfig: NineSchemaConfig,
-    config: Definition,
+    parentConfig: NSchemaTask,
+    config: NSchemaTask,
     context: object
   ): Promise<any>;
   getCustomPlugin(name: string, obj: any): NSchemaPlugin | undefined;
-  getMessage(ns: string, name: string): NSchemaMessage | undefined;
-  getObject(ns: string, name: string): NSchemaObject | undefined;
-  getService(ns: string, name: string): NSchemaService | undefined;
+  getMessage(ns: string, name: string): MessageTask | undefined;
+  getObject(ns: string, name: string): ObjectTask | undefined;
+  getService(ns: string, name: string): ServiceTask | undefined;
   getTarget(obj: any): TargetBind | undefined;
 
   isArray(obj: any): obj is any[];
@@ -74,11 +25,10 @@ export interface NSchemaInterface {
     target: any,
     filter?: (o: any, t: any, p: string) => boolean
   ): void;
-  objClone(obj: any): any;
   register(type: string, obj: NSchemaPlugin): Promise<any>;
-  registerMessage(typeConfig: NSchemaMessage): void;
-  registerObject(typeConfig: Definition): void;
-  registerService(serviceConfig: NSchemaService): void;
+  registerMessage(typeConfig: MessageTask): void;
+  registerObject(typeConfig: ObjectTask): void;
+  registerService(serviceConfig: ServiceTask): void;
   registerSource(obj: SourceBind): Promise<any>;
   registerTarget(obj: TargetBind): Promise<any>;
   types(): { [name: string]: NSchemaPlugin };
@@ -88,13 +38,39 @@ export interface NSchemaInterface {
 export interface Initializable {
   init?(nschema: NSchemaInterface): Promise<any>;
 }
+
+//TODO: Remove this
+export interface NSchemaConfig {
+  $nschemaLocation: string;
+  $type: "nschemaConfig";
+  i: number;
+}
+
+export interface NSchemaProperty {
+  defaultValue?: string;
+  description?: string;
+  options?: {
+    ignoreSerialization?: boolean;
+  };
+  type: NSchemaType;
+}
+
+export type NSchemaTask =
+  | CleanTask
+  | BundleTask
+  | ImportTask
+  | ObjectTask
+  | MessageTask
+  | ServiceTask
+  | NSchemaConfig;
+
 export interface NSchemaPlugin extends Initializable {
   description: string;
   language?: string;
   name: string;
   type: string;
   execute?(
-    config: Definition,
+    config: NSchemaTask,
     nschema: NSchemaInterface,
     context: any | undefined
   ): Promise<any>;
@@ -111,7 +87,7 @@ export interface TargetBind extends NSchemaPlugin {
   language: string;
   serviceType?: string;
   generate(
-    config: any,
+    config: ObjectTask | MessageTask | ServiceTask,
     nschema: NSchemaInterface,
     target: Target,
     context: any | undefined
@@ -123,35 +99,17 @@ export interface Identifier {
   namespace: string;
 }
 
-export interface NSchemaObject extends Registerable {
-  $extends?: Identifier;
-  name: string;
-  namespace?: string;
-}
-
 export interface NSchemaMessageArgument {
   description?: string;
   name: string;
   type: NSchemaType;
 }
 
-interface Registerable {
-  $nschemaRegistered?: boolean;
-}
-
-export interface NSchemaMessage extends Registerable {
-  $extends?: Identifier;
-  data: NSchemaMessageArgument[];
-  description?: string;
-  name?: string;
-  namespace?: string;
-}
-
 export interface NSchemaOperation {
   description?: string;
-  inMessage: NSchemaMessage;
+  inMessage: AnonymousMessage;
   name: string;
-  outMessage: NSchemaMessage;
+  outMessage: AnonymousMessage;
 }
 
 export interface NSchemaRestOperation extends NSchemaOperation {
@@ -159,29 +117,37 @@ export interface NSchemaRestOperation extends NSchemaOperation {
   route: string;
 }
 
-export interface NSchemaService extends Registerable {
+export interface HasFilenameMixin {
   $fileName?: string;
-  description?: string;
-  name: string;
-  namespace?: string;
-  operations: { [name: string]: NSchemaOperation };
 }
 
-export interface NSchemaRestService extends NSchemaService {
+export interface HasImplementsMixin {
+  implements?: NSchemaTypeDefinition[];
+}
+
+export interface HasTargetMixin {
+  target?: Target | Target[];
+}
+
+export interface AppendableMixin {
+  append?: boolean;
+}
+
+export interface NSchemaRestService extends ServiceTask, HasFilenameMixin {
   operations: { [name: string]: NSchemaRestOperation };
   routePrefix?: string;
 }
 
 export interface NSchemaContext {
-  messages: NSchemaMessage[];
-  objects: NSchemaObject[];
-  services: NSchemaService[];
+  messages: MessageTask[];
+  objects: ObjectTask[];
+  services: ServiceTask[];
 }
 
 export interface NSchemaTypeDefinition {
   modifier?: NSchemaModifier | NSchemaModifier[];
   name: string;
-  namespace: string;
+  namespace?: string;
 }
 
 export type NSchemaModifier =
@@ -194,53 +160,35 @@ export type NSchemaPrimitiveType = "string" | "int" | "float" | "bool" | "date";
 
 export type NSchemaType = NSchemaTypeDefinition | NSchemaPrimitiveType;
 
-export interface Definition extends NineSchemaConfig {
-  $fileName?: string;
+export interface AppendableProperties {
   /*
    * append namespace. Part of the namespace that has to be appended to the parent's
    */
   $namespace?: string;
-  $nschemaRegistered?: boolean;
-  $type?: string;
-  name: string;
+
   /*
-   * current generation namespace
+   * append target. Part of the target that has to be appended to the parent's
    */
-  namespace?: string;
+  $target?: Target | Target[];
 }
 
-export interface Target {
-  $fileName?: string;
+export interface Target extends HasFilenameMixin {
   $namespaceMapping?: {
     [name: string]: string;
   };
-  description: string;
+  description?: string;
+  language?: string;
   location: string;
-  name: string;
+  name?: string;
   type?: string;
 }
 
-interface DataContext {
-  $context: NSchemaContext;
-  $i: Utils;
-  $nschema: NSchema;
-  $nschemaLocation?: string;
-  $nschemaRegistered?: boolean;
-  $target?: any[];
-  $type?: string | any;
-  $u: any;
-  description: string;
-  list?: any[];
-  location: string;
-  name: string;
-  namespace?: string;
-  operations: NSchemaOperation[];
-  schema: any;
-  [name: string]: any;
-}
-
-export type TemplateFunction = (
-  data: DataContext | { [name: string]: any }
+export type TemplateFunction<T, X = any> = (
+  data: T,
+  nschema: NSchemaInterface,
+  context: X
 ) => string;
 
-export function shouldNever(t: never) {}
+export function shouldNever(_t: never) {
+  throw new Error(`Should never ${new Error().stack}`);
+}

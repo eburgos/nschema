@@ -1,17 +1,16 @@
+import typescript, { messageType, TypeScriptContext } from "../..";
 import {
   NSchemaInterface,
   NSchemaRestOperation,
   NSchemaRestService
 } from "../../../../../model";
 import { renderPropertyAccessor } from "../../helpers";
-import typescript, { messageType, TypeScriptContext } from "../../typescript";
 import {
   addSpace,
   getHttpVerb,
   getOperationDetails,
   realTypeMap
 } from "./common";
-import { TypeScriptServerlessRest } from "./rest";
 
 function renderOperationsInterface(
   nschema: NSchemaInterface,
@@ -27,12 +26,12 @@ function renderOperationsInterface(
   /**
    *${addSpace((operation.description || "").replace(/\n/g, "\n   * "))}
 ${inMessage.data
-        .map(par => {
-          return `   * @param ${par.name} -${addSpace(
-            (par.description || "").replace(/\n/g, "\n   * ")
-          )}`;
-        })
-        .join("\n")}
+  .map(par => {
+    return `   * @param ${par.name} -${addSpace(
+      (par.description || "").replace(/\n/g, "\n   * ")
+    )}`;
+  })
+  .join("\n")}
    * @param $ctx - Operation context. Optional argument (The service always sends it but you may not implement it in your class)
    * @returns ${outMessage.data
      .map(d => {
@@ -41,7 +40,7 @@ ${inMessage.data
      .join(", ") || `{${messageType(nschema, context, false, outMessage)}}`}
    */
   ${op}(${inMessage.data
-        .map((par, $i) => {
+        .map(par => {
           return `${par.name}: ${typescript.typeName(
             par.type,
             nschema,
@@ -71,27 +70,18 @@ function renderOperationsForClass(
   const protecteds = Object.keys(operations)
     .map(op => {
       const operation = operations[op];
-      const {
-        method,
-        bodyArguments,
-        headerArguments,
-        inMessage,
-        outMessage,
-        route,
-        routeArguments,
-        queryArguments
-      } = getOperationDetails(operation);
+      const { inMessage, outMessage } = getOperationDetails(operation);
 
       return `
   /**
    *${addSpace((operation.description || "").replace(/\n/g, "\n   * "))}
 ${inMessage.data
-        .map(par => {
-          return `   * @param ${par.name} -${addSpace(
-            (par.description || "").replace(/\n/g, "\n   * ")
-          )}`;
-        })
-        .join("\n")}
+  .map(par => {
+    return `   * @param ${par.name} -${addSpace(
+      (par.description || "").replace(/\n/g, "\n   * ")
+    )}`;
+  })
+  .join("\n")}
    * @param $ctx - Operation context
    * @returns ${outMessage.data
      .map(d => {
@@ -100,7 +90,7 @@ ${inMessage.data
      .join(", ") || `{${messageType(nschema, context, false, outMessage)}}`}
    */
   public abstract async ${op}(${inMessage.data
-        .map((par, $i) => {
+        .map(par => {
           return `${par.name}: ${typescript.typeName(
             par.type,
             nschema,
@@ -124,28 +114,19 @@ ${inMessage.data
   const abstracts = Object.keys(operations)
     .map(op => {
       const operation = operations[op];
-      const {
-        method,
-        bodyArguments,
-        headerArguments,
-        inMessage,
-        outMessage,
-        route,
-        routeArguments,
-        queryArguments
-      } = getOperationDetails(operation);
+      const { inMessage, outMessage } = getOperationDetails(operation);
 
       return `
   /**
    * Raw operation. This is what the service actually calls.
    *${addSpace((operation.description || "").replace(/\n/g, "\n   * "))}
 ${inMessage.data
-        .map(par => {
-          return `   * @param ${par.name} -${addSpace(
-            (par.description || "").replace(/\n/g, "\n   * ")
-          )}`;
-        })
-        .join("\n")}
+  .map(par => {
+    return `   * @param ${par.name} -${addSpace(
+      (par.description || "").replace(/\n/g, "\n   * ")
+    )}`;
+  })
+  .join("\n")}
    * @returns ${outMessage.data
      .map(d => {
        return (d.description || "").replace(/\n/g, "\n   * ");
@@ -153,7 +134,7 @@ ${inMessage.data
      .join(", ") || `{${messageType(nschema, context, false, outMessage)}}`}
    */
   protected async $raw${op}(${inMessage.data
-        .map((par, $i) => {
+        .map(par => {
           return `${par.name}: ${typescript.typeName(
             par.type,
             nschema,
@@ -173,7 +154,7 @@ ${inMessage.data
       )}> {
     this.emit("callStarted", { name: "${op}", timestamp: new Date() });
     const result = await this.${op}(${inMessage.data
-        .map((par, $i) => {
+        .map(par => {
           return `${par.name}`;
         })
         .join(", ")}${inMessage.data.length ? `, ` : ``}$ctx);
@@ -197,7 +178,6 @@ function renderConstructorForClass(
     .map(op => {
       const operation = operations[op];
       const {
-        method,
         bodyArguments,
         headerArguments,
         inMessage,
@@ -216,7 +196,7 @@ function renderConstructorForClass(
         outMessage
       )}>({
       route: '${route ||
-        op.replace(/\{([^\}]+?)\}/g, (match, g1) => {
+        op.replace(/\{([^\}]+?)\}/g, (_match, g1) => {
           return `:${g1}`;
         })}',
       //contentType: 'application/json',
@@ -228,14 +208,14 @@ function renderConstructorForClass(
       )} => {
         const input: any = {};
 ${routeArguments
-        .map(p => {
-          return `      input${renderPropertyAccessor(p.name)} = ${realTypeMap(
-            p,
-            `req.params${renderPropertyAccessor(p.name)}`
-          )};
+  .map(p => {
+    return `      input${renderPropertyAccessor(p.name)} = ${realTypeMap(
+      p,
+      `req.params${renderPropertyAccessor(p.name)}`
+    )};
 `;
-        })
-        .join("")}${queryArguments.map(p => {
+  })
+  .join("")}${queryArguments.map(p => {
         return `        input${renderPropertyAccessor(p.name)} = ${realTypeMap(
           p,
           `req.query${renderPropertyAccessor(p.name)}`
@@ -304,8 +284,7 @@ ${routeArguments
 export function render(
   nschema: NSchemaInterface,
   context: TypeScriptContext,
-  config: NSchemaRestService,
-  target: TypeScriptServerlessRest
+  config: NSchemaRestService
 ) {
   if (!context.imports["{events}"]) {
     context.imports["{events}"] = {};

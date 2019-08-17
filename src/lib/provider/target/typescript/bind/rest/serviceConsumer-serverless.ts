@@ -1,13 +1,13 @@
 import * as path from "path";
+import { TypeScriptServerlessRest } from ".";
+import { messageType, TypeScriptContext } from "../..";
 import {
   NSchemaInterface,
   NSchemaRestOperation,
   NSchemaRestService
 } from "../../../../../model";
 import { renderPropertyAccessor } from "../../helpers";
-import { messageType, TypeScriptContext } from "../../typescript";
 import { getOperationDetails, realTypeMap } from "./common";
-import { TypeScriptServerlessRest } from "./rest";
 
 const serverlessReturnType = "{ statusCode: number, body: string }";
 
@@ -22,12 +22,10 @@ function renderOperations(
     .map(op => {
       const operation = operations[op];
       const {
-        method,
         bodyArguments,
         headerArguments,
         inMessage,
         outMessage,
-        route,
         routeArguments,
         queryArguments
       } = getOperationDetails(operation);
@@ -45,38 +43,34 @@ function renderOperations(
       return undefined;
     })();
 ${routeArguments.map(p => {
-        return `    input${renderPropertyAccessor(p.name)} = ${realTypeMap(
-          p,
-          `unescape(event.pathParameters${renderPropertyAccessor(p.name)})`
-        )};
+  return `    input${renderPropertyAccessor(p.name)} = ${realTypeMap(
+    p,
+    `unescape(event.pathParameters${renderPropertyAccessor(p.name)})`
+  )};
 `;
-      })}${queryArguments.map(p => {
+})}${queryArguments.map(p => {
         return `    input${renderPropertyAccessor(p.name)} = ${realTypeMap(
           p,
           `event.queryStringParameters${renderPropertyAccessor(p.name)}`
         )};`;
       })}
 ${headerArguments
-        .map(p => {
-          return `    input${renderPropertyAccessor(p.name)} = ${realTypeMap(
-            p,
-            `event.headers${renderPropertyAccessor(
-              p.headerName || `X-${p.name}`
-            )}`
-          )};`;
-        })
-        .join("\n")}
+  .map(p => {
+    return `    input${renderPropertyAccessor(p.name)} = ${realTypeMap(
+      p,
+      `event.headers${renderPropertyAccessor(p.headerName || `X-${p.name}`)}`
+    )};`;
+  })
+  .join("\n")}
 ${
-        bodyArguments.length === 1
-          ? `    input${renderPropertyAccessor(bodyArguments[0].name)} = $body;`
-          : bodyArguments
-              .map((p, idx) => {
-                return `    input${renderPropertyAccessor(
-                  p.name
-                )} = $body[${idx}];`;
-              })
-              .join("\n")
-      }
+  bodyArguments.length === 1
+    ? `    input${renderPropertyAccessor(bodyArguments[0].name)} = $body;`
+    : bodyArguments
+        .map((p, idx) => {
+          return `    input${renderPropertyAccessor(p.name)} = $body[${idx}];`;
+        })
+        .join("\n")
+}
 
     const $req = input as ${messageType(nschema, context, true, inMessage)};
 

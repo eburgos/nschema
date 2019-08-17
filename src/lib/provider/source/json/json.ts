@@ -2,14 +2,14 @@
  * @module nschema/provider/source/json
  * @author Eduardo Burgos <eburgos@gmail.com>
  */
-import { NineSchemaConfig, NSchemaInterface, SourceBind } from "../../../model";
+import { SourceBind } from "../../../model";
 
 /*
 @param {string} payload - .
 @returns json promise
  */
-function getData(payload: string) {
-  return Promise.resolve(JSON.parse(payload));
+async function getData(payload: string) {
+  return await Promise.resolve(JSON.parse(payload));
 }
 
 /*
@@ -19,7 +19,7 @@ const source: SourceBind = {
   description: "Reads config data from json",
   getData,
   name: "json",
-  init(nschema) {
+  async init(nschema) {
     return nschema.registerSource(this);
   },
   type: "source"

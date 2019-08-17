@@ -1,9 +1,15 @@
-import { GRPCService } from "../../lib/provider/target/gRPC/gRPC";
+import { NSchemaTask, Target } from "../../lib/model";
+import { GRPCBundle, GRPCService } from "../../lib/provider/target/gRPC";
+import { ObjectTask } from "../../lib/provider/type/object";
 import model from "./routeGuideModel";
 
+function isObjectTask(t: NSchemaTask): t is ObjectTask {
+  return t.$type === "object";
+}
+
 const messagesNamespace = model.namespace;
-const Point = model.list.find(i => i.name === "Point");
-const Feature = model.list.find(i => i.name === "Feature");
+const Point = model.list.filter(isObjectTask).find(i => i.name === "Point");
+const Feature = model.list.filter(isObjectTask).find(i => i.name === "Feature");
 
 if (!Point) {
   throw new Error("Point message is undefined");
@@ -51,7 +57,7 @@ position.`,
   }
 };
 
-const $target = [
+const $target: Target[] = [
   {
     $namespaceMapping: {},
     language: "gRPC",
@@ -61,11 +67,12 @@ const $target = [
 
 const list = [routeGuideService, ...model.list];
 
-export default {
+const bundle: GRPCBundle = {
   $target,
   $type: "bundle",
   list,
-  location: "",
-  namespace: "route_guide",
-  schema: "http://io.grpc.examples.routeguide/model/"
+  namespace: "route_guide"
+  //  schema: "http://io.grpc.examples.routeguide/model/"
 };
+
+export default bundle;

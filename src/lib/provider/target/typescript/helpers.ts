@@ -1,5 +1,20 @@
+import { isArray } from "util";
+import { TypeScriptContext } from ".";
+import { writeError } from "../../../logging";
+import {
+  AppendableMixin,
+  NSchemaInterface,
+  NSchemaMessageArgument,
+  NSchemaModifier,
+  NSchemaPrimitiveType,
+  shouldNever
+} from "../../../model";
 import { caseInsensitiveSorter, isRelativePath, wrap } from "../../../utils";
-import { TypeScriptContext } from "./typescript";
+import {
+  TypeScriptLiteralsUnion,
+  TypeScriptMessage,
+  TypeScriptType
+} from "./bind/object";
 
 const moduleSort = (a: { modulePath: string }, b: { modulePath: string }) => {
   const s1 = a.modulePath.toLocaleLowerCase();
@@ -103,9 +118,11 @@ export function computeImportMatrix(
     );
     return renderImport(importNames, p.modulePath);
   });
-  return `${lines.join("\n")}${"\n"}${lines
-    .map(surroundWithFlow)
-    .join("\n")}${"\n"}`;
+  if (!lines.length) {
+    return "";
+  }
+  return `${lines.join("\n")}${"\n"}${lines.map(surroundWithFlow).join("\n")}
+`;
 }
 
 const unQuotedPropertyRegex = /^[a-zA-Z\_\$][a-zA-Z0-9\$\_]*$/;
@@ -115,4 +132,182 @@ export function renderPropertyAccessor(property: string) {
   } else {
     return `["${property}"]`;
   }
+}
+
+export function renderFileHeader(
+  obj: AppendableMixin & { description?: string }
+) {
+  if (obj.append) {
+    return "";
+  } else {
+    return `/**
+ * ${
+   typeof obj.description === "string"
+     ? obj.description.replace(/\n/g, "\n * ")
+     : ""
+ }
+ */`;
+  }
+}
+
+function modifierMap(modifier: NSchemaModifier): string {
+  switch (modifier) {
+    case "list":
+      return "[]";
+    case "array":
+      return "[]";
+    case "option":
+      return "| undefined";
+    default:
+      return typeName(modifier);
+  }
+}
+function isUnions(t: TypeScriptType): t is TypeScriptLiteralsUnion {
+  return (
+    typeof (t as TypeScriptLiteralsUnion).literals !== "undefined" &&
+    (t as TypeScriptLiteralsUnion).name === "string"
+  );
+}
+
+export function typeName(
+  $nschemaType: TypeScriptType,
+  _nschema?: NSchemaInterface,
+  namespace?: string,
+  _name?: string,
+  context?: TypeScriptContext,
+  addFlowComment?: boolean
+) {
+  let result: string;
+  const typeMap = (t: NSchemaPrimitiveType) => {
+    switch (t) {
+      case "int":
+        return "number";
+      case "float":
+        return "number";
+      case "string":
+        return "string";
+      case "bool":
+        return "boolean";
+      case "date":
+        return "number";
+      default:
+        shouldNever(t);
+    }
+    return "string";
+  };
+  if (typeof $nschemaType === "string") {
+    result = typeMap($nschemaType);
+  } else if (typeof $nschemaType === "object") {
+    let ns = $nschemaType.namespace;
+    if (typeof ns === "undefined") {
+      ns = namespace || "";
+    }
+    if (ns !== namespace && context) {
+      if (!context.imports[ns]) {
+        context.imports[ns] = {};
+      }
+      context.imports[ns][$nschemaType.name] = true;
+    }
+    if (isUnions($nschemaType)) {
+      result = $nschemaType.literals.join(" | ");
+    } else {
+      if (typeMap($nschemaType.name as NSchemaPrimitiveType) !== "string") {
+        result = typeMap($nschemaType.name as NSchemaPrimitiveType);
+      } else {
+        result = $nschemaType.name;
+      }
+    }
+  } else {
+    result = typeMap("string");
+  }
+  if (
+    $nschemaType &&
+    typeof $nschemaType === "object" &&
+    $nschemaType.modifier
+  ) {
+    const $modifier = $nschemaType.modifier;
+    const modifierArr: NSchemaModifier[] = !isArray($modifier)
+      ? [$modifier]
+      : $modifier;
+
+    modifierArr.forEach(item => {
+      result = `(${result} ${modifierMap(item)})`;
+    });
+  }
+  if (addFlowComment) {
+    return `${result} /* :${result} */`;
+  } else {
+    return result;
+  }
+}
+
+function $_getDataItems(
+  nsMessage: TypeScriptMessage,
+  $nschema: NSchemaInterface
+) {
+  const r: NSchemaMessageArgument[] = [];
+  if (nsMessage.$extends) {
+    const parent = $nschema.getMessage(
+      nsMessage.$extends.namespace || "",
+      nsMessage.$extends.name
+    );
+    if (parent) {
+      $_getDataItems(parent, $nschema).forEach(i => {
+        r.push(i);
+      });
+    } else {
+      writeError(
+        `could not find parent: ns=${nsMessage.$extends.namespace || ""} name=${
+          nsMessage.$extends.name
+        }`
+      );
+      throw new Error("Could not find parent message");
+    }
+  }
+  (nsMessage.data || []).forEach(item => {
+    r.push(item);
+  });
+  return r;
+}
+
+export function messageType(
+  $nschema: NSchemaInterface,
+  $nschemaMessage: TypeScriptMessage,
+  $nschemaMessageDirection: "in" | "out",
+  $context: TypeScriptContext
+) {
+  const $_typeSeparator =
+    $nschemaMessageDirection === "in"
+      ? ", "
+      : $nschemaMessageDirection === "out"
+      ? ", "
+      : "";
+
+  const $_dataItems = $_getDataItems($nschemaMessage, $nschema);
+  const result =
+    $_dataItems.length === 0
+      ? ["void"]
+      : $_dataItems.length === 1
+      ? [
+          typeName(
+            $_dataItems[0].type,
+            $nschema,
+            undefined,
+            undefined,
+            $context
+          )
+        ]
+      : $_dataItems.map((item, $i) => {
+          return `${item.name || `item${$i}`}: ${typeName(
+            item.type,
+            $nschema,
+            undefined,
+            undefined,
+            $context
+          )}`;
+        });
+
+  return result.length === 1
+    ? result[0]
+    : `{ ${result.join($_typeSeparator)} }`;
 }

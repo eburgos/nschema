@@ -1,12 +1,13 @@
+import { CleanTask } from "../../lib/nschema";
+import { GRPCBundle } from "../../lib/provider/target/gRPC";
 import services from "./routeGuideServices";
 
 const $type = "bundle";
-const location = "./generated/test1/schema";
 const namespace = "route_guide";
-const schema = "http://io.grpc.examples.routeguide/model/";
+//const schema = "http://io.grpc.examples.routeguide/model/";
 const $target: any[] = [];
 
-const clean = {
+const clean: CleanTask = {
   $type: "clean",
   target: [
     {
@@ -17,4 +18,11 @@ const clean = {
 
 const list = [clean, services];
 
-export = { $type, location, namespace, schema, $target, list };
+const bundle: GRPCBundle = {
+  $target,
+  $type,
+  list,
+  namespace
+};
+
+export default bundle;

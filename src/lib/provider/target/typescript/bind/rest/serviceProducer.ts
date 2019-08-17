@@ -1,23 +1,23 @@
-import {
-  NSchemaInterface,
-  NSchemaMessage,
-  NSchemaMessageArgument,
-  NSchemaRestService
-} from "../../../../../model";
-import { computeImportMatrix } from "../../helpers";
+import { RestMessageArgument, TypeScriptRestTarget } from ".";
 import typescript, {
   messageType,
   RestClientStrategy,
   TypeScriptContext
-} from "../../typescript";
+} from "../..";
+import {
+  NSchemaInterface,
+  NSchemaMessageArgument,
+  NSchemaRestService
+} from "../../../../../model";
+import { wrap } from "../../../../../utils";
+import { AnonymousMessage } from "../../../../type/message";
+import { computeImportMatrix } from "../../helpers";
 import {
   addSpace,
   getOperationDetails,
   identityStr,
   sortAlphabetically
 } from "./common";
-import { TypeScriptRestTarget, RestMessageArgument } from "./rest";
-import { wrap } from "../../../../../utils";
 
 function requestArgsType() {
   return `{
@@ -217,7 +217,7 @@ const bodyPart = {
     paramsInRoute: RestMessageArgument[],
     _nschema: NSchemaInterface,
     _context: TypeScriptContext,
-    _outMessage: NSchemaMessage,
+    _outMessage: AnonymousMessage,
     op: string
   ) => {
     return `${
@@ -278,7 +278,7 @@ let $body = JSON.stringify(${paramsInBody.length > 1 ? `[` : ``}${paramsInBody
     _paramsInRoute: NSchemaMessageArgument[],
     nschema: NSchemaInterface,
     context: TypeScriptContext,
-    outMessage: NSchemaMessage,
+    outMessage: AnonymousMessage,
     _op: string
   ) => {
     return `const $response = await request.${method.toLowerCase()}${
@@ -358,7 +358,7 @@ ${inMessage.data
       )}
    */
   public async ${op}(${inMessage.data
-        .map((par, $i) => {
+        .map(par => {
           return `${par.name}: ${typescript.typeName(
             par.type,
             nschema,

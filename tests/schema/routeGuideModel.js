@@ -105,11 +105,10 @@ the distance between each point.`,
     return [Point, RouteSummary, Rectangle, Feature, RouteNote];
 }
 const $target = [];
-exports.default = {
+const bundle = {
     $target,
     $type: "bundle",
     list: messages(),
-    location: "",
-    namespace: "io.grpc.examples.routeguide.Model",
-    schema: "http://io.grpc.examples.routeguide/model/"
+    namespace: "io.grpc.examples.routeguide.Model"
 };
+exports.default = bundle;

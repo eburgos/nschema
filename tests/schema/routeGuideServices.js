@@ -1,9 +1,12 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const routeGuideModel_1 = require("./routeGuideModel");
+function isObjectTask(t) {
+    return t.$type === "object";
+}
 const messagesNamespace = routeGuideModel_1.default.namespace;
-const Point = routeGuideModel_1.default.list.find(i => i.name === "Point");
-const Feature = routeGuideModel_1.default.list.find(i => i.name === "Feature");
+const Point = routeGuideModel_1.default.list.filter(isObjectTask).find(i => i.name === "Point");
+const Feature = routeGuideModel_1.default.list.filter(isObjectTask).find(i => i.name === "Feature");
 if (!Point) {
     throw new Error("Point message is undefined");
 }
@@ -56,11 +59,10 @@ const $target = [
     }
 ];
 const list = [routeGuideService, ...routeGuideModel_1.default.list];
-exports.default = {
+const bundle = {
     $target,
     $type: "bundle",
     list,
-    location: "",
-    namespace: "route_guide",
-    schema: "http://io.grpc.examples.routeguide/model/"
+    namespace: "route_guide"
 };
+exports.default = bundle;

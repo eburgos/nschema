@@ -1,59 +1,36 @@
 /**
- * @module nschema/nschema
  * @author Eduardo Burgos <eburgos@gmail.com>
  */
 
-import * as ejs from "ejs";
 import * as fs from "fs";
-import * as path from "path";
-import { LogLevel, writeError, writeLog } from "./logging";
 import {
-  Definition,
-  NineSchemaConfig,
+  dirname as pathDirname,
+  resolve as pathResolve,
+  sep as pathSep
+} from "path";
+import { LogLevel, writeDebugLog, writeError, writeLog } from "./logging";
+import {
   NSchemaContext,
   NSchemaInterface,
-  NSchemaMessage,
-  NSchemaObject,
   NSchemaPlugin,
-  NSchemaService,
+  NSchemaTask,
   SourceBind,
-  TargetBind,
-  Utils
+  TargetBind
 } from "./model";
+import { MessageTask } from "./provider/type/message";
+import { ObjectTask } from "./provider/type/object";
+import { ServiceTask } from "./provider/type/service";
+import { appendTarget, deepClone, initialCaps, propagateTarget } from "./utils";
+export { CleanTask } from "./provider/type/clean";
 
 declare let require: (name: string) => any;
 
-//TODO: Remove this and export individually when EJS is out
-const utils: Utils = {
-  relativePath: path.relative,
-  resolvePath: path.resolve,
-  i(amount: number, seed: string) {
-    let r = "";
-    for (let cnt = 0; cnt < (amount || 0); cnt += 1) {
-      r += seed;
-    }
-    return r;
-  },
-  clone(obj: any) {
-    if (null == obj || "object" !== typeof obj) {
-      return obj;
-    }
-    const copy: any = {};
-    for (const attr in obj) {
-      if (obj.hasOwnProperty(attr)) {
-        copy[attr] = obj[attr];
-      }
-    }
-    return copy;
-  }
-};
-
 function createDirectorySync(dirpath: string) {
-  const seps = dirpath.split(path.sep);
+  const seps = dirpath.split(pathSep);
   const tried: string[] = [];
   seps.forEach(item => {
     tried.push(item);
-    const tryDir = tried.join(path.sep);
+    const tryDir = tried.join(pathSep);
     if (tryDir) {
       if (!fs.existsSync(tryDir)) {
         fs.mkdirSync(tryDir);
@@ -64,47 +41,31 @@ function createDirectorySync(dirpath: string) {
 function isArray(obj: any): obj is any[] {
   return Object.prototype.toString.call(obj) === "[object Array]";
 }
-function objClone(obj: any): any {
-  let cnt;
-  if (obj === null || obj === undefined) {
-    return obj;
-  }
-  if (isArray(obj)) {
-    const r = [];
-    const len = obj.length;
-    for (cnt = 0; cnt < len; cnt += 1) {
-      r.push(objClone(obj[cnt]));
-    }
-    return r;
-  } else if (typeof obj === "object") {
-    const r: any = {};
-    for (const p in obj) {
-      if (obj.hasOwnProperty(p)) {
-        r[p] = objClone(obj[p]);
-      }
-    }
-    return r;
-  } else {
-    return obj;
-  }
-}
+
+/**
+ *
+ *
+ * @param {*} mixedInto
+ * @param {*} from
+ * @param {(o: any, t: any, p: string) => boolean} [filter] is this function returns false then the property p will be mixed in
+ */
 function mixinRecursive(
-  obj: any,
-  target: any,
+  mixedInto: any,
+  from: any,
   filter?: (o: any, t: any, p: string) => boolean
 ) {
-  for (const p in target) {
-    if (target.hasOwnProperty(p)) {
-      if (!filter || !filter(obj, target, p)) {
+  for (const p in from) {
+    if (from.hasOwnProperty(p)) {
+      if (!filter || !filter(mixedInto, from, p)) {
         if (
-          !isArray(obj[p]) &&
-          !isArray(target[p]) &&
-          typeof obj[p] === "object" &&
-          typeof target[p] === "object"
+          !isArray(mixedInto[p]) &&
+          !isArray(from[p]) &&
+          typeof mixedInto[p] === "object" &&
+          typeof from[p] === "object"
         ) {
-          mixinRecursive(obj[p], target[p]);
+          mixinRecursive(mixedInto[p], from[p]);
         } else {
-          obj[p] = target[p];
+          mixedInto[p] = from[p];
         }
       }
     }
@@ -116,7 +77,7 @@ function appendFile(
   content: string,
   callback: (err: NodeJS.ErrnoException | null) => void
 ) {
-  const dirname = path.dirname(filename);
+  const dirname = pathDirname(filename);
   try {
     createDirectorySync(dirname);
     fs.appendFile(filename, content, callback);
@@ -139,92 +100,64 @@ const getCriteria = (obj: any) => {
 };
 
 function registerBasicTypes(nschema: NSchema) {
-  [
+  const basics: ObjectTask[] = [
     {
       $type: "object",
-      $u: utils,
-      bind: {},
-      i: 0,
       name: "int",
-      namespace: "",
-      properties: {}
+      namespace: ""
     },
     {
       $type: "object",
-      $u: utils,
-      bind: {},
-      i: 0,
       name: "float",
-      namespace: "",
-      properties: {}
+      namespace: ""
     },
     {
       $type: "object",
-      $u: utils,
-      bind: {},
-      i: 0,
       name: "string",
-      namespace: "",
-      properties: {}
+      namespace: ""
     },
     {
       $type: "object",
-      $u: utils,
-      bind: {},
-      i: 0,
       name: "boolean",
-      namespace: "",
-      properties: {}
+      namespace: ""
     }
-  ].forEach(item => nschema.registerObject(item));
+  ];
+  basics.forEach(item => nschema.registerObject(item));
 }
 
+const allowedParentToChildrenMixin: { [name: string]: any } = {
+  $importLocation: true,
+  $nschemaLocation: true,
+  $u: true,
+  namespace: true
+};
+
 export default class NSchema implements NSchemaInterface {
-  public objClone: (obj: any) => any = objClone;
-  public isArray: (obj: any) => obj is any[] = isArray;
-  public path = path;
-
-  public require: ((name: string) => any) | undefined = undefined;
-
-  public mixinRecursive: (
-    obj: any,
-    target: any,
-    filter?: (o: any, t: any, p: string) => boolean
-  ) => void = mixinRecursive;
-
   public appendFile: (
     filename: string,
     content: string,
     callback: (err: NodeJS.ErrnoException | null) => void
   ) => void = appendFile;
-  public ejs = ejs;
   public ejsSettings = {
     client: true,
     close: "%>",
     debug: false,
     open: "<%"
   };
-  public utils = {
-    initialCaps(n: string) {
-      if (!n) {
-        return n;
-      }
-      return n[0].toUpperCase() + n.substr(1);
-    }
-  };
+  public isArray: (obj: any) => obj is any[] = isArray;
+
+  public mixinRecursive: (
+    obj: any,
+    target: any,
+    filter?: (o: any, t: any, p: string) => boolean
+  ) => void = mixinRecursive;
+  // public path = path;
+
+  public require: ((name: string) => any) | undefined = undefined;
 
   public targets: TargetBind[] = [];
-  private sources: { [name: string]: SourceBind } = {};
-  private customPlugins: { [name: string]: NSchemaPlugin[] } = {};
-  private dotSettings: any = {};
-  private loadDefer: Promise<NSchema> | undefined = undefined;
-  private globalConfig: NineSchemaConfig | undefined = undefined;
-
-  private mTypes: { [name: string]: NSchemaPlugin } = {};
-  private mContext: NSchemaContext = {
-    messages: [],
-    objects: [],
-    services: []
+  public utils = {
+    initialCaps
   };
 
   constructor() {
@@ -232,17 +165,192 @@ export default class NSchema implements NSchemaInterface {
     this.mixinRecursive(this.dotSettings, {});
     registerBasicTypes(this);
   }
+  private readonly $context: NSchemaContext = {
+    messages: [],
+    objects: [],
+    services: []
+  };
+  private readonly customPlugins: { [name: string]: NSchemaPlugin[] } = {};
+  private readonly dotSettings: any = {};
+  private loadDefer: Promise<NSchema> | undefined = undefined;
 
-  // Implementing NSchemaInterface
+  private readonly mTypes: { [name: string]: NSchemaPlugin } = {};
+  private readonly sources: { [name: string]: SourceBind } = {};
 
-  public types() {
-    return this.mTypes;
-  }
   public context(): NSchemaContext {
-    return this.mContext;
+    return this.$context;
   }
 
-  public register(type: string, obj: NSchemaPlugin) {
+  public async generate(
+    parentConfig: NSchemaTask,
+    config: NSchemaTask,
+    context: any | undefined
+  ): Promise<any> {
+    const type = config.$type;
+
+    const typeProvider = this.types()[type];
+
+    if (!typeProvider) {
+      throw new Error(`Unknown nschema type provider: ${type}`);
+    }
+    const newConfigCloned = deepClone(config);
+
+    mixinRecursive(newConfigCloned, parentConfig, (_a, _b, prop) => {
+      return !allowedParentToChildrenMixin[prop];
+    });
+
+    const newConfig = appendTarget(
+      propagateTarget(newConfigCloned, parentConfig)
+    );
+
+    if (typeProvider.execute) {
+      writeDebugLog(
+        `executing ${(newConfig as any).namespace || ""} :: ${(newConfig as any)
+          .name || ""} with provider ${typeProvider.name}`
+      );
+      return await typeProvider.execute(newConfig, this, context);
+    } else {
+      return await Promise.resolve();
+    }
+  }
+  public getCustomPlugin(name: string, obj: any) {
+    const customPlugins = (this.customPlugins[name] || []).filter(
+      (target: NSchemaPlugin) => {
+        const tgt: any = target;
+
+        for (const p in obj) {
+          if (obj.hasOwnProperty(p) && isValidProperty(p)) {
+            if (typeof tgt[p] === "function") {
+              return tgt[p](obj[p]);
+            } else if (tgt[p] !== obj[p] && tgt[p] !== "*") {
+              return false;
+            }
+          }
+        }
+        return true;
+      }
+    );
+    if (customPlugins.length > 1) {
+      throw new Error(
+        `Error: multiple plugins found for ${getCriteria(obj)}.
+        ${customPlugins.map(p => JSON.stringify(p, null, 2)).join("\n")}`
+      );
+    } else if (customPlugins.length === 1) {
+      return customPlugins[0];
+    } else {
+      return undefined;
+    }
+  }
+
+  public getMessage(ns: string, name: string): MessageTask | undefined {
+    const r = this.context().messages.filter(t => {
+      return (
+        (t.namespace || "") === (ns || "") && (t.name || "") === (name || "")
+      );
+    });
+    if (r.length) {
+      return r[0];
+    }
+    return undefined;
+  }
+
+  public getObject(ns: string, name: string) {
+    const r = this.context().objects.filter(t => {
+      return (
+        (t.namespace || "") === (ns || "") && (t.name || "") === (name || "")
+      );
+    });
+    if (r.length) {
+      return r[0];
+    }
+    return undefined;
+  }
+  public getService(ns: string, name: string) {
+    const r = this.context().services.filter(t => {
+      return (t.namespace || "") === ns && (t.name || "") === name;
+    });
+    if (r.length) {
+      return r[0];
+    }
+    return undefined;
+  }
+  public getTarget(obj: any): TargetBind {
+    const targets = this.targets.filter((target: TargetBind) => {
+      const tgt: any = target;
+      for (const p in obj) {
+        if (obj.hasOwnProperty(p) && isValidProperty(p)) {
+          if (tgt[p] !== obj[p]) {
+            return false;
+          }
+        }
+      }
+      return true;
+    });
+    if (targets.length > 1) {
+      throw new Error(`multiple targets for: ${getCriteria(obj)}`);
+    } else if (targets.length === 1) {
+      return targets[0];
+    } else {
+      throw new Error(`Unsupported target: ${getCriteria(obj)}`);
+    }
+  }
+
+  public async init(loadPath?: string) {
+    const self: NSchema = this;
+    const providerPath: string = !!loadPath
+      ? loadPath
+      : pathResolve(__dirname, "provider");
+
+    if (this.loadDefer) {
+      return this.loadDefer;
+    } else {
+      this.loadDefer = Promise.all(
+        fs
+          .readdirSync(providerPath)
+          .filter((item: string) => {
+            return fs.statSync(pathResolve(providerPath, item)).isDirectory();
+          })
+          .map((d: string) => {
+            return fs
+              .readdirSync(pathResolve(providerPath, d))
+              .map((i: string) => {
+                return pathResolve(providerPath, d, i);
+              });
+          })
+          .reduce((a: string[], b: string[]) => {
+            return a.concat(b);
+          })
+          .filter((d: string) => {
+            const dir = pathResolve(providerPath, d);
+            const basename = "index"; // pathBasename(dir);
+            return fs.existsSync(pathResolve(dir, `${basename}.js`));
+          })
+          .map((d: string) => {
+            const dir = pathResolve(providerPath, d);
+            const basename = "index";
+            return pathResolve(dir, basename);
+          })
+          .map(require)
+          .map(m => {
+            if (m.default) {
+              m = m.default;
+            }
+            return m.init(self);
+          })
+      )
+        .catch(err => {
+          console.error(err);
+          throw err;
+        })
+        .then(() => {
+          return self;
+        });
+
+      return this.loadDefer;
+    }
+  }
+
+  public async register(type: string, obj: NSchemaPlugin) {
     switch (type) {
       case "source":
         throw new Error(
@@ -266,245 +374,49 @@ export default class NSchema implements NSchemaInterface {
         this.customPlugins[type].push(obj);
         break;
     }
-    return Promise.resolve(null);
+    return await Promise.resolve(null);
   }
-
-  public registerSource(obj: SourceBind) {
-    this.sources[obj.name] = obj;
-    return Promise.resolve(null);
-  }
-
-  public registerTarget(obj: TargetBind) {
-    this.targets.push(obj);
-    return Promise.resolve(null);
-  }
-
-  public registerService(serviceConfig: NSchemaService) {
-    const t = this.getService(
-      serviceConfig.namespace || "",
-      serviceConfig.name
-    );
-    if (t && !t.$nschemaRegistered) {
-      throw new Error(
-        `service ${serviceConfig.namespace || ""}::${serviceConfig.name ||
-          ""} already exists`
-      );
-    }
-    this.context().services.push(serviceConfig);
-    serviceConfig.$nschemaRegistered = true;
-  }
-
-  public registerObject(typeConfig: NSchemaObject) {
-    const t = this.getObject(typeConfig.namespace || "", typeConfig.name);
-    if (t && !t.$nschemaRegistered) {
-      throw new Error(
-        `type ${typeConfig.namespace || ""}::${typeConfig.name ||
-          ""} already exists`
-      );
-    }
-    this.context().objects.push(typeConfig);
-    typeConfig.$nschemaRegistered = true;
-  }
-
-  public getObject(ns: string, name: string) {
-    const r = this.context().objects.filter(t => {
-      return (
-        (t.namespace || "") === (ns || "") && (t.name || "") === (name || "")
-      );
-    });
-    if (r.length) {
-      return r[0];
-    }
-    return undefined;
-  }
-
-  public getMessage(ns: string, name: string): NSchemaMessage | undefined {
-    const r = this.context().messages.filter(t => {
-      return (
-        (t.namespace || "") === (ns || "") && (t.name || "") === (name || "")
-      );
-    });
-    if (r.length) {
-      return r[0];
-    }
-    return undefined;
-  }
-  public registerMessage(typeConfig: NSchemaMessage) {
+  public registerMessage(typeConfig: MessageTask) {
     const t = this.getMessage(
       typeConfig.namespace || "",
       typeConfig.name || ""
     );
-    if (t && !t.$nschemaRegistered) {
-      throw new Error(
-        `message ${typeConfig.namespace || ""}::${typeConfig.name ||
-          ""} already exists`
-      );
+    if (!t) {
+      this.context().messages.push(typeConfig);
     }
-    this.context().messages.push(typeConfig);
-    typeConfig.$nschemaRegistered = true;
   }
-  public getService(ns: string, name: string) {
-    const r = this.context().services.filter(t => {
-      return (t.namespace || "") === ns && (t.name || "") === name;
-    });
-    if (r.length) {
-      return r[0];
-    }
-    return undefined;
-  }
-  public getCustomPlugin(name: string, obj: any) {
-    const customPlugins = (this.customPlugins[name] || []).filter(
-      (target: NSchemaPlugin) => {
-        const tgt: any = target;
 
-        for (const p in obj) {
-          if (obj.hasOwnProperty(p) && isValidProperty(p)) {
-            if (typeof tgt[p] === "function") {
-              return tgt[p](obj[p]);
-            } else if (tgt[p] !== obj[p] && tgt[p] !== "*") {
-              return false;
-            }
-          }
-        }
-        return true;
-      }
+  public registerObject(typeConfig: ObjectTask) {
+    const t = this.getObject(typeConfig.namespace || "", typeConfig.name);
+    if (!t) {
+      this.context().objects.push(typeConfig);
+    }
+  }
+
+  public registerService(serviceConfig: ServiceTask) {
+    const t = this.getService(
+      serviceConfig.namespace || "",
+      serviceConfig.name
     );
-    if (customPlugins.length > 1) {
-      throw new Error(
-        `Warning: multiple plugins found for ${getCriteria(obj)}.`
-      );
-    } else if (customPlugins.length === 1) {
-      return customPlugins[0];
-    } else {
-      return undefined;
-    }
-  }
-  public getTarget(obj: any): TargetBind {
-    const targets = this.targets.filter((target: TargetBind) => {
-      const tgt: any = target;
-      for (const p in obj) {
-        if (obj.hasOwnProperty(p) && isValidProperty(p)) {
-          if (tgt[p] !== obj[p]) {
-            return false;
-          }
-        }
-      }
-      return true;
-    });
-    if (targets.length > 1) {
-      throw new Error(`multiple targets for: ${getCriteria(obj)}`);
-    } else if (targets.length === 1) {
-      return targets[0];
-    } else {
-      throw new Error(`Unsupported target: ${getCriteria(obj)}`);
+    if (!t) {
+      this.context().services.push(serviceConfig);
     }
   }
 
-  public buildTemplate(filename: string) {
-    const tpl = fs.readFileSync(filename, { encoding: "utf-8" });
-    this.dotSettings.filename = filename;
-
-    const compiled = ejs.compile(tpl, this.dotSettings);
-
-    return compiled;
-  }
-  // NSchemaInterface ends
-
-  // tslint:disable-next-line:prefer-function-over-method
-  public writeFile(filename: string, content: string): Promise<void> {
-    const dirname = path.dirname(filename);
-    createDirectorySync(dirname);
-    return new Promise<void>((resolve, reject) => {
-      fs.writeFile(
-        filename,
-        content,
-        null,
-        (err: NodeJS.ErrnoException | null) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve();
-          }
-        }
-      );
-    });
+  public async registerSource(obj: SourceBind) {
+    this.sources[obj.name] = obj;
+    return await Promise.resolve(null);
   }
 
-  public init(loadPath?: string) {
-    const self: NSchema = this;
-    const providerPath: string = !!loadPath
-      ? loadPath
-      : path.resolve(__dirname, "provider");
-
-    if (this.loadDefer) {
-      return this.loadDefer;
-    } else {
-      this.loadDefer = Promise.all(
-        fs
-          .readdirSync(providerPath)
-          .filter((item: string) => {
-            return fs.statSync(path.resolve(providerPath, item)).isDirectory();
-          })
-          .map((d: string) => {
-            return fs
-              .readdirSync(path.resolve(providerPath, d))
-              .map((i: string) => {
-                return path.resolve(providerPath, d, i);
-              });
-          })
-          .reduce((a: string[], b: string[]) => {
-            return a.concat(b);
-          })
-          .filter((d: string) => {
-            const dir = path.resolve(providerPath, d);
-            const basename = path.basename(dir);
-            return fs.existsSync(path.resolve(dir, `${basename}.js`));
-          })
-          .map((d: string) => {
-            const dir = path.resolve(providerPath, d);
-            const basename = path.basename(dir);
-            return path.resolve(dir, basename);
-          })
-          .map(require)
-          .map(m => {
-            if (m.default) {
-              m = m.default;
-            }
-            return m.init(self);
-          })
-      )
-        .catch(err => {
-          console.error(err);
-          throw err;
-        })
-        .then(() => {
-          return self;
-        });
-
-      return this.loadDefer;
-    }
+  public async registerTarget(obj: TargetBind) {
+    this.targets.push(obj);
+    return await Promise.resolve(null);
   }
 
-  public generate(
-    parentConfig: NineSchemaConfig,
-    config: Definition,
-    context: any | undefined
-  ): Promise<any> {
-    config.i = 0; //Starts with indent = 0
-    config.$u = utils;
-    const type = config.$type || "";
+  // Implementing NSchemaInterface
 
-    const typeProvider = this.types()[type];
-    if (!typeProvider) {
-      throw new Error(`Unknown nschema type provider: ${type}`);
-    }
-    const newConfig: Definition = objClone(parentConfig);
-    mixinRecursive(newConfig, config);
-    if (typeProvider.execute) {
-      return typeProvider.execute(newConfig, this, context);
-    } else {
-      return Promise.resolve();
-    }
+  public types() {
+    return this.mTypes;
   }
   public walk(
     dir: string,
@@ -525,9 +437,17 @@ export default class NSchema implements NSchemaInterface {
         }
         file = `${dir}/${file}`;
         fs.stat(file, ($err: NodeJS.ErrnoException | null, stat) => {
+          if ($err) {
+            writeError($err);
+            throw $err;
+          }
           /* jshint unused: true */
           if (stat && stat.isDirectory()) {
             self.walk(file, ($err2, res) => {
+              if ($err2) {
+                writeError($err2);
+                throw $err2;
+              }
               if (res) {
                 results = results.concat(res);
               }
@@ -541,12 +461,30 @@ export default class NSchema implements NSchemaInterface {
       })();
     });
   }
+  // NSchemaInterface ends
+
+  // tslint:disable-next-line:prefer-function-over-method
+  public async writeFile(filename: string, content: string): Promise<void> {
+    const dirname = pathDirname(filename);
+    createDirectorySync(dirname);
+    return await new Promise<void>((resolve, reject) => {
+      fs.writeFile(
+        filename,
+        content,
+        null,
+        (err: NodeJS.ErrnoException | null) => {
+          if (err) {
+            reject(err);
+          } else {
+            resolve();
+          }
+        }
+      );
+    });
+  }
 }
 
-export async function generate(
-  parentConfig: NineSchemaConfig,
-  config: Definition
-) {
+export async function generate(parentConfig: NSchemaTask, config: NSchemaTask) {
   const n = new NSchema();
   try {
     const nschema = await n.init();
@@ -565,34 +503,36 @@ export async function generate(
   }
 }
 
-export function features() {
+export async function features() {
   const n = new NSchema();
-  return n
-    .init()
-    .catch((err: Error) => {
-      writeError("failed to load NSchema");
-      writeError(err);
-      throw err;
-    })
-    .then((nschema: NSchema) => {
-      const version: string = require("../package.json").version;
-      writeLog(LogLevel.Default, `NineSchema version ${version}`);
+  try {
+    const nschema = await n.init();
+    const version: string = require("../package.json").version;
+    writeLog(LogLevel.Default, `NineSchema version ${version}`);
+    writeLog(LogLevel.Default, "");
+    writeLog(LogLevel.Default, "Available bindings:");
+    writeLog(LogLevel.Default, "");
+    nschema.targets.forEach(target => {
+      writeLog(LogLevel.Default, `	serviceType: '${target.serviceType}'`);
+      writeLog(LogLevel.Default, `	language: '${target.language}'`);
+      writeLog(LogLevel.Default, `	bind: '${target.bind}'`);
+      writeLog(
+        LogLevel.Default,
+        `	description: ${target.description || "No description provided"}`
+      );
       writeLog(LogLevel.Default, "");
-      writeLog(LogLevel.Default, "Available bindings:");
-      writeLog(LogLevel.Default, "");
-      nschema.targets.forEach(target => {
-        writeLog(LogLevel.Default, `	serviceType: '${target.serviceType}'`);
-        writeLog(LogLevel.Default, `	language: '${target.language}'`);
-        writeLog(LogLevel.Default, `	bind: '${target.bind}'`);
-        writeLog(
-          LogLevel.Default,
-          `	description: ${target.description || "No description provided"}`
-        );
-        writeLog(LogLevel.Default, "");
-      });
     });
+  } catch (err) {
+    writeError("failed to load NSchema");
+    writeError(err);
+    throw err;
+  }
 }
 
-export function getConfig(nschemaLocation: string): NineSchemaConfig {
-  return { $nschemaLocation: nschemaLocation, i: 0, $u: utils };
+export function getConfig(nschemaLocation: string): NSchemaTask {
+  return {
+    $nschemaLocation: nschemaLocation,
+    $type: "bundle",
+    list: []
+  };
 }

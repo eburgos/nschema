@@ -1,6 +1,0 @@
-<%
-    if (!$nschemaType) {
-        throw new Error('$nschemaType context variable must be present. If you referenced this inside a loop make sure that variable is set.');
-    }
-    $_result = $context.typescript.typeName($nschemaType, $nschema, namespace, name, $context);
-%><%- $_result %>

@@ -1,5 +1,5 @@
+import { GRPCContext } from ".";
 import { caseInsensitiveSorter, isRelativePath, wrap } from "../../../utils";
-import { gRPCContext } from "./gRPC";
 
 const moduleSort = (a: { modulePath: string }, b: { modulePath: string }) => {
   const s1 = a.modulePath.toLocaleLowerCase();
@@ -63,7 +63,7 @@ const surroundWithFlow = wrap("/*:: ", " */");
 export function computeImportMatrix(
   localNamespace: string,
   namespaceMapping: { [name: string]: string },
-  $context: gRPCContext
+  $context: GRPCContext
 ) {
   const rootContext = {
     imports: {} as { [name: string]: { [name: string]: string | boolean } }

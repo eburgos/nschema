@@ -41,7 +41,6 @@ position.`,
           }
         ]
       },
-      name: "GetFeature",
       outMessage: {
         data: [
           {

@@ -108,13 +108,12 @@ export interface NSchemaMessageArgument {
 export interface NSchemaOperation {
   description?: string;
   inMessage: AnonymousMessage;
-  name: string;
   outMessage: AnonymousMessage;
 }
 
 export interface NSchemaRestOperation extends NSchemaOperation {
-  method: string;
-  route: string;
+  method?: string;
+  route?: string;
 }
 
 export interface HasFilenameMixin {
@@ -176,10 +175,12 @@ export interface Target extends HasFilenameMixin {
   $namespaceMapping?: {
     [name: string]: string;
   };
+  bind?: string;
   description?: string;
   language?: string;
   location: string;
   name?: string;
+  serviceType?: string;
   type?: string;
 }
 

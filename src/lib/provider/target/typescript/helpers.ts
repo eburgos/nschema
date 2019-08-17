@@ -165,7 +165,8 @@ function modifierMap(modifier: NSchemaModifier): string {
 function isUnions(t: TypeScriptType): t is TypeScriptLiteralsUnion {
   return (
     typeof (t as TypeScriptLiteralsUnion).literals !== "undefined" &&
-    (t as TypeScriptLiteralsUnion).name === "string"
+    (t as TypeScriptLiteralsUnion).name === "string" &&
+    (t as TypeScriptLiteralsUnion).namespace === ""
   );
 }
 

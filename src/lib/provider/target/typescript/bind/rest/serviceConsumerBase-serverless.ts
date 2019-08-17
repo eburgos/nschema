@@ -14,12 +14,12 @@ function renderOperationsInterface(
   return Object.keys(operations)
     .map(op => {
       const operation = operations[op];
-      const { inMessage, outMessage } = getOperationDetails(operation);
+      const { inMessage, outMessage } = getOperationDetails(operation, op);
 
       return `
   /**
    *${addSpace((operation.description || "").replace(/\n/g, "\n   * "))}
-${inMessage.data
+${(inMessage.data || [])
   .map(par => {
     return `   * @param ${par.name} -${addSpace(
       (par.description || "").replace(/\n/g, "\n   * ")
@@ -27,13 +27,13 @@ ${inMessage.data
   })
   .join("\n")}
    * @param $ctx - Operation context. Optional argument (The service always sends it but you may not implement it in your class)
-   * @returns ${outMessage.data
+   * @returns ${(outMessage.data || [])
      .map(d => {
        return (d.description || "").replace(/\n/g, "\n   * ");
      })
      .join(", ") || `{${messageType(nschema, context, false, outMessage)}}`}
    */
-  ${op}(${inMessage.data
+  ${op}(${(inMessage.data || [])
         .map(par => {
           return `${par.name}: ${typescript.typeName(
             par.type,
@@ -45,7 +45,7 @@ ${inMessage.data
           )}`;
         })
         .join(", ")}${
-        inMessage.data.length ? `, ` : ``
+        (inMessage.data || []).length ? `, ` : ``
       }$ctx: { event: any, context: any }): Promise<${messageType(
         nschema,
         context,
@@ -64,12 +64,12 @@ function renderOperationsForClass(
   const protecteds = Object.keys(operations)
     .map(op => {
       const operation = operations[op];
-      const { inMessage, outMessage } = getOperationDetails(operation);
+      const { inMessage, outMessage } = getOperationDetails(operation, op);
 
       return `
   /**
    *${addSpace((operation.description || "").replace(/\n/g, "\n   * "))}
-${inMessage.data
+${(inMessage.data || [])
   .map(par => {
     return `   * @param ${par.name} -${addSpace(
       (par.description || "").replace(/\n/g, "\n   * ")
@@ -77,13 +77,13 @@ ${inMessage.data
   })
   .join("\n")}
    * @param $ctx - Operation context
-   * @returns ${outMessage.data
+   * @returns ${(outMessage.data || [])
      .map(d => {
        return (d.description || "").replace(/\n/g, "\n   * ");
      })
      .join(", ") || `{${messageType(nschema, context, false, outMessage)}}`}
    */
-  public abstract async ${op}(${inMessage.data
+  public abstract async ${op}(${(inMessage.data || [])
         .map(par => {
           return `${par.name}: ${typescript.typeName(
             par.type,
@@ -95,7 +95,7 @@ ${inMessage.data
           )}`;
         })
         .join(", ")}${
-        inMessage.data.length ? `, ` : ``
+        (inMessage.data || []).length ? `, ` : ``
       }$ctx?: { event: any, context: any } /*: { event: any, context: any } */): Promise<${messageType(
         nschema,
         context,
@@ -108,26 +108,26 @@ ${inMessage.data
   const abstracts = Object.keys(operations)
     .map(op => {
       const operation = operations[op];
-      const { inMessage, outMessage } = getOperationDetails(operation);
+      const { inMessage, outMessage } = getOperationDetails(operation, op);
 
       return `
   /**
    * Raw operation. This is what the service actually calls.
    *${addSpace((operation.description || "").replace(/\n/g, "\n   * "))}
-${inMessage.data
+${(inMessage.data || [])
   .map(par => {
     return `   * @param ${par.name} -${addSpace(
       (par.description || "").replace(/\n/g, "\n   * ")
     )}`;
   })
   .join("\n")}
-   * @returns ${outMessage.data
+   * @returns ${(outMessage.data || [])
      .map(d => {
        return (d.description || "").replace(/\n/g, "\n   * ");
      })
      .join(", ") || `{${messageType(nschema, context, false, outMessage)}}`}
    */
-  protected async $raw${op}(${inMessage.data
+  protected async $raw${op}(${(inMessage.data || [])
         .map(par => {
           return `${par.name}: ${typescript.typeName(
             par.type,
@@ -139,7 +139,7 @@ ${inMessage.data
           )}`;
         })
         .join(", ")}${
-        inMessage.data.length ? `, ` : ``
+        (inMessage.data || []).length ? `, ` : ``
       }$ctx?: { event: any, context: any } /*: { event: any, context: any } */): Promise<${messageType(
         nschema,
         context,
@@ -147,11 +147,11 @@ ${inMessage.data
         outMessage
       )}> {
     this.emit("callStarted", { name: "${op}", timestamp: new Date() });
-    const result = await this.${op}(${inMessage.data
+    const result = await this.${op}(${(inMessage.data || [])
         .map(par => {
           return `${par.name}`;
         })
-        .join(", ")}${inMessage.data.length ? `, ` : ``}$ctx);
+        .join(", ")}${(inMessage.data || []).length ? `, ` : ``}$ctx);
     this.emit("callCompleted", { name: "${op}", timestamp: new Date(), context: $ctx });
     return result;
   }`;

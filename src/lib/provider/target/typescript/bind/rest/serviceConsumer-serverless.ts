@@ -28,7 +28,7 @@ function renderOperations(
         outMessage,
         routeArguments,
         queryArguments
-      } = getOperationDetails(operation);
+      } = getOperationDetails(operation, op);
       return `export async function ${op}(event: any, context: any, callback: (err: Error | undefined, r?: ${serverlessReturnType}) => void) {
   const input: any = {};
   try {
@@ -80,9 +80,9 @@ ${
       true,
       outMessage
     )} = await $service.${op}(${
-        inMessage.data.length === 1
+        (inMessage.data || []).length === 1
           ? "$req, "
-          : inMessage.data
+          : (inMessage.data || [])
               .map(p => {
                 return `$req.${p.name}, `;
               })

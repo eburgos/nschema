@@ -8,7 +8,7 @@ import { requireDefaultOrPackage } from "../../../utils";
 
 export interface ImportTask {
   $importLocation: string;
-  $nschemaLocation: string;
+  $nschemaLocation?: string;
   $type: "import";
 }
 

@@ -84,15 +84,18 @@ export function sortAlphabetically(arr: string[]) {
   return r;
 }
 
-export function getOperationDetails(operation: NSchemaRestOperation) {
+export function getOperationDetails(
+  operation: NSchemaRestOperation,
+  name: string
+) {
   const inMessage = operation.inMessage;
   const outMessage = operation.outMessage;
 
-  const route = operation.route || operation.name;
+  const route = operation.route || name;
   const method = (operation.method || "get").toLowerCase();
 
-  let allParams: RestMessageArgument[] = inMessage.data.slice(0);
-  const allOutParams = outMessage.data.slice(0);
+  let allParams: RestMessageArgument[] = (inMessage.data || []).slice(0);
+  const allOutParams = (outMessage.data || []).slice(0);
   const paramsInRoute: RestMessageArgument[] = allParams
     .filter(p => includeInRoute(p, route))
     .map(p => {
@@ -141,7 +144,9 @@ export function getOperationDetails(operation: NSchemaRestOperation) {
   const paramsInBody = allParams.filter(p => {
     return !includeInRoute(p, route);
   });
-  const paramsOutHeader = outMessage.data.slice(0).filter(includeInHeader);
+  const paramsOutHeader = (outMessage.data || [])
+    .slice(0)
+    .filter(includeInHeader);
   const paramsOutBody = allOutParams.filter(p => {
     return !includeInHeader(p);
   });

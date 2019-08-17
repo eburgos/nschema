@@ -17,7 +17,7 @@ import { deepClone } from "../../../utils";
 
 export interface AnonymousMessage {
   $extends?: Identifier;
-  data: NSchemaMessageArgument[];
+  data?: NSchemaMessageArgument[];
 }
 
 export interface MessageTask

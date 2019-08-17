@@ -105,9 +105,9 @@ ${Object.keys(data.operations)
             .join("\n")
         : ""
     }
-  rpc ${op}(${operation.inMessage.data
+  rpc ${op}(${(operation.inMessage.data || [])
       .map((f: any) => (typeof f.type === "object" ? f.type.name : f.type))
-      .join(", ")}) returns (${operation.outMessage.data
+      .join(", ")}) returns (${(operation.outMessage.data || [])
       .map((f: any) => (typeof f.type === "object" ? f.type.name : f.type))
       .join(", ")}) {}`;
   })

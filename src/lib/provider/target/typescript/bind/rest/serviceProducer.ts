@@ -324,7 +324,7 @@ function renderOperations(
         route,
         routeArguments,
         queryArguments
-      } = getOperationDetails(operation);
+      } = getOperationDetails(operation, op);
       if (method === "get" && bodyArguments.length) {
         throw new Error(
           `Service "${
@@ -337,7 +337,7 @@ function renderOperations(
      /\n/g,
      "\n   * "
    )}
-${inMessage.data
+${(inMessage.data || [])
   .map(par => {
     return `   * @param ${par.name} -${addSpace(
       (par.description || "")
@@ -348,8 +348,8 @@ ${inMessage.data
 `;
   })
   .join("")}   * @returns${addSpace(
-        (outMessage.data.length > 1 ? wrap("[", "]") : identityStr)(
-          outMessage.data
+        ((outMessage.data || []).length > 1 ? wrap("[", "]") : identityStr)(
+          (outMessage.data || [])
             .map(d => {
               return (d.description || "").trim();
             })
@@ -357,7 +357,7 @@ ${inMessage.data
         )
       )}
    */
-  public async ${op}(${inMessage.data
+  public async ${op}(${(inMessage.data || [])
         .map(par => {
           return `${par.name}: ${typescript.typeName(
             par.type,

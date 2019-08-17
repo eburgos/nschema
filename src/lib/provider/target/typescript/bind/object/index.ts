@@ -26,7 +26,7 @@ export interface TypeScriptLiteralsUnion {
   literals: string[];
   modifier?: NSchemaModifier;
   name: "string";
-  namespace: undefined;
+  namespace: "";
 }
 
 export type TypeScriptType = NSchemaType | TypeScriptLiteralsUnion;

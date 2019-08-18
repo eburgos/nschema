@@ -7,6 +7,7 @@
     "preserveConstEnums": true,
     "sourceMap": false,
     "target": "es6",
+    "importHelpers": true,
     "isolatedModules": false,
     "moduleResolution": "node",
     "noLib": false,

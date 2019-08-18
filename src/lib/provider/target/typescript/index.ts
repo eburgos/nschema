@@ -87,7 +87,7 @@ export class TypeScript {
       ...providedContext,
       imports: {}
     };
-    const result = template(config, nschema, context);
+    const result = template(config, nschema, context, target);
 
     if (context.skipWrite) {
       writeDebugLog(

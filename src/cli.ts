@@ -15,12 +15,22 @@ if (argv.logLevel) {
 if (argv.features) {
   features();
 } else {
-  files.forEach(item => {
-    if (item.indexOf("/") !== 0) {
-      item = pathResolve(process.cwd(), item);
-    }
-    const r = require(item);
-
-    generate(getConfig(dirname(item)), r.default ? r.default : r);
-  });
+  files
+    .reduce(async (acc, item) => {
+      return acc.then(async () => {
+        if (item.indexOf("/") !== 0) {
+          item = pathResolve(process.cwd(), item);
+        }
+        const r = require(item);
+        return generate(getConfig(dirname(item)), r.default ? r.default : r);
+      });
+    }, Promise.resolve())
+    .then(
+      () => {
+        process.exit(0);
+      },
+      () => {
+        process.exit(1);
+      }
+    );
 }

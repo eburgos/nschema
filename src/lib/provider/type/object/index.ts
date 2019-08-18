@@ -2,7 +2,6 @@
  * @author Eduardo Burgos <eburgos@gmail.com>
  */
 
-import { writeError } from "../../../logging";
 import {
   AppendableProperties,
   HasTargetMixin,
@@ -13,7 +12,12 @@ import {
   NSchemaTask,
   Target
 } from "../../../model";
-import { deepClone } from "../../../utils";
+import {
+  deepClone,
+  exitOrError,
+  getCriteria,
+  prettyJson
+} from "../../../utils";
 
 /**
  * Describes an object interface being generated. May be extended for specific purposes (with caution).
@@ -57,8 +61,19 @@ async function execute(
           : target;
         const result = targetArr.map(async arrayItem => {
           const item: Target = { ...arrayItem, type: "object" };
-          const foundTarget = nschema.getTarget(item);
-          if (foundTarget) {
+          const foundTargets = nschema.getTarget(item);
+          if (foundTargets.length > 1) {
+            exitOrError(`multiple targets for object: ${getCriteria(obj)}
+      Unable to generate ${newConfig.namespace || ""} :: ${newConfig.name}
+
+      Available targets:
+
+      ${foundTargets.map(prettyJson).join("\n--------\n")}
+      `);
+            throw new Error();
+          } else if (foundTargets.length === 1) {
+            const foundTarget = foundTargets[0];
+
             return await foundTarget.generate(
               newConfig,
               nschema,
@@ -66,9 +81,11 @@ async function execute(
               context
             );
           } else {
-            writeError("Target not found");
-            writeError(item);
-            throw new Error("Target not found");
+            exitOrError(`Target not found for: ${getCriteria(obj)}
+            Unable to generate ${newConfig.namespace || ""} :: ${
+              newConfig.name
+            }`);
+            throw new Error();
           }
         });
         Promise.all(result).then(resolve, reject);

@@ -13,11 +13,11 @@ export interface NSchemaInterface {
     config: NSchemaTask,
     context: object
   ): Promise<any>;
-  getCustomPlugin(name: string, obj: any): NSchemaPlugin | undefined;
+  getCustomPlugin(name: string, obj: any): NSchemaPlugin[];
   getMessage(ns: string, name: string): MessageTask | undefined;
   getObject(ns: string, name: string): ObjectTask | undefined;
   getService(ns: string, name: string): ServiceTask | undefined;
-  getTarget(obj: any): TargetBind | undefined;
+  getTarget(obj: any): TargetBind[];
 
   isArray(obj: any): obj is any[];
   mixinRecursive(
@@ -187,7 +187,8 @@ export interface Target extends HasFilenameMixin {
 export type TemplateFunction<T, X = any> = (
   data: T,
   nschema: NSchemaInterface,
-  context: X
+  context: X,
+  target: Target
 ) => string;
 
 export function shouldNever(_t: never) {

@@ -3,6 +3,7 @@
  *  @author Eduardo Burgos <eburgos@gmail.com>
  */
 
+import { writeError } from "../../../logging";
 import {
   AppendableProperties,
   HasFilenameMixin,
@@ -13,7 +14,12 @@ import {
   NSchemaTask,
   Target
 } from "../../../model";
-import { deepClone } from "../../../utils";
+import {
+  deepClone,
+  exitOrError,
+  getCriteria,
+  prettyJson
+} from "../../../utils";
 import { processMessage } from "../message";
 
 export interface ServiceTask
@@ -61,17 +67,34 @@ async function execute(
 
         const r = targetArr.map(async item => {
           item.type = "service";
-          const targetImplementation = nschema.getTarget(item);
-          if (targetImplementation) {
-            return await targetImplementation.generate(
-              newConfig,
-              nschema,
-              item,
-              providedContext
-            );
-          } else {
-            console.error("Service not found: ", item);
-            throw new Error("Service not found");
+          try {
+            const foundTargets = nschema.getTarget(item);
+            if (foundTargets.length > 1) {
+              exitOrError(`multiple targets for service: ${getCriteria(item)}
+Unable to generate service ${newConfig.namespace || ""} :: ${newConfig.name}
+
+Available targets:
+
+${foundTargets.map(prettyJson).join("\n--------\n")}
+        `);
+              throw new Error();
+            } else if (foundTargets.length === 1) {
+              const targetImplementation = foundTargets[0];
+
+              return await targetImplementation.generate(
+                newConfig,
+                nschema,
+                item,
+                providedContext
+              );
+            } else {
+              exitOrError(`Target not found for: ${getCriteria(item)}
+Unable to generate service ${newConfig.namespace || ""} :: ${newConfig.name}`);
+              throw new Error();
+            }
+          } catch (err) {
+            writeError(err);
+            reject(err);
           }
         });
 

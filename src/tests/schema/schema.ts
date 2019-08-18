@@ -25,8 +25,10 @@ const bundle: BundleTask = {
         "rxjs/Rx": "rxjs/Rx"
       },
       $restClientStrategy: "Default",
+      bind: "rest",
       language: "typescript",
-      location: "./generated/typescriptClient/schema"
+      location: "./generated/typescriptClient/schema",
+      serviceType: "producer"
     } as TypeScriptRestTarget
   ],
 
@@ -136,8 +138,10 @@ const bundle: BundleTask = {
             "rxjs/Rx": "rxjs/Rx"
           },
           $restClientStrategy: "Default",
+          bind: "rest",
           language: "typescript",
-          location: "./generated/typescriptClient/schema"
+          location: "./generated/typescriptClient/schema",
+          serviceType: "producer"
         } as TypeScriptRestTarget
       ],
       $type: "bundle",

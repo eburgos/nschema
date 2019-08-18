@@ -37,6 +37,8 @@ export interface FSharp {
   ): string;
 }
 
+//TODO: Do we need a FSharpContext?
+
 const fsharp: FSharp = {
   async generate(
     nschema: NSchemaInterface,
@@ -45,7 +47,7 @@ const fsharp: FSharp = {
     target: Target
   ) {
     const config = deepClone(nsconfig);
-    const result = template(config, nschema, {});
+    const result = template(config, nschema, {}, target);
     const location = target.location;
     const filepath =
       location.indexOf(".") === 0
@@ -94,7 +96,6 @@ const fsharp: FSharp = {
             m = m.default;
           }
 
-          m.fsharp = self;
           return new Promise<boolean>((resolve, reject) => {
             if (typeof m.init === "function") {
               m.init(nschema).then(
@@ -111,7 +112,7 @@ const fsharp: FSharp = {
           });
         })
     ).then(undefined, err => {
-      writeError(JSON.stringify(err, null, 2));
+      throw err;
     });
   },
   // tslint:disable-next-line:prefer-function-over-method

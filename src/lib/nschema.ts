@@ -20,7 +20,13 @@ import {
 import { MessageTask } from "./provider/type/message";
 import { ObjectTask } from "./provider/type/object";
 import { ServiceTask } from "./provider/type/service";
-import { appendTarget, deepClone, initialCaps, propagateTarget } from "./utils";
+import {
+  appendTarget,
+  deepClone,
+  initialCaps,
+  isValidCriteriaProperty,
+  propagateTarget
+} from "./utils";
 export { CleanTask } from "./provider/type/clean";
 
 declare let require: (name: string) => any;
@@ -85,19 +91,6 @@ function appendFile(
     callback(err);
   }
 }
-
-function isValidProperty(k: string) {
-  return k !== "location" && k.indexOf("$") !== 0;
-}
-
-const getCriteria = (obj: any) => {
-  return Object.keys(obj)
-    .filter(isValidProperty)
-    .map(k => {
-      return `${k} = '${obj[k]}'`;
-    })
-    .join(" AND ");
-};
 
 function registerBasicTypes(nschema: NSchema) {
   const basics: ObjectTask[] = [
@@ -172,7 +165,7 @@ export default class NSchema implements NSchemaInterface {
   };
   private readonly customPlugins: { [name: string]: NSchemaPlugin[] } = {};
   private readonly dotSettings: any = {};
-  private loadDefer: Promise<NSchema> | undefined = undefined;
+  private loadDefer: Promise<any> | undefined = undefined;
 
   private readonly mTypes: { [name: string]: NSchemaPlugin } = {};
   private readonly sources: { [name: string]: SourceBind } = {};
@@ -213,15 +206,17 @@ export default class NSchema implements NSchemaInterface {
       return await Promise.resolve();
     }
   }
-  public getCustomPlugin(name: string, obj: any) {
+  public getCustomPlugin(name: string, obj: any): NSchemaPlugin[] {
     const customPlugins = (this.customPlugins[name] || []).filter(
       (target: NSchemaPlugin) => {
         const tgt: any = target;
 
         for (const p in obj) {
-          if (obj.hasOwnProperty(p) && isValidProperty(p)) {
+          if (obj.hasOwnProperty(p) && isValidCriteriaProperty(p)) {
             if (typeof tgt[p] === "function") {
-              return tgt[p](obj[p]);
+              if (!tgt[p](obj[p])) {
+                return false;
+              }
             } else if (tgt[p] !== obj[p] && tgt[p] !== "*") {
               return false;
             }
@@ -230,16 +225,7 @@ export default class NSchema implements NSchemaInterface {
         return true;
       }
     );
-    if (customPlugins.length > 1) {
-      throw new Error(
-        `Error: multiple plugins found for ${getCriteria(obj)}.
-        ${customPlugins.map(p => JSON.stringify(p, null, 2)).join("\n")}`
-      );
-    } else if (customPlugins.length === 1) {
-      return customPlugins[0];
-    } else {
-      return undefined;
-    }
+    return customPlugins;
   }
 
   public getMessage(ns: string, name: string): MessageTask | undefined {
@@ -274,11 +260,11 @@ export default class NSchema implements NSchemaInterface {
     }
     return undefined;
   }
-  public getTarget(obj: any): TargetBind {
+  public getTarget(obj: any): TargetBind[] {
     const targets = this.targets.filter((target: TargetBind) => {
       const tgt: any = target;
       for (const p in obj) {
-        if (obj.hasOwnProperty(p) && isValidProperty(p)) {
+        if (obj.hasOwnProperty(p) && isValidCriteriaProperty(p)) {
           if (tgt[p] !== obj[p]) {
             return false;
           }
@@ -286,13 +272,7 @@ export default class NSchema implements NSchemaInterface {
       }
       return true;
     });
-    if (targets.length > 1) {
-      throw new Error(`multiple targets for: ${getCriteria(obj)}`);
-    } else if (targets.length === 1) {
-      return targets[0];
-    } else {
-      throw new Error(`Unsupported target: ${getCriteria(obj)}`);
-    }
+    return targets;
   }
 
   public async init(loadPath?: string) {
@@ -302,7 +282,8 @@ export default class NSchema implements NSchemaInterface {
       : pathResolve(__dirname, "provider");
 
     if (this.loadDefer) {
-      return this.loadDefer;
+      await this.loadDefer;
+      return self;
     } else {
       this.loadDefer = Promise.all(
         fs
@@ -337,16 +318,13 @@ export default class NSchema implements NSchemaInterface {
             }
             return m.init(self);
           })
-      )
-        .catch(err => {
-          console.error(err);
-          throw err;
-        })
-        .then(() => {
-          return self;
-        });
-
-      return this.loadDefer;
+      );
+      try {
+        await this.loadDefer;
+        return self;
+      } catch (err) {
+        throw err;
+      }
     }
   }
 
@@ -486,20 +464,24 @@ export default class NSchema implements NSchemaInterface {
 
 export async function generate(parentConfig: NSchemaTask, config: NSchemaTask) {
   const n = new NSchema();
-  try {
-    const nschema = await n.init();
 
+  const nschema: NSchemaInterface | undefined = await (async () => {
     try {
-      return await nschema.generate(parentConfig, config, undefined);
+      return await n.init();
+    } catch (err) {
+      return undefined;
+    }
+  })();
+
+  if (!nschema) {
+    writeError("failed to load NSchema");
+  } else {
+    try {
+      return await nschema.generate(parentConfig, config, {});
     } catch (err) {
       writeError("NSchema failed to generate");
-      writeError(err);
       throw err;
     }
-  } catch (err) {
-    writeError("failed to load NSchema");
-    writeError(err);
-    throw err;
   }
 }
 

@@ -1,5 +1,7 @@
 import { default as deepCloneHelper } from "immutability-helper";
+import { render as renderPrettyJson } from "prettyjson";
 import { isArray } from "util";
+import { writeError } from "./logging";
 import { NSchemaTask } from "./model";
 
 declare const require: (name: string) => { default: NSchemaTask } | NSchemaTask;
@@ -123,4 +125,30 @@ export function indent(amount: number, seed: string) {
     r += seed;
   }
   return r;
+}
+
+export function isValidCriteriaProperty(k: string) {
+  return k !== "location" && k.indexOf("$") !== 0;
+}
+
+export function getCriteria(obj: any) {
+  const r: any = {};
+  Object.keys(obj)
+    .filter(isValidCriteriaProperty)
+    .forEach(k => {
+      r[k] = obj[k];
+    });
+  return `
+${prettyJson(r)}
+`;
+}
+
+export function exitOrError(err: any) {
+  writeError(err);
+  writeError("nineschema exited");
+  process.exit(1);
+}
+
+export function prettyJson(obj: any) {
+  return renderPrettyJson(obj);
 }

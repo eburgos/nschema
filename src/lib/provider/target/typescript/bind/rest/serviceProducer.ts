@@ -1,4 +1,4 @@
-import { RestMessageArgument, TypeScriptRestTarget } from ".";
+import { isRestTarget, RestMessageArgument, TypeScriptRestTarget } from ".";
 import typescript, {
   messageType,
   RestClientStrategy,
@@ -7,7 +7,8 @@ import typescript, {
 import {
   NSchemaInterface,
   NSchemaMessageArgument,
-  NSchemaRestService
+  NSchemaRestService,
+  Target
 } from "../../../../../model";
 import { wrap } from "../../../../../utils";
 import { AnonymousMessage } from "../../../../type/message";
@@ -404,8 +405,12 @@ export function render(
   nschema: NSchemaInterface,
   context: TypeScriptContext,
   config: NSchemaRestService,
-  target: TypeScriptRestTarget
+  targetRaw: Target
 ) {
+  if (!isRestTarget(targetRaw)) {
+    throw new Error("Invalid target for typescript rest");
+  }
+  const target: TypeScriptRestTarget = targetRaw;
   const restClientStrategy =
     target.$restClientStrategy || RestClientStrategy.Default;
 

@@ -4,7 +4,7 @@ option java_multiple_files = true;
 option java_package = "route_guide";
 option java_outer_classname = "route_guideProto";
 option objc_class_prefix = "RTG";
-  
+
 package route_guide;
 /* Imports:
 

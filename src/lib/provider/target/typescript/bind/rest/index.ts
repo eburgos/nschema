@@ -36,13 +36,16 @@ export interface TypeScriptRestTarget extends Target {
   $typeScriptRest?: {
     requestModule: string;
   };
+  bind: "rest";
 }
 
-export interface TypeScriptServerlessRest extends TypeScriptRestTarget {
+export interface TypeScriptServerlessRest extends Target {
   $serverless: {
     implementation: string;
     yamlPath: string;
   };
+  bind: "rest-serverless";
+  serviceType: "consumer";
 }
 
 export interface RestMessageArgument extends NSchemaMessageArgument {
@@ -57,7 +60,8 @@ export function checkAndFixTarget(
 ): TypeScriptRestTarget {
   const r: TypeScriptRestTarget = {
     $typeScriptRest: { requestModule: "axios" },
-    ...target
+    ...target,
+    bind: "rest"
   };
   if (!r.$typeScriptRest) {
     throw new Error("Invalid target for TypeScript Rest");
@@ -95,6 +99,31 @@ const templates: {
     TypeScriptContext
   >;
 } = {};
+
+templates.consumer = (data, nschema, context) => {
+  if (data.$type === "message" || data.$type === "object") {
+    throw new Error("Invalid Argument");
+  }
+  return renderConsumer(nschema, context, data);
+};
+templates["consumer-serverless"] = (data, nschema, context) => {
+  if (data.$type === "message" || data.$type === "object") {
+    throw new Error("Invalid Argument");
+  }
+  return renderServerlessConsumerBase(nschema, context, data);
+};
+templates["consumer-serverless-exports"] = (data, nschema, context, target) => {
+  if (data.$type === "message" || data.$type === "object") {
+    throw new Error("Invalid Argument");
+  }
+  return renderServerlessConsumer(nschema, context, data, target);
+};
+templates.producer = (data, nschema, context, target) => {
+  if (data.$type === "message" || data.$type === "object") {
+    throw new Error("Invalid Argument");
+  }
+  return renderProducer(nschema, context, data, target);
+};
 
 async function serverlessPostGen(
   result: { config: ServiceTask; generated: any } | any,
@@ -227,27 +256,6 @@ export class NRest {
     }
     const typescript: TypeScript = this.typescript as TypeScript;
 
-    templates.consumer = (data: any) => {
-      return renderConsumer(nschema, data.$context, data);
-    };
-    templates["consumer-serverless"] = (data: any) => {
-      return renderServerlessConsumerBase(nschema, data.$context, data);
-    };
-    templates["consumer-serverless-exports"] = (
-      data: any,
-      nschemaInstance,
-      context
-    ) => {
-      return renderServerlessConsumer(
-        nschemaInstance,
-        context,
-        data,
-        data.target
-      );
-    };
-    templates.producer = (data: any, nschemaInstance, context) => {
-      return renderProducer(nschemaInstance, context, data, data.target);
-    };
     return Promise.all(
       [
         {
@@ -337,3 +345,15 @@ export class NRest {
 const rest = new NRest();
 
 export default rest;
+
+export function isServerlessTarget(
+  target: Target
+): target is TypeScriptServerlessRest {
+  const t: any = target;
+  return !!t.$serverless;
+}
+
+export function isRestTarget(target: Target): target is TypeScriptRestTarget {
+  const t: any = target;
+  return t.bind === "rest";
+}

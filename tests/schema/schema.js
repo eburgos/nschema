@@ -14,8 +14,10 @@ const bundle = {
                 "rxjs/Rx": "rxjs/Rx"
             },
             $restClientStrategy: "Default",
+            bind: "rest",
             language: "typescript",
-            location: "./generated/typescriptClient/schema"
+            location: "./generated/typescriptClient/schema",
+            serviceType: "producer"
         }
     ],
     $type: "bundle",
@@ -108,8 +110,10 @@ const bundle = {
                         "rxjs/Rx": "rxjs/Rx"
                     },
                     $restClientStrategy: "Default",
+                    bind: "rest",
                     language: "typescript",
-                    location: "./generated/typescriptClient/schema"
+                    location: "./generated/typescriptClient/schema",
+                    serviceType: "producer"
                 }
             ],
             $type: "bundle",

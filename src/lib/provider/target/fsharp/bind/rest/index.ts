@@ -2,7 +2,7 @@
  * Created by eburgos on 6/13/14.
  */
 "use strict";
-import { FSharp } from "../..";
+import fsharp from "../..";
 import {
   NSchemaInterface,
   Target,
@@ -16,8 +16,7 @@ async function baseGenerate(
   config: ServiceTask,
   nschema: NSchemaInterface,
   target: Target,
-  template: TemplateFunction<FSharpObject | ServiceTask | MessageTask>,
-  fsharp: FSharp
+  template: TemplateFunction<FSharpObject | ServiceTask | MessageTask>
 ) {
   return fsharp.generate(nschema, config, template, target);
 }
@@ -487,14 +486,8 @@ const templates: {
   }
 };
 
-export class NRest {
-  public fsharp: FSharp | undefined;
-  public async init(nschema: NSchemaInterface) {
-    if (!this.fsharp) {
-      throw new Error("Argument exception");
-    }
-    const fsharp = this.fsharp;
-
+const rest = {
+  async init(nschema: NSchemaInterface) {
     [
       { template: templates.consumer, serviceType: "consumer" },
       { template: templates.producer, serviceType: "producer" }
@@ -511,14 +504,12 @@ export class NRest {
           thisNschema: NSchemaInterface,
           target: Target
         ) {
-          return baseGenerate(config, thisNschema, target, template, fsharp);
+          return baseGenerate(config, thisNschema, target, template);
         }
       });
     });
     return Promise.resolve(null);
   }
-}
-
-const rest = new NRest();
+};
 
 export default rest;

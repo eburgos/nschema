@@ -3,7 +3,7 @@
  */
 import chalk from "chalk";
 import { isArray } from "util";
-import { writeDebugLog } from "../../../logging";
+import { writeDebugLog, writeError } from "../../../logging";
 import {
   AppendableProperties,
   HasTargetMixin,
@@ -12,7 +12,12 @@ import {
   NSchemaTask,
   Target
 } from "../../../model";
-import { deepClone, updateNamespace } from "../../../utils";
+import {
+  deepClone,
+  exitOrError,
+  getCriteria,
+  updateNamespace
+} from "../../../utils";
 
 const { magenta } = chalk;
 
@@ -39,8 +44,19 @@ async function execute(
   let resultPromise: Promise<any> = Promise.resolve(true);
 
   (tempTargets || []).forEach((tgt: Target) => {
-    const customBundle = nschema.getCustomPlugin("customBundle", tgt);
-    if (customBundle) {
+    const customBundles = nschema.getCustomPlugin("customBundle", tgt);
+    if (customBundles.length > 1) {
+      writeError(
+        `Multiple customBundle plugins found for ${getCriteria(tgt)}.
+Unable to generate ${parentConfig.namespace || ""}.
+
+Available options are:
+
+${customBundles.map(p => JSON.stringify(p, null, 2)).join("\n")}`
+      );
+      throw new Error(`Error: multiple plugins found for ${getCriteria(tgt)}.`);
+    } else if (customBundles.length === 1) {
+      const customBundle = customBundles[0];
       resultPromise = resultPromise.then(async () => {
         newConfig.target = [tgt];
         if (customBundle) {
@@ -66,7 +82,7 @@ async function execute(
   return arr.reduce(async (acc, next) => {
     return acc.then(async () => {
       return nschema.generate(newConfig, next, context);
-    });
+    }, exitOrError);
   }, resultPromise);
 }
 

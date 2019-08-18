@@ -1,10 +1,11 @@
 import * as path from "path";
-import { TypeScriptServerlessRest } from ".";
+import { isServerlessTarget, TypeScriptServerlessRest } from ".";
 import { messageType, TypeScriptContext } from "../..";
 import {
   NSchemaInterface,
   NSchemaRestOperation,
-  NSchemaRestService
+  NSchemaRestService,
+  Target
 } from "../../../../../model";
 import { renderPropertyAccessor } from "../../helpers";
 import { getOperationDetails, realTypeMap } from "./common";
@@ -116,8 +117,13 @@ export function render(
   nschema: NSchemaInterface,
   context: TypeScriptContext,
   config: NSchemaRestService,
-  target: TypeScriptServerlessRest
+  targetRaw: Target
 ) {
+  if (!isServerlessTarget(targetRaw)) {
+    throw new Error("Invalid target for typescript rest serverless");
+  }
+  const target: TypeScriptServerlessRest = targetRaw;
+
   const implementationPath = path.relative(
     path.resolve(target.location, target.$serverless.yamlPath),
     path.resolve(target.location, target.$serverless.implementation)

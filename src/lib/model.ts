@@ -39,13 +39,6 @@ export interface Initializable {
   init?(nschema: NSchemaInterface): Promise<any>;
 }
 
-//TODO: Remove this
-export interface NSchemaConfig {
-  $nschemaLocation: string;
-  $type: "nschemaConfig";
-  i: number;
-}
-
 export interface NSchemaProperty {
   defaultValue?: string;
   description?: string;
@@ -61,8 +54,7 @@ export type NSchemaTask =
   | ImportTask
   | ObjectTask
   | MessageTask
-  | ServiceTask
-  | NSchemaConfig;
+  | ServiceTask;
 
 export interface NSchemaPlugin extends Initializable {
   description: string;

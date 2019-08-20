@@ -102,13 +102,13 @@ ${Object.keys(data.properties || {})
     }
     const $property = data.properties[prop];
     const $nschemaType = $property.type;
-    const $registeredType =
-      $nschema.getObject(
-        typeof $nschemaType !== "string"
-          ? $nschemaType.namespace || ""
-          : "" || data.namespace || "",
-        typeof $nschemaType !== "string" ? $nschemaType.name : ""
-      ) || $nschemaType;
+    // const $registeredType =
+    //   $nschema.getObject(
+    //     typeof $nschemaType !== "string"
+    //       ? $nschemaType.namespace || ""
+    //       : "" || data.namespace || "",
+    //     typeof $nschemaType !== "string" ? $nschemaType.name : ""
+    //   ) || $nschemaType;
     const modifier = ($nschemaType as NSchemaTypeDefinition).modifier;
     const isOptional =
       typeof $nschemaType !== "string"
@@ -122,7 +122,7 @@ ${Object.keys(data.properties || {})
    * ${($property.description || "").replace(/\n/g, "\n     * ")}
    */
   ${$property.typescriptName || prop}${isOptional ? "?" : ""}: ${typeName(
-      $registeredType,
+      $nschemaType,
       $nschema
     )};
 `;

@@ -33,6 +33,7 @@ const moduleSort = (a: { modulePath: string }, b: { modulePath: string }) => {
 const importsSort = caseInsensitiveSorter((item: string) => item);
 const noWrap = wrap("", "");
 const curlyWrap = wrap("{ ", " }");
+const quotesWrap = wrap(`"`, `"`);
 
 function renderImport(importNames: string[], modulePath: string) {
   const starred = importNames.filter(n => n[0] === "*");
@@ -210,7 +211,7 @@ export function typeName(
       context.imports[ns][$nschemaType.name] = true;
     }
     if (isUnions($nschemaType)) {
-      result = $nschemaType.literals.join(" | ");
+      result = $nschemaType.literals.map(quotesWrap).join(" | ");
     } else {
       if (typeMap($nschemaType.name as NSchemaPrimitiveType) !== "string") {
         result = typeMap($nschemaType.name as NSchemaPrimitiveType);

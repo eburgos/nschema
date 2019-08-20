@@ -75,7 +75,6 @@ export function initialCaps(n: string) {
 export function appendTarget(config: NSchemaTask): NSchemaTask {
   return config.$type !== "clean" &&
     config.$type !== "import" &&
-    config.$type !== "nschemaConfig" &&
     config.$target &&
     config.target
     ? {
@@ -102,9 +101,7 @@ export function propagateTarget(
 ): NSchemaTask {
   if (
     config.$type !== "import" &&
-    config.$type !== "nschemaConfig" &&
     parentConfig.$type !== "import" &&
-    parentConfig.$type !== "nschemaConfig" &&
     typeof config.target === "undefined" &&
     typeof parentConfig.target !== "undefined"
   ) {

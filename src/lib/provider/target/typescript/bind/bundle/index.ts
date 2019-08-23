@@ -127,9 +127,12 @@ ${imports}`
       ? pathResolve(
           process.cwd(),
           location,
-          newTarget.$fileName || `${config.namespace}.ts`
+          newTarget.$fileName || config.$fileName || `${config.namespace}.ts`
         )
-      : pathResolve(location, config.$fileName || `${config.namespace}.ts`);
+      : pathResolve(
+          location,
+          newTarget.$fileName || config.$fileName || `${config.namespace}.ts`
+        );
 
   writeLog(
     LogLevel.Default,

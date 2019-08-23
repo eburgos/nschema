@@ -2,7 +2,7 @@
  * Created by eburgos on 6/13/14.
  */
 import { isArray } from "util";
-import { TypeScript } from "../..";
+import { TypeScript, TypeScriptContext } from "../..";
 import { writeDebugLog } from "../../../../../logging";
 import {
   AppendableMixin,
@@ -89,10 +89,18 @@ function renderEnum(data: TypeScriptObject) {
     */`;
 }
 
-function renderClass(data: TypeScriptObject, $nschema: NSchemaInterface) {
+function renderClass(
+  data: TypeScriptObject,
+  $nschema: NSchemaInterface,
+  context: TypeScriptContext
+) {
   return `interface ${data.name}${
     data.implements && data.implements.length
-      ? ` extends ${data.implements.map(impl => typeName(impl)).join(", ")}`
+      ? ` extends ${data.implements
+          .map(impl =>
+            typeName(impl, $nschema, data.namespace || "", data.name, context)
+          )
+          .join(", ")}`
       : ""
   } {
 ${Object.keys(data.properties || {})
@@ -102,13 +110,6 @@ ${Object.keys(data.properties || {})
     }
     const $property = data.properties[prop];
     const $nschemaType = $property.type;
-    // const $registeredType =
-    //   $nschema.getObject(
-    //     typeof $nschemaType !== "string"
-    //       ? $nschemaType.namespace || ""
-    //       : "" || data.namespace || "",
-    //     typeof $nschemaType !== "string" ? $nschemaType.name : ""
-    //   ) || $nschemaType;
     const modifier = ($nschemaType as NSchemaTypeDefinition).modifier;
     const isOptional =
       typeof $nschemaType !== "string"
@@ -123,7 +124,10 @@ ${Object.keys(data.properties || {})
    */
   ${$property.typescriptName || prop}${isOptional ? "?" : ""}: ${typeName(
       $nschemaType,
-      $nschema
+      $nschema,
+      data.namespace,
+      data.name,
+      context
     )};
 `;
   })
@@ -134,7 +138,8 @@ ${Object.keys(data.properties || {})
 const templates = {
   object(
     data: TypeScriptObject | TypeScriptMessage | ServiceTask,
-    nschema: NSchemaInterface
+    nschema: NSchemaInterface,
+    context: TypeScriptContext
   ) {
     if (data.$type === "message" || data.$type === "service") {
       throw new Error("Invalid argument");
@@ -143,7 +148,7 @@ const templates = {
 export ${
       data.$subType === "enumeration"
         ? renderEnum(data)
-        : renderClass(data, nschema)
+        : renderClass(data, nschema, context)
     }`;
   }
 };

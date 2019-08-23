@@ -170,6 +170,13 @@ export interface Target extends HasFilenameMixin {
   bind?: string;
   description?: string;
   language?: string;
+
+  /**
+   * Location MUST be a folder
+   *
+   * @type {string}
+   * @memberof Target
+   */
   location: string;
   name?: string;
   serviceType?: string;
@@ -183,6 +190,8 @@ export type TemplateFunction<T, X = any> = (
   target: Target
 ) => string;
 
-export function shouldNever(_t: never) {
-  throw new Error(`Should never ${new Error().stack}`);
+export function shouldNever(_t: never, skipError?: boolean) {
+  if (!skipError) {
+    throw new Error(`Should never ${new Error().stack}`);
+  }
 }

@@ -136,7 +136,7 @@ export function renderPropertyAccessor(property: string) {
 }
 
 export function renderFileHeader(
-  obj: AppendableMixin & { description?: string }
+  obj: AppendableMixin & { description?: string; name: string }
 ) {
   if (obj.append) {
     return "";
@@ -147,11 +147,20 @@ export function renderFileHeader(
      ? obj.description.replace(/\n/g, "\n * ")
      : ""
  }
+ *
+ * @export
+ * @interface ${obj.name}
  */`;
   }
 }
 
-function modifierMap(modifier: NSchemaModifier): string {
+function modifierMap(
+  modifier: NSchemaModifier,
+  nschema: NSchemaInterface,
+  namespace: string | undefined,
+  name: string,
+  context: TypeScriptContext
+): string {
   switch (modifier) {
     case "list":
       return "[]";
@@ -160,7 +169,7 @@ function modifierMap(modifier: NSchemaModifier): string {
     case "option":
       return "| undefined";
     default:
-      return typeName(modifier);
+      return typeName(modifier, nschema, namespace, name, context);
   }
 }
 function isUnions(t: TypeScriptType): t is TypeScriptLiteralsUnion {
@@ -171,69 +180,111 @@ function isUnions(t: TypeScriptType): t is TypeScriptLiteralsUnion {
   );
 }
 
+function findTypeMap(t: NSchemaPrimitiveType, skipError?: boolean) {
+  switch (t) {
+    case "int":
+      return "number";
+    case "float":
+      return "number";
+    case "string":
+      return "string";
+    case "bool":
+      return "boolean";
+    case "date":
+      return "number";
+    default:
+      shouldNever(t, skipError);
+      return undefined;
+  }
+  return "string";
+}
+
+function typeMap(t: NSchemaPrimitiveType) {
+  const r = findTypeMap(t);
+  if (typeof r === "undefined") {
+    writeError(`Unknown type ${t}`);
+    throw new Error(`Unknown type ${t}`);
+  }
+  return r;
+}
+
+function isPrimitiveType(
+  nschemaType: TypeScriptType
+): nschemaType is NSchemaPrimitiveType {
+  if (typeof nschemaType === "string") {
+    const primitive = nschemaType as NSchemaPrimitiveType;
+    switch (primitive) {
+      case "bool":
+      case "date":
+      case "float":
+      case "int":
+      case "string":
+        return true;
+      default:
+        return false;
+    }
+  } else if (isUnions(nschemaType)) {
+    return true;
+  } else {
+    if (nschemaType.namespace === "") {
+      return isPrimitiveType(nschemaType.name as NSchemaPrimitiveType);
+    } else {
+      return false;
+    }
+  }
+}
+
 export function typeName(
-  $nschemaType: TypeScriptType,
-  _nschema?: NSchemaInterface,
-  namespace?: string,
-  _name?: string,
-  context?: TypeScriptContext,
+  nschemaType: TypeScriptType,
+  nschema: NSchemaInterface,
+  namespace: string | undefined,
+  name: string,
+  context: TypeScriptContext,
   addFlowComment?: boolean
 ) {
   let result: string;
-  const typeMap = (t: NSchemaPrimitiveType) => {
-    switch (t) {
-      case "int":
-        return "number";
-      case "float":
-        return "number";
-      case "string":
-        return "string";
-      case "bool":
-        return "boolean";
-      case "date":
-        return "number";
-      default:
-        shouldNever(t);
-    }
-    return "string";
-  };
-  if (typeof $nschemaType === "string") {
-    result = typeMap($nschemaType);
-  } else if (typeof $nschemaType === "object") {
-    let ns = $nschemaType.namespace;
+  if (typeof nschemaType === "string") {
+    result = typeMap(nschemaType);
+  } else if (typeof nschemaType === "object") {
+    let ns = nschemaType.namespace;
     if (typeof ns === "undefined") {
       ns = namespace || "";
     }
-    if (ns !== namespace && context) {
+    if (ns !== namespace && !isPrimitiveType(nschemaType) && context) {
       if (!context.imports[ns]) {
         context.imports[ns] = {};
       }
-      context.imports[ns][$nschemaType.name] = true;
+      context.imports[ns][nschemaType.name] = true;
     }
-    if (isUnions($nschemaType)) {
-      result = $nschemaType.literals.map(quotesWrap).join(" | ");
+    if (isUnions(nschemaType)) {
+      result = nschemaType.literals.map(quotesWrap).join(" | ");
     } else {
-      if (typeMap($nschemaType.name as NSchemaPrimitiveType) !== "string") {
-        result = typeMap($nschemaType.name as NSchemaPrimitiveType);
+      if (
+        typeof findTypeMap(nschemaType.name as NSchemaPrimitiveType, true) ===
+        "string"
+      ) {
+        result = typeMap(nschemaType.name as NSchemaPrimitiveType);
       } else {
-        result = $nschemaType.name;
+        result = nschemaType.name;
       }
     }
   } else {
     result = typeMap("string");
   }
-  if (
-    $nschemaType &&
-    typeof $nschemaType === "object" &&
-    $nschemaType.modifier
-  ) {
-    const $modifier = $nschemaType.modifier;
+  if (nschemaType && typeof nschemaType === "object" && nschemaType.modifier) {
+    const $modifier = nschemaType.modifier;
     const modifierArr: NSchemaModifier[] = !isArray($modifier)
       ? [$modifier]
       : $modifier;
 
     modifierArr.forEach(item => {
-      result = `(${result} ${modifierMap(item)})`;
+      result = `(${result} ${modifierMap(
+        item,
+        nschema,
+        namespace,
+        name,
+        context
+      )})`;
     });
   }
   if (addFlowComment) {
@@ -294,8 +345,8 @@ export function messageType(
           typeName(
             $_dataItems[0].type,
             $nschema,
-            undefined,
-            undefined,
+            $nschemaMessage.namespace,
+            $nschemaMessage.name,
             $context
           )
         ]
@@ -303,8 +354,8 @@ export function messageType(
           return `${item.name || `item${$i}`}: ${typeName(
             item.type,
             $nschema,
-            undefined,
-            undefined,
+            $nschemaMessage.namespace,
+            $nschemaMessage.name,
             $context
           )}`;
         });

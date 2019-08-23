@@ -63,7 +63,7 @@ async function execute(
           const item: Target = { ...arrayItem, type: "object" };
           const foundTargets = nschema.getTarget(item);
           if (foundTargets.length > 1) {
-            exitOrError(`multiple targets for object: ${getCriteria(obj)}
+            exitOrError(`multiple targets for object: ${getCriteria(item)}
       Unable to generate ${newConfig.namespace || ""} :: ${newConfig.name}
 
       Available targets:
@@ -81,7 +81,7 @@ async function execute(
               context
             );
           } else {
-            exitOrError(`Target not found for: ${getCriteria(obj)}
+            exitOrError(`Target not found for object: ${getCriteria(item)}
             Unable to generate ${newConfig.namespace || ""} :: ${
               newConfig.name
             }`);

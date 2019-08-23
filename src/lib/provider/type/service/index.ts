@@ -88,7 +88,7 @@ ${foundTargets.map(prettyJson).join("\n--------\n")}
                 providedContext
               );
             } else {
-              exitOrError(`Target not found for: ${getCriteria(item)}
+              exitOrError(`Target not found for service: ${getCriteria(item)}
 Unable to generate service ${newConfig.namespace || ""} :: ${newConfig.name}`);
               throw new Error();
             }

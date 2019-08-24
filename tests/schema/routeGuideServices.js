@@ -2,7 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const routeGuideModel_1 = require("./routeGuideModel");
 function isObjectTask(t) {
-    return t.$type === "object";
+    return t.type === "object";
 }
 const messagesNamespace = routeGuideModel_1.default.namespace;
 const Point = routeGuideModel_1.default.list.filter(isObjectTask).find(i => i.name === "Point");
@@ -14,7 +14,7 @@ if (!Feature) {
     throw new Error("Feature message is undefined");
 }
 const routeGuideService = {
-    $type: "service",
+    type: "service",
     description: "Interface exported by the server.",
     name: "RouteGuide",
     operations: {
@@ -60,7 +60,7 @@ const $target = [
 const list = [routeGuideService, ...routeGuideModel_1.default.list];
 const bundle = {
     $target,
-    $type: "bundle",
+    type: "bundle",
     list,
     namespace: "route_guide"
 };

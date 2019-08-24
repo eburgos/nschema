@@ -73,8 +73,8 @@ export function initialCaps(n: string) {
  * @returns {NSchemaTask}
  */
 export function appendTarget(config: NSchemaTask): NSchemaTask {
-  return config.$type !== "clean" &&
-    config.$type !== "import" &&
+  return config.type !== "clean" &&
+    config.type !== "import" &&
     config.$target &&
     config.target
     ? {
@@ -100,8 +100,8 @@ export function propagateTarget(
   parentConfig: NSchemaTask
 ): NSchemaTask {
   if (
-    config.$type !== "import" &&
-    parentConfig.$type !== "import" &&
+    config.type !== "import" &&
+    parentConfig.type !== "import" &&
     typeof config.target === "undefined" &&
     typeof parentConfig.target !== "undefined"
   ) {
@@ -148,4 +148,18 @@ export function exitOrError(err: any) {
 
 export function prettyJson(obj: any) {
   return renderPrettyJson(obj);
+}
+
+export function findNonCollidingName(
+  desired: string,
+  opts: string[],
+  filter?: (n: string) => boolean
+) {
+  let current = desired;
+  let cnt = 0;
+  while (opts.indexOf(current) >= 0 && (!filter || filter(current))) {
+    cnt += 1;
+    current = `${desired}${cnt}`;
+  }
+  return current;
 }

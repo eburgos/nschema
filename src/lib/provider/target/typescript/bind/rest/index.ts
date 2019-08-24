@@ -15,10 +15,8 @@ import {
 import { LogLevel, writeDebugLog, writeLog } from "../../../../../logging";
 import {
   NSchemaInterface,
-  NSchemaMessageArgument,
   NSchemaRestOperation,
   NSchemaRestService,
-  NSchemaType,
   Target,
   TemplateFunction
 } from "../../../../../model";
@@ -39,19 +37,13 @@ export interface TypeScriptRestTarget extends Target {
   bind: "rest";
 }
 
-export interface TypeScriptServerlessRest extends Target {
+export interface TypeScriptServerlessRestTarget extends Target {
   $serverless: {
     implementation: string;
     yamlPath: string;
   };
   bind: "rest-serverless";
   serviceType: "consumer";
-}
-
-export interface RestMessageArgument extends NSchemaMessageArgument {
-  headerName?: string;
-  paramType?: "header" | "query";
-  realType?: NSchemaType;
 }
 
 export function checkAndFixTarget(
@@ -101,25 +93,25 @@ const templates: {
 } = {};
 
 templates.consumer = (data, nschema, context) => {
-  if (data.$type === "message" || data.$type === "object") {
+  if (data.type === "message" || data.type === "object") {
     throw new Error("Invalid Argument");
   }
   return renderConsumer(nschema, context, data);
 };
 templates["consumer-serverless"] = (data, nschema, context) => {
-  if (data.$type === "message" || data.$type === "object") {
+  if (data.type === "message" || data.type === "object") {
     throw new Error("Invalid Argument");
   }
   return renderServerlessConsumerBase(nschema, context, data);
 };
 templates["consumer-serverless-exports"] = (data, nschema, context, target) => {
-  if (data.$type === "message" || data.$type === "object") {
+  if (data.type === "message" || data.type === "object") {
     throw new Error("Invalid Argument");
   }
   return renderServerlessConsumer(nschema, context, data, target);
 };
 templates.producer = (data, nschema, context, target) => {
-  if (data.$type === "message" || data.$type === "object") {
+  if (data.type === "message" || data.type === "object") {
     throw new Error("Invalid Argument");
   }
   return renderProducer(nschema, context, data, target);
@@ -348,7 +340,7 @@ export default rest;
 
 export function isServerlessTarget(
   target: Target
-): target is TypeScriptServerlessRest {
+): target is TypeScriptServerlessRestTarget {
   const t: any = target;
   return !!t.$serverless;
 }

@@ -72,7 +72,7 @@ const templates: {
             var $nschemaType = $property.type;
             var $registeredType = $nschema.getObject($nschemaType.namespace || namespace || '', $nschemaType.name) || $nschemaType;
     %>    /// <summary><%- $property.description || '' %></summary>
-    <% if ($registeredType && $registeredType.$subType === 'enumeration') { %>[<JsonConverter(typeof<StringEnumConverter>)>]
+    <% if ($registeredType && $registeredType.subType === 'enumeration') { %>[<JsonConverter(typeof<StringEnumConverter>)>]
         <% } %>    member val <%- $property.fsharpName || $nschema.utils.initialCaps($property.name) %>: <% if ($property.type.rawName) { %><%- $property.type.rawName %> = Unchecked.defaultof<<%- $property.type.rawName %>><% } else { %><% include ../typeName %> = <% include ../typeDefaultValue %><% } %> with get, set
     <% }); %>
 

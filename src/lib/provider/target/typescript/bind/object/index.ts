@@ -71,14 +71,14 @@ function renderEnum(data: TypeScriptObject) {
             throw new Error(`Invalid properties`);
           }
           const property = data.properties[prop];
-          const $currentVal =
+          const currentVal =
             typeof property.typescriptValue !== "undefined"
               ? property.typescriptValue
               : cnt;
           return `/*
           * ${(property.description || "").replace(/\n/g, "\n     * ")}
           */
-         ${property.typescriptName || initialCaps(prop)} = ${$currentVal}`;
+         ${property.typescriptName || initialCaps(prop)} = ${currentVal}`;
         }).join(`,
         `)}
     }
@@ -91,14 +91,14 @@ function renderEnum(data: TypeScriptObject) {
 
 function renderClass(
   data: TypeScriptObject,
-  $nschema: NSchemaInterface,
+  nschema: NSchemaInterface,
   context: TypeScriptContext
 ) {
   return `interface ${data.name}${
     data.implements && data.implements.length
       ? ` extends ${data.implements
           .map(impl =>
-            typeName(impl, $nschema, data.namespace || "", data.name, context)
+            typeName(impl, nschema, data.namespace || "", data.name, context)
           )
           .join(", ")}`
       : ""
@@ -108,11 +108,11 @@ ${Object.keys(data.properties || {})
     if (!data.properties) {
       throw new Error("Invalid argument");
     }
-    const $property = data.properties[prop];
-    const $nschemaType = $property.type;
-    const modifier = ($nschemaType as NSchemaTypeDefinition).modifier;
+    const property = data.properties[prop];
+    const nschemaType = property.type;
+    const modifier = (nschemaType as NSchemaTypeDefinition).modifier;
     const isOptional =
-      typeof $nschemaType !== "string"
+      typeof nschemaType !== "string"
         ? modifier
           ? (isArray(modifier) ? modifier : [modifier]).indexOf("option") >= 0
             ? true
@@ -120,11 +120,11 @@ ${Object.keys(data.properties || {})
           : false
         : false;
     return `  /**
-   * ${($property.description || "").replace(/\n/g, "\n     * ")}
+   * ${(property.description || "").replace(/\n/g, "\n     * ")}
    */
-  ${$property.typescriptName || prop}${isOptional ? "?" : ""}: ${typeName(
-      $nschemaType,
-      $nschema,
+  ${property.typescriptName || prop}${isOptional ? "?" : ""}: ${typeName(
+      nschemaType,
+      nschema,
       data.namespace,
       data.name,
       context
@@ -141,12 +141,12 @@ const templates = {
     nschema: NSchemaInterface,
     context: TypeScriptContext
   ) {
-    if (data.$type === "message" || data.$type === "service") {
+    if (data.type === "message" || data.type === "service") {
       throw new Error("Invalid argument");
     }
     return `${renderFileHeader(data)}
 export ${
-      data.$subType === "enumeration"
+      data.subType === "enumeration"
         ? renderEnum(data)
         : renderClass(data, nschema, context)
     }`;

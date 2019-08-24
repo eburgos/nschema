@@ -104,7 +104,7 @@ function classTemplate(data: FSharpObject, nschema: NSchemaInterface) {
       return `${indent(i, "  ")}  /// <summary>${data.description ||
         ""}</summary>
       ${indent(i, "  ")}  ${
-        $registeredType && $registeredType.$subType === "enumeration"
+        $registeredType && $registeredType.subType === "enumeration"
           ? `[<JsonConverter(typeof<StringEnumConverter>)>]
 ${indent(i, "  ")}  `
           : ""
@@ -132,12 +132,12 @@ ${indent(i, "  ")}  `
 const objectTemplate: TemplateFunction<
   FSharpObject | ServiceTask | MessageTask
 > = (data, nschema) => {
-  if (data.$type === "service" || data.$type === "message") {
+  if (data.type === "service" || data.type === "message") {
     throw new Error("Invalid argument");
   }
   return `${classHeader(data)}
   ${
-    data.$subType === "enumeration"
+    data.subType === "enumeration"
       ? enumTemplate(data)
       : classTemplate(data, nschema)
   }

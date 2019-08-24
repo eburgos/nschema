@@ -42,8 +42,8 @@ function modifierMap(modifier: NSchemaModifier): string {
 export interface GRPCOperation extends NSchemaOperation {}
 
 export interface GRPCService extends ServiceTask, HasFilenameMixin {
-  $type: "service";
   operations: { [name: string]: GRPCOperation };
+  type: "service";
 }
 
 export interface GRPCMessage extends MessageTask, HasFilenameMixin {
@@ -76,12 +76,12 @@ export class GRPC {
   // tslint:disable-next-line:prefer-function-over-method
   public async generate(
     nschema: NSchemaInterface,
-    $nsconfig: GRPCMessage | GRPCObject | GRPCService,
+    grpcConfig: GRPCMessage | GRPCObject | GRPCService,
     template: TemplateFunction<GRPCMessage | GRPCObject | GRPCService>,
     target: Target,
     providedContext: any | undefined
   ) {
-    const config = deepClone($nsconfig);
+    const config = deepClone(grpcConfig);
 
     const context: GRPCContext = {
       ...buildgRPCContext(),

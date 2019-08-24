@@ -7,9 +7,9 @@ import { NSchemaInterface, NSchemaPlugin, NSchemaTask } from "../../../model";
 import { requireDefaultOrPackage } from "../../../utils";
 
 export interface ImportTask {
-  $importLocation: string;
-  $nschemaLocation?: string;
-  $type: "import";
+  importLocation: string;
+  nschemaLocation?: string;
+  type: "import";
 }
 
 async function execute(
@@ -17,14 +17,11 @@ async function execute(
   nschema: NSchemaInterface,
   context: object
 ) {
-  if (parentConfig.$type !== "import") {
+  if (parentConfig.type !== "import") {
     throw new Error("Invalid import task");
   }
-  const location = parentConfig.$importLocation || "";
-  const newLocation = pathResolve(
-    parentConfig.$nschemaLocation || "",
-    location
-  );
+  const location = parentConfig.importLocation || "";
+  const newLocation = pathResolve(parentConfig.nschemaLocation || "", location);
   const cfg = requireDefaultOrPackage(newLocation);
   return nschema.generate(parentConfig, cfg, context);
 }

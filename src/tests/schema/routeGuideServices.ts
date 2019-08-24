@@ -4,7 +4,7 @@ import { ObjectTask } from "../../lib/provider/type/object";
 import model from "./routeGuideModel";
 
 function isObjectTask(t: NSchemaTask): t is ObjectTask {
-  return t.$type === "object";
+  return t.type === "object";
 }
 
 const messagesNamespace = model.namespace;
@@ -19,7 +19,7 @@ if (!Feature) {
 }
 
 const routeGuideService: GRPCService = {
-  $type: "service",
+  type: "service",
   description: "Interface exported by the server.",
   name: "RouteGuide",
   operations: {
@@ -68,7 +68,7 @@ const list = [routeGuideService, ...model.list];
 
 const bundle: GRPCBundle = {
   $target,
-  $type: "bundle",
+  type: "bundle",
   list,
   namespace: "route_guide"
   //  schema: "http://io.grpc.examples.routeguide/model/"

@@ -4,6 +4,7 @@ import {
   NSchemaRestOperation,
   NSchemaRestService
 } from "../../../../../model";
+import { findNonCollidingName } from "../../../../../utils";
 import { addSpace, getOperationDetails } from "./common";
 
 function renderOperationsInterface(
@@ -15,6 +16,10 @@ function renderOperationsInterface(
     .map(op => {
       const operation = operations[op];
       const { inMessage, outMessage } = getOperationDetails(operation, op);
+      const contextVariable = findNonCollidingName(
+        "context",
+        (inMessage.data || []).map(d => d.name)
+      );
 
       return `
   /**
@@ -26,7 +31,7 @@ ${(inMessage.data || [])
     )}`;
   })
   .join("\n")}
-   * @param $ctx - Operation context. Optional argument (The service always sends it but you may not implement it in your class)
+   * @param ${contextVariable} - Operation context. Optional argument (The service always sends it but you may not implement it in your class)
    * @returns ${(outMessage.data || [])
      .map(d => {
        return (d.description || "").replace(/\n/g, "\n   * ");
@@ -46,7 +51,7 @@ ${(inMessage.data || [])
         })
         .join(", ")}${
         (inMessage.data || []).length ? `, ` : ``
-      }$ctx: { event: any, context: any }): Promise<${messageType(
+      }${contextVariable}: { event: any, context: any }): Promise<${messageType(
         nschema,
         context,
         true,

@@ -4,6 +4,7 @@ import {
   NSchemaRestOperation,
   NSchemaRestService
 } from "../../../../../model";
+import { findNonCollidingName } from "../../../../../utils";
 import { renderPropertyAccessor } from "../../helpers";
 import {
   addSpace,
@@ -21,6 +22,10 @@ function renderOperationsInterface(
     .map(op => {
       const operation = operations[op];
       const { inMessage, outMessage } = getOperationDetails(operation, op);
+      const contextVarName = findNonCollidingName(
+        "context",
+        (inMessage.data || []).map(d => d.name)
+      );
 
       return `
   /**
@@ -32,7 +37,7 @@ ${(inMessage.data || [])
     )}`;
   })
   .join("\n")}
-   * @param $ctx - Operation context. Optional argument (The service always sends it but you may not implement it in your class)
+   * @param ${contextVarName} - Operation context. Optional argument (The service always sends it but you may not implement it in your class)
    * @returns ${(outMessage.data || [])
      .map(d => {
        return (d.description || "").replace(/\n/g, "\n   * ");
@@ -52,7 +57,7 @@ ${(inMessage.data || [])
         })
         .join(", ")}${
         (inMessage.data || []).length ? `, ` : ``
-      }$ctx: { request: Request, response: Response }): Promise<${messageType(
+      }${contextVarName}: { request: Request, response: Response }): Promise<${messageType(
         nschema,
         context,
         true,
@@ -71,6 +76,10 @@ function renderOperationsForClass(
     .map(op => {
       const operation = operations[op];
       const { inMessage, outMessage } = getOperationDetails(operation, op);
+      const contextVarName = findNonCollidingName(
+        "context",
+        (inMessage.data || []).map(d => d.name)
+      );
 
       return `
   /**
@@ -82,7 +91,7 @@ ${(inMessage.data || [])
     )}`;
   })
   .join("\n")}
-   * @param $ctx - Operation context
+   * @param ${contextVarName} - Operation context
    * @returns ${(outMessage.data || [])
      .map(d => {
        return (d.description || "").replace(/\n/g, "\n   * ");
@@ -102,7 +111,7 @@ ${(inMessage.data || [])
         })
         .join(", ")}${
         (inMessage.data || []).length ? `, ` : ``
-      }$ctx?: { request: Request, response: Response } /*: { request: Request, response: Response } */): Promise<${messageType(
+      }${contextVarName}?: { request: Request, response: Response } /*: { request: Request, response: Response } */): Promise<${messageType(
         nschema,
         context,
         true,
@@ -115,6 +124,10 @@ ${(inMessage.data || [])
     .map(op => {
       const operation = operations[op];
       const { inMessage, outMessage } = getOperationDetails(operation, op);
+      const contextVarName = findNonCollidingName(
+        "context",
+        (inMessage.data || []).map(d => d.name)
+      );
 
       return `
   /**
@@ -146,7 +159,7 @@ ${(inMessage.data || [])
         })
         .join(", ")}${
         (inMessage.data || []).length ? `, ` : ``
-      }$ctx?: { request: Request, response: Response } /*: { request: Request, response: Response } */): Promise<${messageType(
+      }${contextVarName}?: { request: Request, response: Response } /*: { request: Request, response: Response } */): Promise<${messageType(
         nschema,
         context,
         true,
@@ -157,8 +170,10 @@ ${(inMessage.data || [])
         .map(par => {
           return `${par.name}`;
         })
-        .join(", ")}${(inMessage.data || []).length ? `, ` : ``}$ctx);
-    this.emit("callCompleted", { name: "${op}", timestamp: new Date(), context: $ctx });
+        .join(", ")}${
+        (inMessage.data || []).length ? `, ` : ``
+      }${contextVarName});
+    this.emit("callCompleted", { name: "${op}", timestamp: new Date(), context: ${contextVarName} });
     return result;
   }`;
     })

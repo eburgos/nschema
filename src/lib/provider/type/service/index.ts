@@ -26,12 +26,27 @@ export interface ServiceTask
   extends HasTargetMixin,
     HasFilenameMixin,
     AppendableProperties {
-  $type: "service";
-
   description?: string;
   name: string;
   namespace?: string;
   operations: { [name: string]: NSchemaOperation };
+
+  /**
+   * Only applicable to message producers (clients).
+   *
+   * @type {{
+   *     [name: string]: { arguments: string[]; description?: string; operations: string[] };
+   *   }}
+   * @memberof ServiceTask
+   */
+  producerContexts?: {
+    [name: string]: {
+      arguments: string[];
+      description?: string;
+      operations: string[];
+    };
+  };
+  type: "service";
 }
 
 async function execute(
@@ -39,7 +54,7 @@ async function execute(
   nschema: NSchemaInterface,
   providedContext: any
 ) {
-  if (origParentConfig.$type !== "service") {
+  if (origParentConfig.type !== "service") {
     throw new Error("Invalid service task");
   }
   const parentConfig = origParentConfig;

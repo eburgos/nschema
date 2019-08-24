@@ -1,5 +1,5 @@
 import * as path from "path";
-import { isServerlessTarget, TypeScriptServerlessRest } from ".";
+import { isServerlessTarget, TypeScriptServerlessRestTarget } from ".";
 import { messageType, TypeScriptContext } from "../..";
 import {
   NSchemaInterface,
@@ -7,6 +7,7 @@ import {
   NSchemaRestService,
   Target
 } from "../../../../../model";
+import { findNonCollidingName } from "../../../../../utils";
 import { renderPropertyAccessor } from "../../helpers";
 import { getOperationDetails, realTypeMap } from "./common";
 
@@ -30,10 +31,14 @@ function renderOperations(
         routeArguments,
         queryArguments
       } = getOperationDetails(operation, op);
+      const bodyVarName = findNonCollidingName(
+        "body",
+        (inMessage.data || []).map(d => d.name)
+      );
       return `export async function ${op}(event: any, context: any, callback: (err: Error | undefined, r?: ${serverlessReturnType}) => void) {
   const input: any = {};
   try {
-    const $body: any | undefined = (() => {
+    const ${bodyVarName}: any | undefined = (() => {
       if (event.body) {
         if ("string" === typeof event.body) {
           return JSON.parse(event.body);
@@ -65,10 +70,14 @@ ${headerArguments
   .join("\n")}
 ${
   bodyArguments.length === 1
-    ? `    input${renderPropertyAccessor(bodyArguments[0].name)} = $body;`
+    ? `    input${renderPropertyAccessor(
+        bodyArguments[0].name
+      )} = ${bodyVarName};`
     : bodyArguments
         .map((p, idx) => {
-          return `    input${renderPropertyAccessor(p.name)} = $body[${idx}];`;
+          return `    input${renderPropertyAccessor(
+            p.name
+          )} = ${bodyVarName}[${idx}];`;
         })
         .join("\n")
 }
@@ -122,7 +131,7 @@ export function render(
   if (!isServerlessTarget(targetRaw)) {
     throw new Error("Invalid target for typescript rest serverless");
   }
-  const target: TypeScriptServerlessRest = targetRaw;
+  const target: TypeScriptServerlessRestTarget = targetRaw;
 
   const implementationPath = path.relative(
     path.resolve(target.location, target.$serverless.yamlPath),

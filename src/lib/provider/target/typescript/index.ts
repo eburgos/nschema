@@ -14,6 +14,7 @@ import {
   NSchemaModifier,
   NSchemaPrimitiveType,
   NSchemaType,
+  RestMessageArgument,
   shouldNever,
   Target,
   TemplateFunction
@@ -30,7 +31,13 @@ export { TypeScriptObject, TypeScriptMessage };
 
 declare let require: (name: string) => any;
 
-function modifierMap(modifier: NSchemaModifier): string {
+function modifierMap(
+  modifier: NSchemaModifier,
+  nschema: NSchemaInterface,
+  namespace: string,
+  name: string,
+  context: TypeScriptContext
+): string {
   switch (modifier) {
     case "list":
       return "[]";
@@ -39,7 +46,7 @@ function modifierMap(modifier: NSchemaModifier): string {
     case "option":
       return "| undefined";
     default:
-      return typeName(modifier);
+      return typeName(modifier, nschema, namespace, name, context, false);
   }
 }
 
@@ -180,13 +187,28 @@ export class TypeScript {
   }
 }
 
+export function isOptional(p: RestMessageArgument): boolean {
+  if (p.realType) {
+    return isOptional({ name: p.name, type: p.realType });
+  }
+  if (typeof p.type === "object") {
+    if (p.type.modifier) {
+      const mods = isArray(p.type.modifier)
+        ? p.type.modifier
+        : [p.type.modifier];
+      return mods.indexOf("option") >= 0;
+    }
+  }
+  return false;
+}
+
 function typeName(
-  $nschemaType: NSchemaType,
-  _nschema?: NSchemaInterface,
-  namespace?: string,
-  _name?: string,
-  context?: any,
-  addFlowComment?: boolean
+  nschemaType: NSchemaType,
+  nschema: NSchemaInterface,
+  namespace: string,
+  name: string,
+  context: TypeScriptContext,
+  addFlowComment: boolean
 ) {
   let result: string;
   const typeMap = (t: NSchemaPrimitiveType) => {
@@ -206,10 +228,10 @@ function typeName(
     }
     return "string";
   };
-  if (typeof $nschemaType === "string") {
-    result = typeMap($nschemaType);
-  } else if (typeof $nschemaType === "object") {
-    let ns = $nschemaType.namespace;
+  if (typeof nschemaType === "string") {
+    result = typeMap(nschemaType);
+  } else if (typeof nschemaType === "object") {
+    let ns = nschemaType.namespace;
     if (typeof ns === "undefined") {
       ns = namespace || "";
     }
@@ -217,24 +239,26 @@ function typeName(
       if (!context.imports[ns]) {
         context.imports[ns] = {};
       }
-      context.imports[ns][$nschemaType.name] = true;
+      context.imports[ns][nschemaType.name] = true;
     }
-    result = $nschemaType.name;
+    result = nschemaType.name;
   } else {
     result = typeMap("string");
   }
-  if (
-    $nschemaType &&
-    typeof $nschemaType === "object" &&
-    $nschemaType.modifier
-  ) {
-    const $modifier = $nschemaType.modifier;
+  if (nschemaType && typeof nschemaType === "object" && nschemaType.modifier) {
+    const $modifier = nschemaType.modifier;
     const modifierArr: NSchemaModifier[] = !isArray($modifier)
       ? [$modifier]
       : $modifier;
 
     modifierArr.forEach(item => {
-      result = `(${result} ${modifierMap(item)})`;
+      result = `(${result} ${modifierMap(
+        item,
+        nschema,
+        namespace,
+        name,
+        context
+      )})`;
     });
   }
   if (addFlowComment) {

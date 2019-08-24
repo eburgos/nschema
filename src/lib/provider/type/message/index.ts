@@ -25,16 +25,15 @@ export interface MessageTask
     HasFilenameMixin,
     HasTargetMixin,
     AppendableProperties {
-  $type: "message";
-
   description?: string;
 
   name: string;
   namespace?: string;
+  type: "message";
 }
 
 function getMessage(ns: string, name: string, nschema: NSchemaInterface) {
-  const filtered = nschema.context().messages.filter(m => {
+  const filtered = nschema.context.messages.filter(m => {
     return (
       (m.namespace || "") === (ns || "") && (m.name || "") === (name || "")
     );
@@ -67,9 +66,7 @@ export function processMessage(
       ]);
     } else {
       throw new Error(
-        `Could not find a message to extend: namespace='${
-          newConfig.$extends.namespace
-        }', name='${newConfig.$extends.name}'`
+        `Could not find a message to extend: namespace='${newConfig.$extends.namespace}', name='${newConfig.$extends.name}'`
       );
     }
     newConfig.$extends = undefined;
@@ -84,7 +81,7 @@ export function processMessage(
 }
 
 async function execute(parentConfig: NSchemaTask, nschema: NSchemaInterface) {
-  if (parentConfig.$type !== "message") {
+  if (parentConfig.type !== "message") {
     throw new Error("Invalid message task");
   }
   nschema.registerMessage(parentConfig);

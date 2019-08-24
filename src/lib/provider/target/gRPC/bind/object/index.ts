@@ -39,7 +39,7 @@ const objectTemplate: TemplateFunction<
   GRPCMessage | GRPCObject | GRPCService,
   GRPCContext
 > = (data, nschema, context) => {
-  if (data.$type === "message" || data.$type === "service") {
+  if (data.type === "message" || data.type === "service") {
     throw new Error("Invalid argument");
   }
   return `${
@@ -82,7 +82,7 @@ const serviceTemplate: TemplateFunction<
   GRPCMessage | GRPCObject | GRPCService,
   GRPCContext
 > = data => {
-  if (data.$type === "message" || data.$type === "object") {
+  if (data.type === "message" || data.type === "object") {
     throw new Error("Invalid argument");
   }
   return `${

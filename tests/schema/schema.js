@@ -20,18 +20,15 @@ const bundle = {
             serviceType: "producer"
         }
     ],
-    $type: "bundle",
     list: [
         {
-            $importLocation: "./subschema.json",
-            $type: "import"
+            importLocation: "./subschema.json",
+            type: "import"
         },
         {
             $namespace: "Invoicing",
-            $type: "bundle",
             list: [
                 {
-                    $type: "object",
                     name: "Invoice",
                     properties: {
                         customerId: {
@@ -46,11 +43,10 @@ const bundle = {
                                 namespace: "NSchema.Model.InvoicingDetail"
                             }
                         }
-                    }
+                    },
+                    type: "object"
                 },
                 {
-                    $subType: "enumeration",
-                    $type: "object",
                     name: "AuthenticationStatus",
                     properties: {
                         LoggedIn: {
@@ -61,10 +57,11 @@ const bundle = {
                             description: "User is logged out",
                             type: "string"
                         }
-                    }
+                    },
+                    subType: "enumeration",
+                    type: "object"
                 },
                 {
-                    $type: "object",
                     name: "UserInfo",
                     properties: {
                         name: {
@@ -77,10 +74,10 @@ const bundle = {
                                 name: "AuthenticationStatus"
                             }
                         }
-                    }
+                    },
+                    type: "object"
                 },
                 {
-                    $type: "message",
                     data: [
                         {
                             description: "Your login that you registered",
@@ -95,9 +92,11 @@ const bundle = {
                             type: "string"
                         }
                     ],
-                    name: "AuthMessage"
+                    name: "AuthMessage",
+                    type: "message"
                 }
-            ]
+            ],
+            type: "bundle"
         },
         {
             $namespace: "Services",
@@ -116,7 +115,6 @@ const bundle = {
                     serviceType: "producer"
                 }
             ],
-            $type: "bundle",
             list: [
                 {
                     $target: [
@@ -151,7 +149,6 @@ const bundle = {
                             serviceType: "consumer"
                         }
                     ],
-                    $type: "service",
                     name: "InvoiceService",
                     operations: {
                         AllParametersOperation: {
@@ -295,11 +292,14 @@ const bundle = {
                                 ]
                             }
                         }
-                    }
+                    },
+                    type: "service"
                 }
-            ]
+            ],
+            type: "bundle"
         }
     ],
-    namespace: "NSchema.Model"
+    namespace: "NSchema.Model",
+    type: "bundle"
 };
 exports.default = bundle;

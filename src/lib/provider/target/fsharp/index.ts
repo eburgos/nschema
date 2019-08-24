@@ -265,7 +265,7 @@ export function typeDefaultValue(
         $nschema,
         namespace
       )}>`;
-      /*                if ((typeof($nschemaType) === 'object') && ($registeredType) && ($registeredType.$subType === 'enumeration')) {
+      /*                if ((typeof($nschemaType) === 'object') && ($registeredType) && ($registeredType.subType === 'enumeration')) {
                   $_result = 'Unchecked.defaultof<' + $registeredType.namespace + '.' + $registeredType.name + '>';
               }
               else {

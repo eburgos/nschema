@@ -78,59 +78,45 @@ function mixinRecursive(
   }
 }
 
-function appendFile(
-  filename: string,
-  content: string,
-  callback: (err: NodeJS.ErrnoException | null) => void
-) {
-  const dirname = pathDirname(filename);
-  try {
-    createDirectorySync(dirname);
-    fs.appendFile(filename, content, callback);
-  } catch (err) {
-    callback(err);
-  }
-}
-
 function registerBasicTypes(nschema: NSchema) {
   const basics: ObjectTask[] = [
     {
-      $type: "object",
       name: "int",
-      namespace: ""
+      namespace: "",
+      type: "object"
     },
     {
-      $type: "object",
       name: "float",
-      namespace: ""
+      namespace: "",
+      type: "object"
     },
     {
-      $type: "object",
       name: "string",
-      namespace: ""
+      namespace: "",
+      type: "object"
     },
     {
-      $type: "object",
       name: "boolean",
-      namespace: ""
+      namespace: "",
+      type: "object"
     }
   ];
   basics.forEach(item => nschema.registerObject(item));
 }
 
 const allowedParentToChildrenMixin: { [name: string]: any } = {
-  $importLocation: true,
-  $nschemaLocation: true,
-  $u: true,
-  namespace: true
+  importLocation: true,
+  namespace: true,
+  nschemaLocation: true
 };
 
 export default class NSchema implements NSchemaInterface {
-  public appendFile: (
-    filename: string,
-    content: string,
-    callback: (err: NodeJS.ErrnoException | null) => void
-  ) => void = appendFile;
+  public readonly context: NSchemaContext = {
+    messages: [],
+    objects: [],
+    services: []
+  };
+
   public ejsSettings = {
     client: true,
     close: "%>",
@@ -158,11 +144,7 @@ export default class NSchema implements NSchemaInterface {
     this.mixinRecursive(this.dotSettings, {});
     registerBasicTypes(this);
   }
-  private readonly $context: NSchemaContext = {
-    messages: [],
-    objects: [],
-    services: []
-  };
+
   private readonly customPlugins: { [name: string]: NSchemaPlugin[] } = {};
   private readonly dotSettings: any = {};
   private loadDefer: Promise<any> | undefined = undefined;
@@ -170,16 +152,12 @@ export default class NSchema implements NSchemaInterface {
   private readonly mTypes: { [name: string]: NSchemaPlugin } = {};
   private readonly sources: { [name: string]: SourceBind } = {};
 
-  public context(): NSchemaContext {
-    return this.$context;
-  }
-
   public async generate(
     parentConfig: NSchemaTask,
     config: NSchemaTask,
     context: any | undefined
   ): Promise<any> {
-    const type = config.$type;
+    const type = config.type;
 
     const typeProvider = this.types()[type];
 
@@ -229,7 +207,7 @@ export default class NSchema implements NSchemaInterface {
   }
 
   public getMessage(ns: string, name: string): MessageTask | undefined {
-    const r = this.context().messages.filter(t => {
+    const r = this.context.messages.filter(t => {
       return (
         (t.namespace || "") === (ns || "") && (t.name || "") === (name || "")
       );
@@ -241,7 +219,7 @@ export default class NSchema implements NSchemaInterface {
   }
 
   public getObject(ns: string, name: string) {
-    const r = this.context().objects.filter(t => {
+    const r = this.context.objects.filter(t => {
       return (
         (t.namespace || "") === (ns || "") && (t.name || "") === (name || "")
       );
@@ -252,7 +230,7 @@ export default class NSchema implements NSchemaInterface {
     return undefined;
   }
   public getService(ns: string, name: string) {
-    const r = this.context().services.filter(t => {
+    const r = this.context.services.filter(t => {
       return (t.namespace || "") === ns && (t.name || "") === name;
     });
     if (r.length) {
@@ -360,14 +338,14 @@ export default class NSchema implements NSchemaInterface {
       typeConfig.name || ""
     );
     if (!t) {
-      this.context().messages.push(typeConfig);
+      this.context.messages.push(typeConfig);
     }
   }
 
   public registerObject(typeConfig: ObjectTask) {
     const t = this.getObject(typeConfig.namespace || "", typeConfig.name);
     if (!t) {
-      this.context().objects.push(typeConfig);
+      this.context.objects.push(typeConfig);
     }
   }
 
@@ -377,7 +355,7 @@ export default class NSchema implements NSchemaInterface {
       serviceConfig.name
     );
     if (!t) {
-      this.context().services.push(serviceConfig);
+      this.context.services.push(serviceConfig);
     }
   }
 
@@ -414,17 +392,17 @@ export default class NSchema implements NSchemaInterface {
           return done(undefined, results);
         }
         file = `${dir}/${file}`;
-        fs.stat(file, ($err: NodeJS.ErrnoException | null, stat) => {
-          if ($err) {
-            writeError($err);
-            throw $err;
+        fs.stat(file, (err2: NodeJS.ErrnoException | null, stat) => {
+          if (err2) {
+            writeError(err2);
+            throw err2;
           }
           /* jshint unused: true */
           if (stat && stat.isDirectory()) {
-            self.walk(file, ($err2, res) => {
-              if ($err2) {
-                writeError($err2);
-                throw $err2;
+            self.walk(file, (err3, res) => {
+              if (err3) {
+                writeError(err3);
+                throw err3;
               }
               if (res) {
                 results = results.concat(res);
@@ -513,8 +491,8 @@ export async function features() {
 
 export function getConfig(nschemaLocation: string): NSchemaTask {
   return {
-    $nschemaLocation: nschemaLocation,
-    $type: "bundle",
-    list: []
+    list: [],
+    nschemaLocation,
+    type: "bundle"
   };
 }

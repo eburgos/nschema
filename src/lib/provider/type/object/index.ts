@@ -27,16 +27,15 @@ import {
  * @extends {HasTargetMixin}
  */
 export interface ObjectTask extends HasTargetMixin, AppendableProperties {
-  $extends?: Identifier;
-  $subType?: "enumeration" | "";
-  $type: "object";
   description?: string;
+  extends?: Identifier;
   name: string;
   namespace?: string;
-
   properties?: {
     [name: string]: NSchemaProperty;
   };
+  subType?: "enumeration" | "";
+  type: "object";
 }
 
 async function execute(
@@ -44,7 +43,7 @@ async function execute(
   nschema: NSchemaInterface,
   context: object
 ) {
-  if (parentConfig.$type !== "object") {
+  if (parentConfig.type !== "object") {
     throw new Error("Invalid object task");
   }
   nschema.registerObject(parentConfig);
@@ -52,7 +51,7 @@ async function execute(
   return new Promise<any>((resolve, reject) => {
     process.nextTick(() => {
       const newConfig = deepClone(parentConfig);
-      newConfig.$subType = newConfig.$subType || "";
+      newConfig.subType = newConfig.subType || "";
 
       const target = newConfig.target;
       if (target) {

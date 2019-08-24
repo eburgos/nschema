@@ -1,22 +1,22 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const routeGuideServices_1 = require("./routeGuideServices");
-const $type = "bundle";
+const type = "bundle";
 const namespace = "route_guide";
 const $target = [];
 const clean = {
-    $type: "clean",
     target: [
         {
             location: `${__dirname}/../../generated/routeguide`
         }
-    ]
+    ],
+    type: "clean"
 };
 const list = [clean, routeGuideServices_1.default];
 const bundle = {
     $target,
-    $type,
     list,
-    namespace
+    namespace,
+    type
 };
 exports.default = bundle;

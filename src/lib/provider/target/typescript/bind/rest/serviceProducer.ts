@@ -1,5 +1,6 @@
-import { isRestTarget, RestMessageArgument, TypeScriptRestTarget } from ".";
+import { isRestTarget, TypeScriptRestTarget } from ".";
 import typescript, {
+  isOptional,
   messageType,
   RestClientStrategy,
   TypeScriptContext
@@ -7,12 +8,14 @@ import typescript, {
 import {
   NSchemaInterface,
   NSchemaMessageArgument,
+  NSchemaRestOperation,
   NSchemaRestService,
+  RestMessageArgument,
   Target
 } from "../../../../../model";
-import { wrap } from "../../../../../utils";
+import { findNonCollidingName, wrap } from "../../../../../utils";
 import { AnonymousMessage } from "../../../../type/message";
-import { computeImportMatrix } from "../../helpers";
+import { computeImportMatrix, typeName } from "../../helpers";
 import {
   addSpace,
   getOperationDetails,
@@ -20,12 +23,12 @@ import {
   sortAlphabetically
 } from "./common";
 
-function requestArgsType() {
+function requestArgsType(method: string) {
   return `{
       data: any | undefined,
       handleAs: string,
       headers: {[name: string]: string },
-      method: string,
+      method: "${method}",
       url: string,
     }`;
 }
@@ -33,6 +36,8 @@ function requestArgsType() {
 function buildRequest(
   method: string,
   route: string,
+  routePrefix: string,
+  endpointPropertyName: string,
   paramsInQuery: RestMessageArgument[],
   paramsInBody: RestMessageArgument[],
   paramsInHeader: RestMessageArgument[],
@@ -57,7 +62,10 @@ function buildRequest(
         ...{
           ${sortAlphabetically(
             paramsInHeader.map(p => {
-              return `"${p.headerName || `X-${p.name}`}": ${p.name}`;
+              return isOptional(p)
+                ? `...(typeof ${p.name} !== "undefined")? { "${p.headerName ||
+                    `X-${p.name}`}": ${p.name} } : {}`
+                : `"${p.headerName || `X-${p.name}`}": ${p.name}`;
             })
           ).join(",\n          ")}
         }}`
@@ -65,23 +73,23 @@ function buildRequest(
       }`
         },
       method: "${method}",
-      url: \`\${this.$endpointUrl}${
-        paramsInRoute.length
-          ? `\${[${paramsInRoute
-              .map(p => {
-                return `{ key: \`${p.name}\`, value: \`\${${p.name}}\`}`;
-              })
-              .join(
-                ", "
-              )}].reduce((acc, next: { key: string, value: string }) => acc.split(\`{\${next.key}}\`).join(next.value), "${route}")}`
-          : `${route}`
-      }${
+      url: \`\${this.${endpointPropertyName}}${routePrefix}${
+    paramsInRoute.length
+      ? `\${[${paramsInRoute
+          .map(p => {
+            return `{ key: \`${p.name}\`, value: \`\${${p.name}}\`}`;
+          })
+          .join(
+            ", "
+          )}].reduce((acc, next: { key: string, value: string }) => acc.split(\`{\${next.key}}\`).join(next.value), "${route}")}`
+      : `${route}`
+  }${
     paramsInQuery.length
       ? `?\${${`${paramsInQuery
           .map(p => {
             return `\`${p.name}=\${encodeURIComponent(\`\${${p.name}}\`)}\`}`;
           })
-          .join(` + "&`)}`}`
+          .join(`&\${`)}`}`
       : ``
   }\`
     }`;
@@ -152,27 +160,27 @@ const $toJson = (res: Response) => {
 };
 
 const constructorPart = {
-  [RestClientStrategy.Angular2]: () => {
+  [RestClientStrategy.Angular2]: (endpointPropertyName: string) => {
     return `  /**
    * Base url for this http service
    */
-  $endpointUrl: string;
+  ${endpointPropertyName}: string;
 
   constructor(private http: Http) {
   }
 `;
   },
-  [RestClientStrategy.Default]: () => {
+  [RestClientStrategy.Default]: (endpointPropertyName: string) => {
     return `  /**
    * Base url for this http service
    */
-  private readonly $endpointUrl: string /* :string */;
+  private readonly ${endpointPropertyName}: string /* :string */;
 
-  constructor($endpointUrl: string /* :string */) {
-      this.$endpointUrl = $endpointUrl;
+  constructor(${endpointPropertyName}: string /* :string */) {
+      this.${endpointPropertyName} = ${endpointPropertyName};
   }
   /*::
-  $endpointUrl: string;
+  ${endpointPropertyName}: string;
   */
 `;
   }
@@ -182,6 +190,8 @@ const requestOptionsPart = {
   [RestClientStrategy.Angular2]: (
     _method: string,
     _route: string,
+    _routePrefix: string,
+    _endpointPropertyName: string,
     _paramsInQuery: NSchemaMessageArgument[],
     _paramsInBody: NSchemaMessageArgument[],
     _paramsInHeader: NSchemaMessageArgument[],
@@ -192,14 +202,18 @@ const requestOptionsPart = {
   [RestClientStrategy.Default]: (
     method: string,
     route: string,
+    routePrefix: string,
+    endpointPropertyName: string,
     paramsInQuery: NSchemaMessageArgument[],
     paramsInBody: NSchemaMessageArgument[],
     paramsInHeader: NSchemaMessageArgument[],
     paramsInRoute: NSchemaMessageArgument[]
   ) => {
-    return `: ${requestArgsType()} = ${buildRequest(
+    return `: ${requestArgsType(method)} = ${buildRequest(
       method,
       route,
+      routePrefix,
+      endpointPropertyName,
       paramsInQuery,
       paramsInBody,
       paramsInHeader,
@@ -219,7 +233,9 @@ const bodyPart = {
     _nschema: NSchemaInterface,
     _context: TypeScriptContext,
     _outMessage: AnonymousMessage,
-    op: string
+    op: string,
+    optionsVarName: string,
+    endpointPropertyName: string
   ) => {
     return `${
       paramsInQuery.length
@@ -228,10 +244,10 @@ const bodyPart = {
       return `        if (typeof(${p.name}) !== undefined) {
                 $queryParams.set("${p.name}", ${p.name}.toString());
             }`;
-    })}        $options.params = $queryParams;`
+    })}        ${optionsVarName}.params = $queryParams;`
         : ``
     }
-    $options.headers =  new Headers({
+    ${optionsVarName}.headers =  new Headers({
       "Content-Type": "application/json",
       ${paramsInHeader
         .map(p => {
@@ -254,7 +270,7 @@ let $body = JSON.stringify(${paramsInBody.length > 1 ? `[` : ``}${paramsInBody
     : ``
 }
 
-    return this.http.${method.toLowerCase()}(this.$endpointUrl + [${paramsInRoute
+    return this.http.${method.toLowerCase()}(this.${endpointPropertyName} + [${paramsInRoute
       .map(p => {
         return `\`${p.name}\``;
       })
@@ -264,7 +280,7 @@ let $body = JSON.stringify(${paramsInBody.length > 1 ? `[` : ``}${paramsInBody
       ["get", "delete", "head"].indexOf(method.toLowerCase()) < 0
         ? ` $body,`
         : ``
-    } $options)
+    } ${optionsVarName})
                     .map($toJson)
                     .catch((error) => {
                         return this.$errorHandler(error, "${op}");
@@ -280,18 +296,29 @@ let $body = JSON.stringify(${paramsInBody.length > 1 ? `[` : ``}${paramsInBody
     nschema: NSchemaInterface,
     context: TypeScriptContext,
     outMessage: AnonymousMessage,
-    _op: string
+    _op: string,
+    optionsVarName: string,
+    _endpointPropertyName: string
   ) => {
-    return `const $response = await request.${method.toLowerCase()}${
+    const responseVarName = findNonCollidingName(
+      "response",
+      [
+        ..._paramsInBody,
+        ..._paramsInHeader,
+        ..._paramsInQuery,
+        ..._paramsInRoute
+      ].map(p => p.name)
+    );
+    return `const ${responseVarName} = await request.${method.toLowerCase()}${
       ["delete"].indexOf(method.toLowerCase()) < 0
         ? `<${messageType(nschema, context, true, outMessage)}>`
         : ``
-    }($options.url, ${
+    }(${optionsVarName}.url, ${
       ["delete", "head", "get"].indexOf(method.toLowerCase()) < 0
-        ? `$options.data, `
+        ? `${optionsVarName}.data, `
         : ``
-    }$options);
-    return $response.data;`;
+    }${optionsVarName});
+    return ${responseVarName}.data;`;
   }
 };
 
@@ -311,9 +338,11 @@ function renderOperations(
   context: TypeScriptContext,
   config: NSchemaRestService,
   deferredType: string,
-  restClientStrategy: RestClientStrategy
+  restClientStrategy: RestClientStrategy,
+  endpointPropertyName: string
 ) {
-  return Object.keys(config.operations)
+  const routePrefix = config.routePrefix || "";
+  return `${Object.keys(config.operations)
     .map(op => {
       const operation = config.operations[op];
       const {
@@ -326,13 +355,16 @@ function renderOperations(
         routeArguments,
         queryArguments
       } = getOperationDetails(operation, op);
+
       if (method === "get" && bodyArguments.length) {
         throw new Error(
-          `Service "${
-            config.name
-          }" : operation "${op}" has method GET and body parameters. Fix this to continue.`
+          `Service "${config.name}" : operation "${op}" has method GET and body parameters. Fix this to continue.`
         );
       }
+      const optionsVarName = findNonCollidingName(
+        "options",
+        (inMessage.data || []).map(m => m.name)
+      );
       return `  /**
    *${(operation.description ? ` ${operation.description}` : "").replace(
      /\n/g,
@@ -375,14 +407,16 @@ ${(inMessage.data || [])
         true,
         outMessage
       )}> {
-    const $options${requestOptionsPart[restClientStrategy](
-      method,
-      route,
-      queryArguments,
-      bodyArguments,
-      headerArguments,
-      routeArguments
-    )}
+    const ${optionsVarName}${requestOptionsPart[restClientStrategy](
+        method,
+        route,
+        routePrefix,
+        endpointPropertyName,
+        queryArguments,
+        bodyArguments,
+        headerArguments,
+        routeArguments
+      )}
     ${bodyPart[restClientStrategy](
       method,
       route,
@@ -393,12 +427,108 @@ ${(inMessage.data || [])
       nschema,
       context,
       outMessage,
-      op
+      op,
+      optionsVarName,
+      endpointPropertyName
     )}
   }
 `;
     })
-    .join("\n");
+    .join("\n")}${
+    !config.producerContexts
+      ? ""
+      : `
+  ${Object.keys(config.producerContexts || {})
+    .map(contextName => {
+      if (!config.producerContexts) {
+        throw new Error("Invalid Argument");
+      }
+      const pContext = config.producerContexts[contextName];
+      const description = pContext.description || "";
+      const contextOperations = Object.keys(config.operations)
+        .filter(k => pContext.operations.includes(k))
+        .reduce((acc: { [name: string]: NSchemaRestOperation }, next) => {
+          acc[next] = config.operations[next];
+          return acc;
+        }, {});
+      //Validating that all parameters in context belong to all operations and have the same type
+      const operationArguments = pContext.arguments.map(arg => {
+        const { isValidType, lastType } = Object.keys(contextOperations).reduce(
+          (
+            acc: { isValidType: boolean; lastType: string | undefined },
+            cop
+          ) => {
+            const contextOperation = contextOperations[cop];
+            const operationArgument = (
+              contextOperation.inMessage.data || []
+            ).find(operationArg => operationArg.name === arg);
+            if (!operationArgument) {
+              throw new Error(
+                `Unable to generate producer context ${contextName} for service ${config.namespace ||
+                  ""} :: ${
+                  config.name
+                } because all of it's operations don't have the ${arg} argument.`
+              );
+            }
+            const argumentTypeName = typeName(
+              operationArgument.realType || operationArgument.type,
+              nschema,
+              config.namespace,
+              config.name,
+              context,
+              true
+            );
+            if (
+              acc.isValidType &&
+              (typeof acc.lastType === "undefined" ||
+                acc.lastType === argumentTypeName)
+            ) {
+              return {
+                isValidType: true,
+                lastType: argumentTypeName
+              };
+            } else {
+              return { isValidType: false, lastType: undefined };
+            }
+          },
+          { isValidType: true, lastType: undefined }
+        );
+        if (!isValidType) {
+          throw new Error(
+            `Unable to generate producer context ${contextName} for service ${config.namespace ||
+              ""} :: ${
+              config.name
+            } because all of it's operations don't have the same type for their ${arg} argument.`
+          );
+        }
+        return {
+          name: arg,
+          type: lastType
+        };
+      });
+      return `/*
+   * ${description}
+   */
+  public ${contextName}(${operationArguments
+        .map(arg => `${arg.name}: ${arg.type}`)
+        .join(", ")}) {
+    return {
+${Object.keys(contextOperations)
+  .map(op => {
+    const operation = contextOperations[op];
+    return `      ${op}: (${(operation.inMessage.data || [])
+      .filter(({ name }) => !operationArguments.find(arg => arg.name === name))
+      .map(arg => `${arg.name}: ${arg.type}`)
+      .join(", ")}) => this.${op}(${(operation.inMessage.data || [])
+      .map(arg => arg.name)
+      .join(", ")})`;
+  })
+  .join(",\n")}
+    };
+  }`;
+    })
+    .join("\n")}`
+  }`;
 }
 
 export function render(
@@ -410,6 +540,10 @@ export function render(
   if (!isRestTarget(targetRaw)) {
     throw new Error("Invalid target for typescript rest");
   }
+  const endpointPropertyName = findNonCollidingName(
+    "endpointUrl",
+    Object.keys(config.operations)
+  );
   const target: TypeScriptRestTarget = targetRaw;
   const restClientStrategy =
     target.$restClientStrategy || RestClientStrategy.Default;
@@ -426,13 +560,14 @@ ${computeImportMatrix(
 )}`
   }${classHeader[restClientStrategy](context)}
 export class ${config.name} {
-${constructorPart[restClientStrategy]()}
+${constructorPart[restClientStrategy](endpointPropertyName)}
 ${renderOperations(
   nschema,
   context,
   config,
   deferredType,
-  restClientStrategy
+  restClientStrategy,
+  endpointPropertyName
 )}${errorHandlerPart[restClientStrategy]()}}
 `;
 }

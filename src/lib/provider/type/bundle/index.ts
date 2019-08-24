@@ -22,10 +22,10 @@ import {
 const { magenta } = chalk;
 
 export interface BundleTask extends HasTargetMixin, AppendableProperties {
-  $nschemaLocation?: string;
-  $type: "bundle";
   list: NSchemaTask[];
   namespace?: string;
+  nschemaLocation?: string;
+  type: "bundle";
 }
 
 async function execute(

@@ -1,6 +1,8 @@
 import { isArray } from "util";
-import { RestMessageArgument } from ".";
-import { NSchemaRestOperation } from "../../../../../model";
+import {
+  NSchemaRestOperation,
+  RestMessageArgument
+} from "../../../../../model";
 import { caseInsensitiveSorter } from "../../../../../utils";
 
 export function realTypeMap(p: RestMessageArgument, expr: string) {

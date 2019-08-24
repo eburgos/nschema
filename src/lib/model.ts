@@ -6,7 +6,7 @@ import { ObjectTask } from "./provider/type/object";
 import { ServiceTask } from "./provider/type/service";
 
 export interface NSchemaInterface {
-  context(): NSchemaContext;
+  context: NSchemaContext;
 
   generate(
     parentConfig: NSchemaTask,
@@ -103,11 +103,6 @@ export interface NSchemaOperation {
   outMessage: AnonymousMessage;
 }
 
-export interface NSchemaRestOperation extends NSchemaOperation {
-  method?: string;
-  route?: string;
-}
-
 export interface HasFilenameMixin {
   $fileName?: string;
 }
@@ -122,6 +117,23 @@ export interface HasTargetMixin {
 
 export interface AppendableMixin {
   append?: boolean;
+}
+
+export interface RestMessageArgument extends NSchemaMessageArgument {
+  headerName?: string;
+  paramType?: "header" | "query";
+  realType?: NSchemaType;
+}
+
+export interface RestAnonymousMessage extends AnonymousMessage {
+  data?: RestMessageArgument[];
+}
+
+export interface NSchemaRestOperation extends NSchemaOperation {
+  inMessage: RestAnonymousMessage;
+  method?: string;
+  outMessage: RestAnonymousMessage;
+  route?: string;
 }
 
 export interface NSchemaRestService extends ServiceTask, HasFilenameMixin {

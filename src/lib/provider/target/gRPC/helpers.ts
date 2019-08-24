@@ -63,18 +63,18 @@ const surroundWithFlow = wrap("/*:: ", " */");
 export function computeImportMatrix(
   localNamespace: string,
   namespaceMapping: { [name: string]: string },
-  $context: GRPCContext
+  context: GRPCContext
 ) {
   const rootContext = {
     imports: {} as { [name: string]: { [name: string]: string | boolean } }
   };
-  Object.keys($context.imports).forEach(p => {
+  Object.keys(context.imports).forEach(p => {
     if (!rootContext.imports[p]) {
       rootContext.imports[p] = {};
     }
-    const ns = $context.imports[p];
+    const ns = context.imports[p];
     Object.keys(ns).forEach(name => {
-      rootContext.imports[p][name] = $context.imports[p][name];
+      rootContext.imports[p][name] = context.imports[p][name];
     });
   });
 

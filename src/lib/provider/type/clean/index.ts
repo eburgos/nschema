@@ -12,7 +12,7 @@ import { NSchemaInterface, NSchemaPlugin, Target } from "../../../model";
 const { red, green, yellow } = chalk;
 
 export interface CleanTask {
-  $type: "clean";
+  type: "clean";
   simulate?: boolean;
   target: Target[];
 }

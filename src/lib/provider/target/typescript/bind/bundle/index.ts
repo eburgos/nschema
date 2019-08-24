@@ -50,7 +50,7 @@ async function execute(
   parentConfig: NSchemaTask | TypeScriptBundle,
   nschema: NSchemaInterface
 ) {
-  if (parentConfig.$type !== "bundle") {
+  if (parentConfig.type !== "bundle") {
     throw new Error("Invalid bundle task");
   }
   // According from how this bundle is implemented I will always get 1 target here
@@ -74,7 +74,7 @@ async function execute(
 
   const r = arr.map(async (cur: NSchemaTask) => {
     writeDebugLog(
-      `bundle - ts - generating ${cur.$type} ${(cur as any).namespace ||
+      `bundle - ts - generating ${cur.type} ${(cur as any).namespace ||
         ""} :: ${(cur as any).name}`
     );
     return await nschema.generate(parentConfig, cur, { skipWrite: true });

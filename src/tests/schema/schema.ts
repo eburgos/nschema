@@ -1,8 +1,5 @@
-import { NSchemaRestService } from "../../lib/model";
-import {
-  RestMessageArgument,
-  TypeScriptRestTarget
-} from "../../lib/provider/target/typescript/bind/rest";
+import { NSchemaRestService, RestMessageArgument } from "../../lib/model";
+import { TypeScriptRestTarget } from "../../lib/provider/target/typescript/bind/rest";
 import { BundleTask } from "../../lib/provider/type/bundle";
 
 // This is a NSchema sample config file. Config files can either be defined as pure JSON or as a CJS module like this one.
@@ -40,21 +37,20 @@ const bundle: BundleTask = {
   // 'message' defines that this object is a service message. A message can be a parameter or a group of parameters
   //
   // It's probably better to start off with a bundle since a bundle let's you define a list of objects
-  $type: "bundle",
+
   list: [
     // This import executes whatever is in the external subschema.json file
     {
-      $importLocation: "./subschema.json",
-      $type: "import"
+      importLocation: "./subschema.json",
+      type: "import"
     },
     // As you can see, we can have bundles inside of bundles
     {
       // $namespace means Append this string to the current 'namespace' variable. This sets 'namespace' to 'NSchema.Model.Invoicing'
       $namespace: "Invoicing",
-      $type: "bundle",
+
       list: [
         {
-          $type: "object",
           name: "Invoice",
           properties: {
             customerId: {
@@ -74,11 +70,10 @@ const bundle: BundleTask = {
                 namespace: "NSchema.Model.InvoicingDetail"
               }
             }
-          }
+          },
+          type: "object"
         },
         {
-          $subType: "enumeration",
-          $type: "object",
           name: "AuthenticationStatus",
           properties: {
             LoggedIn: {
@@ -89,10 +84,11 @@ const bundle: BundleTask = {
               description: "User is logged out",
               type: "string"
             }
-          }
+          },
+          subType: "enumeration",
+          type: "object"
         },
         {
-          $type: "object",
           name: "UserInfo",
           properties: {
             name: {
@@ -105,10 +101,10 @@ const bundle: BundleTask = {
                 name: "AuthenticationStatus"
               }
             }
-          }
+          },
+          type: "object"
         },
         {
-          $type: "message",
           data: [
             {
               description: "Your login that you registered",
@@ -123,9 +119,11 @@ const bundle: BundleTask = {
               type: "string"
             }
           ] as RestMessageArgument[],
-          name: "AuthMessage"
+          name: "AuthMessage",
+          type: "message"
         }
-      ]
+      ],
+      type: "bundle"
     },
     {
       $namespace: "Services",
@@ -144,7 +142,6 @@ const bundle: BundleTask = {
           serviceType: "producer"
         } as TypeScriptRestTarget
       ],
-      $type: "bundle",
       list: [
         // Finally our first service
         {
@@ -180,7 +177,6 @@ const bundle: BundleTask = {
               serviceType: "consumer"
             }
           ],
-          $type: "service",
           name: "InvoiceService",
           operations: {
             AllParametersOperation: {
@@ -331,13 +327,16 @@ const bundle: BundleTask = {
                 ]
               }
             }
-          }
+          },
+          type: "service"
         } as NSchemaRestService
-      ]
+      ],
+      type: "bundle"
     }
   ],
   // Namespace used assuming this generation generates classes or something that requires namespaces (such as C# or Java)
-  namespace: "NSchema.Model"
+  namespace: "NSchema.Model",
+  type: "bundle"
 };
 
 export default bundle;

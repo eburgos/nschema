@@ -45,7 +45,7 @@ async function execute(
   parentConfig: NSchemaTask | GRPCBundle,
   nschema: NSchemaInterface
 ) {
-  if (parentConfig.$type !== "bundle") {
+  if (parentConfig.type !== "bundle") {
     throw new Error("Invalid bundle task");
   }
   // According from how this bundle is implemented I will always get 1 target here

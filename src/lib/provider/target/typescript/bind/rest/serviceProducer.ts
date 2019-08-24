@@ -41,24 +41,40 @@ function buildRequest(
   paramsInQuery: RestMessageArgument[],
   paramsInBody: RestMessageArgument[],
   paramsInHeader: RestMessageArgument[],
-  paramsInRoute: RestMessageArgument[]
+  paramsInRoute: RestMessageArgument[],
+  encoding: "json" | "querystring",
+  context: TypeScriptContext
 ) {
+  if (encoding === "querystring") {
+    if (!context.imports["{qs}"]) {
+      context.imports["{qs}"] = {};
+    }
+    context.imports["{qs}"]["*"] = "qs";
+  }
   return `{
       data: ${
         ["get", "delete", "head"].indexOf(method.toLowerCase()) < 0 &&
         paramsInBody.length > 0
-          ? `JSON.stringify(${paramsInBody.length > 1 ? `[` : ``}${paramsInBody
-              .map(d => {
-                return d.name;
-              })
-              .join(", ")}${paramsInBody.length > 1 ? `]` : ``})`
+          ? encoding === "json"
+            ? `JSON.stringify(${
+                paramsInBody.length > 1 ? `[` : ``
+              }${paramsInBody
+                .map(d => {
+                  return d.name;
+                })
+                .join(", ")}${paramsInBody.length > 1 ? `]` : ``})`
+            : `qs.stringify({${paramsInBody.map(p => p.name)}})`
           : `undefined`
       },
       handleAs: "json",
       headers: {
-        "Content-Type": "application/json"${
-          paramsInHeader.length
-            ? `,
+        "Content-Type": "${
+          encoding === "querystring"
+            ? "application/x-www-form-urlencoded"
+            : "application/json"
+        }"${
+    paramsInHeader.length
+      ? `,
         ...{
           ${sortAlphabetically(
             paramsInHeader.map(p => {
@@ -69,9 +85,9 @@ function buildRequest(
             })
           ).join(",\n          ")}
         }}`
-            : `
+      : `
       }`
-        },
+  },
       method: "${method}",
       url: \`\${this.${endpointPropertyName}}${routePrefix}${
     paramsInRoute.length
@@ -166,7 +182,7 @@ const constructorPart = {
    */
   ${endpointPropertyName}: string;
 
-  constructor(private http: Http) {
+  public constructor(private http: Http) {
   }
 `;
   },
@@ -176,7 +192,7 @@ const constructorPart = {
    */
   private readonly ${endpointPropertyName}: string /* :string */;
 
-  constructor(${endpointPropertyName}: string /* :string */) {
+  public constructor(${endpointPropertyName}: string /* :string */) {
       this.${endpointPropertyName} = ${endpointPropertyName};
   }
   /*::
@@ -207,7 +223,9 @@ const requestOptionsPart = {
     paramsInQuery: NSchemaMessageArgument[],
     paramsInBody: NSchemaMessageArgument[],
     paramsInHeader: NSchemaMessageArgument[],
-    paramsInRoute: NSchemaMessageArgument[]
+    paramsInRoute: NSchemaMessageArgument[],
+    encoding: "json" | "querystring",
+    context: TypeScriptContext
   ) => {
     return `: ${requestArgsType(method)} = ${buildRequest(
       method,
@@ -217,7 +235,9 @@ const requestOptionsPart = {
       paramsInQuery,
       paramsInBody,
       paramsInHeader,
-      paramsInRoute
+      paramsInRoute,
+      encoding,
+      context
     )};`;
   }
 };
@@ -415,7 +435,9 @@ ${(inMessage.data || [])
         queryArguments,
         bodyArguments,
         headerArguments,
-        routeArguments
+        routeArguments,
+        inMessage.encoding || "json",
+        context
       )}
     ${bodyPart[restClientStrategy](
       method,
@@ -445,7 +467,9 @@ ${(inMessage.data || [])
       }
       const pContext = config.producerContexts[contextName];
       const description = pContext.description || "";
-      const contextOperations = Object.keys(config.operations)
+      const contextOperations: {
+        [name: string]: NSchemaRestOperation;
+      } = Object.keys(config.operations)
         .filter(k => pContext.operations.includes(k))
         .reduce((acc: { [name: string]: NSchemaRestOperation }, next) => {
           acc[next] = config.operations[next];

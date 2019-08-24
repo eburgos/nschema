@@ -127,6 +127,7 @@ export interface RestMessageArgument extends NSchemaMessageArgument {
 
 export interface RestAnonymousMessage extends AnonymousMessage {
   data?: RestMessageArgument[];
+  encoding?: "json" | "querystring";
 }
 
 export interface NSchemaRestOperation extends NSchemaOperation {

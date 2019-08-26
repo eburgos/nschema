@@ -1,16 +1,19 @@
-import typescript, { messageType, TypeScriptContext } from "../..";
+import { messageType, TypeScriptContext } from "../..";
 import {
   NSchemaInterface,
   NSchemaRestOperation,
   NSchemaRestService
 } from "../../../../../model";
 import { findNonCollidingName } from "../../../../../utils";
+import { typeName } from "../../helpers";
 import { addSpace, getOperationDetails } from "./common";
 
 function renderOperationsInterface(
   nschema: NSchemaInterface,
   context: TypeScriptContext,
-  operations: { [name: string]: NSchemaRestOperation }
+  operations: { [name: string]: NSchemaRestOperation },
+  name: string,
+  namespace: string | undefined
 ) {
   return Object.keys(operations)
     .map(op => {
@@ -40,12 +43,13 @@ ${(inMessage.data || [])
    */
   ${op}(${(inMessage.data || [])
         .map(par => {
-          return `${par.name}: ${typescript.typeName(
+          return `${par.name}: ${typeName(
             par.type,
             nschema,
-            "",
-            "",
+            namespace,
+            name,
             context,
+            true,
             true
           )}`;
         })
@@ -64,7 +68,9 @@ ${(inMessage.data || [])
 function renderOperationsForClass(
   nschema: NSchemaInterface,
   context: TypeScriptContext,
-  operations: { [name: string]: NSchemaRestOperation }
+  operations: { [name: string]: NSchemaRestOperation },
+  name: string,
+  namespace: string | undefined
 ) {
   const protecteds = Object.keys(operations)
     .map(op => {
@@ -90,12 +96,13 @@ ${(inMessage.data || [])
    */
   public abstract async ${op}(${(inMessage.data || [])
         .map(par => {
-          return `${par.name}: ${typescript.typeName(
+          return `${par.name}: ${typeName(
             par.type,
             nschema,
-            "",
-            "",
+            namespace,
+            name,
             context,
+            true,
             true
           )}`;
         })
@@ -134,12 +141,13 @@ ${(inMessage.data || [])
    */
   protected async $raw${op}(${(inMessage.data || [])
         .map(par => {
-          return `${par.name}: ${typescript.typeName(
+          return `${par.name}: ${typeName(
             par.type,
             nschema,
-            "",
-            "",
+            namespace,
+            name,
             context,
+            true,
             true
           )}`;
         })
@@ -178,7 +186,13 @@ export function render(
   context.imports["{events}"].EventEmitter = true;
 
   return `export interface ${config.name} {
-${renderOperationsInterface(nschema, context, config.operations)}
+${renderOperationsInterface(
+  nschema,
+  context,
+  config.operations,
+  config.name,
+  config.namespace
+)}
   on(eventName: "callStarted", handler: (eventData: { name: string, timestamp: Date }) => any): this;
   on(eventName: "callCompleted", handler: (eventData: { name: string, timestamp: Date, result: any }) => any): this;
   on(eventName: "operationError", handler: (eventData: { name: string, timestamp: Date, error: Error }) => any): this;
@@ -188,7 +202,13 @@ ${renderOperationsInterface(nschema, context, config.operations)}
 export abstract class ${config.name}Base extends EventEmitter implements ${
     config.name
   } {
-${renderOperationsForClass(nschema, context, config.operations)}
+${renderOperationsForClass(
+  nschema,
+  context,
+  config.operations,
+  config.name,
+  config.namespace
+)}
 }
 `;
 }

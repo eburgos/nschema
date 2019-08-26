@@ -4,6 +4,7 @@ import {
   RestMessageArgument
 } from "../../../../../model";
 import { caseInsensitiveSorter } from "../../../../../utils";
+import { isPrimitiveTypeString } from "../../helpers";
 
 export function realTypeMap(p: RestMessageArgument, expr: string) {
   const realType =
@@ -37,25 +38,38 @@ export function getType(p: RestMessageArgument) {
   return typeof p.type === "string" ? { namespace: "", name: p.type } : p.type;
 }
 
-export function includeInRoute(p: RestMessageArgument, route: string) {
+function isPrimitiveOptional(p: RestMessageArgument) {
   const t = getType(p);
 
   return (
-    route.indexOf(`{${p.name}}`) >= 0 &&
+    t.namespace === "" &&
+    isPrimitiveTypeString(t.name) &&
+    (t.modifier === "option" ||
+      (isArray(t.modifier) &&
+        t.modifier.length === 1 &&
+        t.modifier[0] === "option"))
+  );
+}
+
+export function includeInRoute(p: RestMessageArgument, route: string) {
+  const t = getType(p);
+
+  const isInRoute = route.indexOf(`{${p.name}}`) >= 0;
+
+  return (
+    isInRoute &&
     (!t.modifier || (isArray(t.modifier) && !t.modifier.length)) &&
     t.namespace === "" &&
-    (t.name === "string" ||
-      t.name === "int" ||
-      t.name === "float" ||
-      t.name === "bool" ||
-      t.name === "date")
+    isPrimitiveTypeString(t.name)
   );
 }
 export function includeInQuery(p: RestMessageArgument) {
   const t = getType(p);
   return (
     p.paramType === "query" &&
-    (!t.modifier || (isArray(t.modifier) && !t.modifier.length)) &&
+    (!t.modifier ||
+      (isArray(t.modifier) && !t.modifier.length) ||
+      isPrimitiveOptional(p)) &&
     t.namespace === "" &&
     (t.name === "string" ||
       t.name === "int" ||

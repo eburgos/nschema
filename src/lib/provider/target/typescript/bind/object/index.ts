@@ -98,7 +98,15 @@ function renderClass(
     data.implements && data.implements.length
       ? ` extends ${data.implements
           .map(impl =>
-            typeName(impl, nschema, data.namespace || "", data.name, context)
+            typeName(
+              impl,
+              nschema,
+              data.namespace || "",
+              data.name,
+              context,
+              false,
+              false
+            )
           )
           .join(", ")}`
       : ""
@@ -127,7 +135,9 @@ ${Object.keys(data.properties || {})
       nschema,
       data.namespace,
       data.name,
-      context
+      context,
+      false,
+      false
     )};
 `;
   })

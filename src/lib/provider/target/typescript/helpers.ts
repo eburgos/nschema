@@ -169,7 +169,15 @@ function modifierMap(
     case "option":
       return "| undefined";
     default:
-      return typeName(modifier, nschema, namespace, name, context);
+      return typeName(
+        modifier,
+        nschema,
+        namespace,
+        name,
+        context,
+        false,
+        false
+      );
   }
 }
 function isUnions(t: TypeScriptType): t is TypeScriptLiteralsUnion {
@@ -180,7 +188,11 @@ function isUnions(t: TypeScriptType): t is TypeScriptLiteralsUnion {
   );
 }
 
-function findTypeMap(t: NSchemaPrimitiveType, skipError?: boolean) {
+function findTypeMap(
+  t: NSchemaPrimitiveType,
+  skipError: boolean,
+  isParameter: boolean
+) {
   switch (t) {
     case "int":
       return "number";
@@ -191,7 +203,7 @@ function findTypeMap(t: NSchemaPrimitiveType, skipError?: boolean) {
     case "bool":
       return "boolean";
     case "date":
-      return "number";
+      return isParameter ? "Date | number" : "number";
     default:
       shouldNever(t, skipError);
       return undefined;
@@ -199,8 +211,8 @@ function findTypeMap(t: NSchemaPrimitiveType, skipError?: boolean) {
   return "string";
 }
 
-function typeMap(t: NSchemaPrimitiveType) {
-  const r = findTypeMap(t);
+function typeMap(t: NSchemaPrimitiveType, isParameter: boolean) {
+  const r = findTypeMap(t, false, isParameter);
   if (typeof r === "undefined") {
     writeError(`Unknown type ${t}`);
     throw new Error(`Unknown type ${t}`);
@@ -208,21 +220,11 @@ function typeMap(t: NSchemaPrimitiveType) {
   return r;
 }
 
-function isPrimitiveType(
+export function isPrimitiveType(
   nschemaType: TypeScriptType
 ): nschemaType is NSchemaPrimitiveType {
   if (typeof nschemaType === "string") {
-    const primitive = nschemaType as NSchemaPrimitiveType;
-    switch (primitive) {
-      case "bool":
-      case "date":
-      case "float":
-      case "int":
-      case "string":
-        return true;
-      default:
-        return false;
-    }
+    return isPrimitiveTypeString(nschemaType);
   } else if (isUnions(nschemaType)) {
     return true;
   } else {
@@ -234,17 +236,33 @@ function isPrimitiveType(
   }
 }
 
+export function isPrimitiveTypeString(t: string) {
+  const x = t as NSchemaPrimitiveType;
+  switch (x) {
+    case "bool":
+    case "date":
+    case "string":
+    case "int":
+    case "float":
+      return true;
+    default:
+      shouldNever(x, true);
+      return false;
+  }
+}
+
 export function typeName(
   nschemaType: TypeScriptType,
   nschema: NSchemaInterface,
   namespace: string | undefined,
   name: string,
   context: TypeScriptContext,
-  addFlowComment?: boolean
+  addFlowComment: boolean,
+  isParameter: boolean
 ) {
   let result: string;
   if (typeof nschemaType === "string") {
-    result = typeMap(nschemaType);
+    result = typeMap(nschemaType, isParameter);
   } else if (typeof nschemaType === "object") {
     let ns = nschemaType.namespace;
     if (typeof ns === "undefined") {
@@ -260,16 +278,19 @@ export function typeName(
       result = nschemaType.literals.map(quotesWrap).join(" | ");
     } else {
       if (
-        typeof findTypeMap(nschemaType.name as NSchemaPrimitiveType, true) ===
-        "string"
+        typeof findTypeMap(
+          nschemaType.name as NSchemaPrimitiveType,
+          true,
+          true
+        ) === "string"
       ) {
-        result = typeMap(nschemaType.name as NSchemaPrimitiveType);
+        result = typeMap(nschemaType.name as NSchemaPrimitiveType, isParameter);
       } else {
         result = nschemaType.name;
       }
     }
   } else {
-    result = typeMap("string");
+    result = typeMap("string", isParameter);
   }
   if (nschemaType && typeof nschemaType === "object" && nschemaType.modifier) {
     const $modifier = nschemaType.modifier;
@@ -294,7 +315,7 @@ export function typeName(
   }
 }
 
-function $_getDataItems(
+function getDataItems(
   nsMessage: TypeScriptMessage,
   $nschema: NSchemaInterface
 ) {
@@ -305,7 +326,7 @@ function $_getDataItems(
       nsMessage.$extends.name
     );
     if (parent) {
-      $_getDataItems(parent, $nschema).forEach(i => {
+      getDataItems(parent, $nschema).forEach(i => {
         r.push(i);
       });
     } else {
@@ -324,19 +345,19 @@ function $_getDataItems(
 }
 
 export function messageType(
-  $nschema: NSchemaInterface,
-  $nschemaMessage: TypeScriptMessage,
-  $nschemaMessageDirection: "in" | "out",
-  $context: TypeScriptContext
+  nschema: NSchemaInterface,
+  nschemaMessage: TypeScriptMessage,
+  nschemaMessageDirection: "in" | "out",
+  context: TypeScriptContext
 ) {
   const $_typeSeparator =
-    $nschemaMessageDirection === "in"
+    nschemaMessageDirection === "in"
       ? ", "
-      : $nschemaMessageDirection === "out"
+      : nschemaMessageDirection === "out"
       ? ", "
       : "";
 
-  const $_dataItems = $_getDataItems($nschemaMessage, $nschema);
+  const $_dataItems = getDataItems(nschemaMessage, nschema);
   const result =
     $_dataItems.length === 0
       ? ["void"]
@@ -344,19 +365,23 @@ export function messageType(
       ? [
           typeName(
             $_dataItems[0].type,
-            $nschema,
-            $nschemaMessage.namespace,
-            $nschemaMessage.name,
-            $context
+            nschema,
+            nschemaMessage.namespace,
+            nschemaMessage.name,
+            context,
+            true,
+            false
           )
         ]
       : $_dataItems.map((item, $i) => {
           return `${item.name || `item${$i}`}: ${typeName(
             item.type,
-            $nschema,
-            $nschemaMessage.namespace,
-            $nschemaMessage.name,
-            $context
+            nschema,
+            nschemaMessage.namespace,
+            nschemaMessage.name,
+            context,
+            true,
+            false
           )}`;
         });
 

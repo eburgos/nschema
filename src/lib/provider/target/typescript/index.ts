@@ -11,11 +11,7 @@ import {
   HasFilenameMixin,
   NSchemaInterface,
   NSchemaMessageArgument,
-  NSchemaModifier,
-  NSchemaPrimitiveType,
-  NSchemaType,
   RestMessageArgument,
-  shouldNever,
   Target,
   TemplateFunction
 } from "../../../model";
@@ -24,31 +20,13 @@ import { BundleTask } from "../../type/bundle";
 import { AnonymousMessage } from "../../type/message";
 import { ServiceTask } from "../../type/service";
 import { TypeScriptMessage, TypeScriptObject } from "./bind/object";
+import { typeName } from "./helpers";
 
 const { blue, green, yellow } = chalk;
 
 export { TypeScriptObject, TypeScriptMessage };
 
 declare let require: (name: string) => any;
-
-function modifierMap(
-  modifier: NSchemaModifier,
-  nschema: NSchemaInterface,
-  namespace: string,
-  name: string,
-  context: TypeScriptContext
-): string {
-  switch (modifier) {
-    case "list":
-      return "[]";
-    case "array":
-      return "[]";
-    case "option":
-      return "| undefined";
-    default:
-      return typeName(modifier, nschema, namespace, name, context, false);
-  }
-}
 
 export interface TypeScriptContext {
   hasTypeScript: true;
@@ -75,7 +53,6 @@ export enum RestClientStrategy {
 }
 
 export class TypeScript {
-  public typeName = typeName;
   // tslint:disable-next-line:prefer-function-over-method
   public async generate(
     nschema: NSchemaInterface,
@@ -202,72 +179,6 @@ export function isOptional(p: RestMessageArgument): boolean {
   return false;
 }
 
-function typeName(
-  nschemaType: NSchemaType,
-  nschema: NSchemaInterface,
-  namespace: string,
-  name: string,
-  context: TypeScriptContext,
-  addFlowComment: boolean
-) {
-  let result: string;
-  const typeMap = (t: NSchemaPrimitiveType) => {
-    switch (t) {
-      case "int":
-        return "number";
-      case "float":
-        return "number";
-      case "string":
-        return "string";
-      case "bool":
-        return "boolean";
-      case "date":
-        return "Date";
-      default:
-        shouldNever(t);
-    }
-    return "string";
-  };
-  if (typeof nschemaType === "string") {
-    result = typeMap(nschemaType);
-  } else if (typeof nschemaType === "object") {
-    let ns = nschemaType.namespace;
-    if (typeof ns === "undefined") {
-      ns = namespace || "";
-    }
-    if (ns !== namespace && context) {
-      if (!context.imports[ns]) {
-        context.imports[ns] = {};
-      }
-      context.imports[ns][nschemaType.name] = true;
-    }
-    result = nschemaType.name;
-  } else {
-    result = typeMap("string");
-  }
-  if (nschemaType && typeof nschemaType === "object" && nschemaType.modifier) {
-    const $modifier = nschemaType.modifier;
-    const modifierArr: NSchemaModifier[] = !isArray($modifier)
-      ? [$modifier]
-      : $modifier;
-
-    modifierArr.forEach(item => {
-      result = `(${result} ${modifierMap(
-        item,
-        nschema,
-        namespace,
-        name,
-        context
-      )})`;
-    });
-  }
-  if (addFlowComment) {
-    return `${result} /* :${result} */`;
-  } else {
-    return result;
-  }
-}
-
 const typescript = new TypeScript();
 
 function getDataItems(
@@ -299,7 +210,7 @@ function getDataItems(
 
 export function messageType(
   nschema: NSchemaInterface,
-  $context: TypeScriptContext,
+  context: TypeScriptContext,
   addFlowComment: boolean,
   message: AnonymousMessage
 ): string {
@@ -310,25 +221,27 @@ export function messageType(
     return "void";
   } else if (dataItems.length === 1) {
     const item = dataItems[0];
-    return `${typescript.typeName(
+    return `${typeName(
       item.type,
       nschema,
       "",
       "",
-      $context,
-      addFlowComment
+      context,
+      addFlowComment,
+      false
     )}`;
   } else {
     return (
       `{ ${dataItems
         .map((item, $i) => {
-          return `${item.name || `item${$i}`}: ${typescript.typeName(
+          return `${item.name || `item${$i}`}: ${typeName(
             item.type,
             nschema,
             "",
             "",
-            $context,
-            addFlowComment
+            context,
+            addFlowComment,
+            false
           )}`;
         })
         .join(typeSeparator)} }` || "void"

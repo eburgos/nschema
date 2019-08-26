@@ -1,5 +1,6 @@
+import { isArray } from "util";
 import { isRestTarget, TypeScriptRestTarget } from ".";
-import typescript, {
+import {
   isOptional,
   messageType,
   RestClientStrategy,
@@ -10,12 +11,17 @@ import {
   NSchemaMessageArgument,
   NSchemaRestOperation,
   NSchemaRestService,
+  NSchemaType,
   RestMessageArgument,
   Target
 } from "../../../../../model";
 import { findNonCollidingName, wrap } from "../../../../../utils";
 import { AnonymousMessage } from "../../../../type/message";
-import { computeImportMatrix, typeName } from "../../helpers";
+import {
+  computeImportMatrix,
+  isPrimitiveTypeString,
+  typeName
+} from "../../helpers";
 import {
   addSpace,
   getOperationDetails,
@@ -25,12 +31,38 @@ import {
 
 function requestArgsType(method: string) {
   return `{
-      data: any | undefined,
-      handleAs: string,
-      headers: {[name: string]: string },
-      method: "${method}",
-      url: string,
+      data: any | undefined;
+      handleAs: string;
+      headers: {[name: string]: string };
+      method: "${method}";
+      url: string;
     }`;
+}
+
+function isSingleDate(t: NSchemaType) {
+  if (isPrimitiveTypeString(t as string)) {
+    return t === "date";
+  } else if (
+    typeof t !== "string" &&
+    (t.name === "date" && t.namespace === "")
+  ) {
+    if (!t.modifier) {
+      return true;
+    } else {
+      const mods = isArray(t.modifier) ? t.modifier : [t.modifier];
+      return mods.length === 1 && mods[0] === "option";
+    }
+  }
+  return false;
+}
+
+function getValueOf(p: RestMessageArgument) {
+  const type = p.realType || p.type;
+  if (isSingleDate(type)) {
+    return `${p.name} instanceof Date? ${p.name}.getTime() : ${p.name}`;
+  }
+
+  return p.name;
 }
 
 function buildRequest(
@@ -60,10 +92,12 @@ function buildRequest(
                 paramsInBody.length > 1 ? `[` : ``
               }${paramsInBody
                 .map(d => {
-                  return d.name;
+                  return getValueOf(d);
                 })
                 .join(", ")}${paramsInBody.length > 1 ? `]` : ``})`
-            : `qs.stringify({${paramsInBody.map(p => p.name)}})`
+            : `qs.stringify({${paramsInBody.map(
+                p => `${p.name}: ${getValueOf(p)}`
+              )}})`
           : `undefined`
       },
       handleAs: "json",
@@ -80,8 +114,10 @@ function buildRequest(
             paramsInHeader.map(p => {
               return isOptional(p)
                 ? `...(typeof ${p.name} !== "undefined")? { "${p.headerName ||
-                    `X-${p.name}`}": ${p.name} } : {}`
-                : `"${p.headerName || `X-${p.name}`}": ${p.name}`;
+                    `X-${p.name}`}": \`\${${getValueOf(p)}}\` } : {}`
+                : `"${p.headerName || `X-${p.name}`}": \`\${${getValueOf(
+                    p
+                  )}}\``;
             })
           ).join(",\n          ")}
         }}`
@@ -93,19 +129,22 @@ function buildRequest(
     paramsInRoute.length
       ? `\${[${paramsInRoute
           .map(p => {
-            return `{ key: \`${p.name}\`, value: \`\${${p.name}}\`}`;
+            return `{ key: \`${p.name}\`, value: \`\${${getValueOf(p)}}\`}`;
           })
           .join(
             ", "
-          )}].reduce((acc, next: { key: string, value: string }) => acc.split(\`{\${next.key}}\`).join(next.value), "${route}")}`
+          )}].reduce((acc, next: { key: string; value: string; }) => acc.split(\`{\${next.key}}\`).join(next.value), "${route}")}`
       : `${route}`
   }${
     paramsInQuery.length
-      ? `?\${${`${paramsInQuery
+      ? `?\${[${`${paramsInQuery
           .map(p => {
-            return `\`${p.name}=\${encodeURIComponent(\`\${${p.name}}\`)}\`}`;
+            return `{ name: \`${p.name}\`, value: ${getValueOf(p)} }`;
+            //return `\`${p.name}=\${encodeURIComponent(\`\${${p.name}}\`)}\`}`;
           })
-          .join(`&\${`)}`}`
+          .join(
+            `, `
+          )}].filter(item => typeof(item.value) !== "undefined").map(item => \`\${item.name}=\${encodeURIComponent(\`\${item.value}\`)}\`).join("&")}`}`
       : ``
   }\`
     }`;
@@ -170,8 +209,16 @@ const $toJson = (res: Response) => {
 
 @Injectable()`;
   },
-  [RestClientStrategy.Default]: (_context: TypeScriptContext) => {
-    return "";
+  [RestClientStrategy.Default]: (
+    _context: TypeScriptContext,
+    config: NSchemaRestService
+  ) => {
+    return `/**
+ *${config.description ? ` ${config.description}` : ""}
+ *
+ * @export
+ * @class ${config.name}
+ */`;
   }
 };
 
@@ -186,13 +233,17 @@ const constructorPart = {
   }
 `;
   },
-  [RestClientStrategy.Default]: (endpointPropertyName: string) => {
+  [RestClientStrategy.Default]: (
+    endpointPropertyName: string,
+    errorHandlerPropertyName: string,
+    config: NSchemaRestService
+  ) => {
     return `  /**
    * Base url for this http service
    */
   private readonly ${endpointPropertyName}: string /* :string */;
 
-  public constructor(${endpointPropertyName}: string /* :string */) {
+  public constructor(${endpointPropertyName}: string /* :string */, private ${errorHandlerPropertyName}?: ${config.name}ErrorHandler) {
       this.${endpointPropertyName} = ${endpointPropertyName};
   }
   /*::
@@ -316,9 +367,10 @@ let $body = JSON.stringify(${paramsInBody.length > 1 ? `[` : ``}${paramsInBody
     nschema: NSchemaInterface,
     context: TypeScriptContext,
     outMessage: AnonymousMessage,
-    _op: string,
+    op: string,
     optionsVarName: string,
-    _endpointPropertyName: string
+    _endpointPropertyName: string,
+    errorHandlerPropertyName: string
   ) => {
     const responseVarName = findNonCollidingName(
       "response",
@@ -329,16 +381,26 @@ let $body = JSON.stringify(${paramsInBody.length > 1 ? `[` : ``}${paramsInBody
         ..._paramsInRoute
       ].map(p => p.name)
     );
-    return `const ${responseVarName} = await request.${method.toLowerCase()}${
+    return `try {
+      const ${responseVarName} = await request.${method.toLowerCase()}${
       ["delete"].indexOf(method.toLowerCase()) < 0
-        ? `<${messageType(nschema, context, true, outMessage)}>`
+        ? `<${messageType(nschema, context, false, outMessage)}>`
         : ``
     }(${optionsVarName}.url, ${
       ["delete", "head", "get"].indexOf(method.toLowerCase()) < 0
         ? `${optionsVarName}.data, `
         : ``
     }${optionsVarName});
-    return ${responseVarName}.data;`;
+      return ${responseVarName}.data;
+    }
+    catch (err) {
+      if (this.${errorHandlerPropertyName} && this.${errorHandlerPropertyName}.${op}) {
+        return this.${errorHandlerPropertyName}.${op}(err);
+      }
+      else {
+        throw err;
+      }
+    }`;
   }
 };
 
@@ -359,7 +421,8 @@ function renderOperations(
   config: NSchemaRestService,
   deferredType: string,
   restClientStrategy: RestClientStrategy,
-  endpointPropertyName: string
+  endpointPropertyName: string,
+  errorHandlerPropertyName: string
 ) {
   const routePrefix = config.routePrefix || "";
   return `${Object.keys(config.operations)
@@ -378,7 +441,11 @@ function renderOperations(
 
       if (method === "get" && bodyArguments.length) {
         throw new Error(
-          `Service "${config.name}" : operation "${op}" has method GET and body parameters. Fix this to continue.`
+          `Service "${
+            config.name
+          }" : operation "${op}" has method GET and body parameters "${bodyArguments
+            .map(d => d.name)
+            .join("\n")}". Fix this to continue.`
         );
       }
       const optionsVarName = findNonCollidingName(
@@ -412,21 +479,27 @@ ${(inMessage.data || [])
    */
   public async ${op}(${(inMessage.data || [])
         .map(par => {
-          return `${par.name}: ${typescript.typeName(
+          return `${par.name}: ${typeName(
             par.type,
             nschema,
-            "",
-            "",
+            config.namespace,
+            config.name,
             context,
+            true,
             true
           )}`;
         })
         .join(", ")}): ${deferredType}<${messageType(
         nschema,
         context,
-        true,
+        false,
         outMessage
-      )}> {
+      )}> /* :${deferredType}<${messageType(
+        nschema,
+        context,
+        false,
+        outMessage
+      )}> */ {
     const ${optionsVarName}${requestOptionsPart[restClientStrategy](
         method,
         route,
@@ -451,7 +524,8 @@ ${(inMessage.data || [])
       outMessage,
       op,
       optionsVarName,
-      endpointPropertyName
+      endpointPropertyName,
+      errorHandlerPropertyName
     )}
   }
 `;
@@ -467,6 +541,16 @@ ${(inMessage.data || [])
       }
       const pContext = config.producerContexts[contextName];
       const description = pContext.description || "";
+      pContext.operations.forEach(op => {
+        if (!config.operations[op]) {
+          throw new Error(
+            `Unable to generate producer context ${contextName} for service ${config.namespace ||
+              ""} :: ${
+              config.name
+            } because it defines a non-existent operation ${op}.`
+          );
+        }
+      });
       const contextOperations: {
         [name: string]: NSchemaRestOperation;
       } = Object.keys(config.operations)
@@ -500,6 +584,7 @@ ${(inMessage.data || [])
               config.namespace,
               config.name,
               context,
+              true,
               true
             );
             if (
@@ -542,7 +627,18 @@ ${Object.keys(contextOperations)
     const operation = contextOperations[op];
     return `      ${op}: (${(operation.inMessage.data || [])
       .filter(({ name }) => !operationArguments.find(arg => arg.name === name))
-      .map(arg => `${arg.name}: ${arg.type}`)
+      .map(
+        arg =>
+          `${arg.name}: ${typeName(
+            arg.realType || arg.type,
+            nschema,
+            config.namespace,
+            config.name,
+            context,
+            true,
+            true
+          )}`
+      )
       .join(", ")}) => this.${op}(${(operation.inMessage.data || [])
       .map(arg => arg.name)
       .join(", ")})`;
@@ -568,6 +664,10 @@ export function render(
     "endpointUrl",
     Object.keys(config.operations)
   );
+  const errorHandlerPropertyName = findNonCollidingName(
+    "errorHandler",
+    Object.keys(config.operations)
+  );
   const target: TypeScriptRestTarget = targetRaw;
   const restClientStrategy =
     target.$restClientStrategy || RestClientStrategy.Default;
@@ -582,16 +682,38 @@ ${computeImportMatrix(
   target.$namespaceMapping || {},
   context
 )}`
-  }${classHeader[restClientStrategy](context)}
+  }
+export interface ${config.name}ErrorHandler {
+${Object.keys(config.operations)
+  .map(op => {
+    const operation = config.operations[op];
+    const outMessage = operation.outMessage;
+    return `  ${op}?(error: any): ${deferredType}<${messageType(
+      nschema,
+      context,
+      false,
+      outMessage
+    )}>;`;
+  })
+  .join("\n")}
+}
+
+
+${classHeader[restClientStrategy](context, config)}
 export class ${config.name} {
-${constructorPart[restClientStrategy](endpointPropertyName)}
+${constructorPart[restClientStrategy](
+  endpointPropertyName,
+  errorHandlerPropertyName,
+  config
+)}
 ${renderOperations(
   nschema,
   context,
   config,
   deferredType,
   restClientStrategy,
-  endpointPropertyName
+  endpointPropertyName,
+  errorHandlerPropertyName
 )}${errorHandlerPart[restClientStrategy]()}}
 `;
 }

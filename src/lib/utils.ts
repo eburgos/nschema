@@ -2,7 +2,7 @@ import { default as deepCloneHelper } from "immutability-helper";
 import { render as renderPrettyJson } from "prettyjson";
 import { isArray } from "util";
 import { writeError } from "./logging";
-import { NSchemaTask } from "./model";
+import { NSchemaTask, NSchemaType } from "./model";
 
 declare const require: (name: string) => { default: NSchemaTask } | NSchemaTask;
 function hasDefault(
@@ -162,4 +162,40 @@ export function findNonCollidingName(
     current = `${desired}${cnt}`;
   }
   return current;
+}
+
+export function isOptional(p: {
+  realType?: NSchemaType;
+  type: NSchemaType;
+}): boolean {
+  if (p.realType) {
+    return isOptional({ type: p.realType });
+  }
+  if (typeof p.type === "object") {
+    if (p.type.modifier) {
+      const mods = isArray(p.type.modifier)
+        ? p.type.modifier
+        : [p.type.modifier];
+      return mods.indexOf("option") === mods.length - 1;
+    }
+  }
+  return false;
+}
+
+export function removeOptional(type: NSchemaType): NSchemaType {
+  if (typeof type === "string") {
+    return type;
+  }
+  const mods = type.modifier
+    ? isArray(type.modifier)
+      ? type.modifier
+      : [type.modifier]
+    : [];
+  if (mods.length > 0 && mods[mods.length - 1] === "option") {
+    return {
+      ...type,
+      modifier: mods.slice(0, mods.length - 1)
+    };
+  }
+  return type;
 }

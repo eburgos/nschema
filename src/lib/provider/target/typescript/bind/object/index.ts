@@ -1,7 +1,6 @@
 /**
  * Created by eburgos on 6/13/14.
  */
-import { isArray } from "util";
 import { TypeScript, TypeScriptContext } from "../..";
 import { writeDebugLog } from "../../../../../logging";
 import {
@@ -12,11 +11,15 @@ import {
   NSchemaModifier,
   NSchemaProperty,
   NSchemaType,
-  NSchemaTypeDefinition,
   Target,
   TemplateFunction
 } from "../../../../../model";
-import { initialCaps, wrap } from "../../../../../utils";
+import {
+  initialCaps,
+  isOptional,
+  removeOptional,
+  wrap
+} from "../../../../../utils";
 import { MessageTask } from "../../../../type/message";
 import { ObjectTask } from "../../../../type/object";
 import { ServiceTask } from "../../../../type/service";
@@ -32,6 +35,7 @@ export interface TypeScriptLiteralsUnion {
 export type TypeScriptType = NSchemaType | TypeScriptLiteralsUnion;
 
 export interface TypeScriptProperty extends NSchemaProperty {
+  canOmit?: boolean;
   type: TypeScriptType;
   typescriptName?: string;
   typescriptValue?: string;
@@ -118,20 +122,14 @@ ${Object.keys(data.properties || {})
     }
     const property = data.properties[prop];
     const nschemaType = property.type;
-    const modifier = (nschemaType as NSchemaTypeDefinition).modifier;
-    const isOptional =
-      typeof nschemaType !== "string"
-        ? modifier
-          ? (isArray(modifier) ? modifier : [modifier]).indexOf("option") >= 0
-            ? true
-            : false
-          : false
-        : false;
+
+    const canOmitProperty = isOptional(property) && property.canOmit;
+
     return `  /**
    * ${(property.description || "").replace(/\n/g, "\n     * ")}
    */
-  ${property.typescriptName || prop}${isOptional ? "?" : ""}: ${typeName(
-      nschemaType,
+  ${property.typescriptName || prop}${canOmitProperty ? "?" : ""}: ${typeName(
+      canOmitProperty ? removeOptional(nschemaType) : nschemaType,
       nschema,
       data.namespace,
       data.name,

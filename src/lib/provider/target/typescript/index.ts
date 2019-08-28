@@ -5,13 +5,11 @@
 import chalk from "chalk";
 import { existsSync, readdirSync, statSync } from "fs";
 import { extname, resolve as pathResolve } from "path";
-import { isArray } from "util";
 import { LogLevel, writeDebugLog, writeLog } from "../../../logging";
 import {
   HasFilenameMixin,
   NSchemaInterface,
   NSchemaMessageArgument,
-  RestMessageArgument,
   Target,
   TemplateFunction
 } from "../../../model";
@@ -162,21 +160,6 @@ export class TypeScript {
       throw new Error(err);
     });
   }
-}
-
-export function isOptional(p: RestMessageArgument): boolean {
-  if (p.realType) {
-    return isOptional({ name: p.name, type: p.realType });
-  }
-  if (typeof p.type === "object") {
-    if (p.type.modifier) {
-      const mods = isArray(p.type.modifier)
-        ? p.type.modifier
-        : [p.type.modifier];
-      return mods.indexOf("option") >= 0;
-    }
-  }
-  return false;
 }
 
 const typescript = new TypeScript();

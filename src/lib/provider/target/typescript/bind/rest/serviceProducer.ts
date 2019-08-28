@@ -1,11 +1,6 @@
 import { isArray } from "util";
 import { isRestTarget, TypeScriptRestTarget } from ".";
-import {
-  isOptional,
-  messageType,
-  RestClientStrategy,
-  TypeScriptContext
-} from "../..";
+import { messageType, RestClientStrategy, TypeScriptContext } from "../..";
 import {
   NSchemaInterface,
   NSchemaMessageArgument,
@@ -15,7 +10,7 @@ import {
   RestMessageArgument,
   Target
 } from "../../../../../model";
-import { findNonCollidingName, wrap } from "../../../../../utils";
+import { findNonCollidingName, isOptional, wrap } from "../../../../../utils";
 import { AnonymousMessage } from "../../../../type/message";
 import {
   computeImportMatrix,

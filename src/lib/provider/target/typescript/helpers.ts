@@ -136,7 +136,11 @@ export function renderPropertyAccessor(property: string) {
 }
 
 export function renderFileHeader(
-  obj: AppendableMixin & { description?: string; name: string }
+  obj: AppendableMixin & {
+    description?: string;
+    name: string;
+    subType?: "enumeration" | "";
+  }
 ) {
   if (obj.append) {
     return "";
@@ -149,7 +153,7 @@ export function renderFileHeader(
  }
  *
  * @export
- * @interface ${obj.name}
+ * @${obj.subType === "enumeration" ? "enum" : "interface"} ${obj.name}
  */`;
   }
 }

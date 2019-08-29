@@ -70,27 +70,32 @@ const wrapDoubleQuotes = wrap(`"`, `"`);
 
 function renderEnum(data: TypeScriptObject) {
   return `enum ${data.name} {
-        ${Object.keys(data.properties || {}).map((prop, cnt) => {
-          if (!data.properties) {
-            throw new Error(`Invalid properties`);
-          }
-          const property = data.properties[prop];
-          const currentVal =
-            typeof property.typescriptValue !== "undefined"
-              ? property.typescriptValue
-              : cnt;
-          return `/*
-          * ${(property.description || "").replace(/\n/g, "\n     * ")}
-          */
-         ${property.typescriptName || initialCaps(prop)} = ${currentVal}`;
-        }).join(`,
-        `)}
-    }
-    /*::
-    export type ${data.name} = ${Object.keys(data.properties || {})
+${Object.keys(data.properties || {}).map((prop, cnt) => {
+  if (!data.properties) {
+    throw new Error(`Invalid properties`);
+  }
+  const property = data.properties[prop];
+  const currentVal =
+    typeof property.typescriptValue !== "undefined"
+      ? property.type === "string"
+        ? `"${property.typescriptValue}"`
+        : property.typescriptValue
+      : cnt;
+  return `  /*
+   * ${(property.description || "").replace(/\n/g, "\n     * ")}
+   */
+  ${property.typescriptName || initialCaps(prop)} = ${currentVal}`;
+}).join(`,
+
+`)}
+}
+
+/*::
+ export type ${data.name} = ${Object.keys(data.properties || {})
     .map(wrapDoubleQuotes)
     .join(" | ")};
-    */`;
+*/
+`;
 }
 
 function renderClass(

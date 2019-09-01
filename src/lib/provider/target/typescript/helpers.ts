@@ -122,7 +122,8 @@ export function computeImportMatrix(
   if (!lines.length) {
     return "";
   }
-  return `${lines.join("\n")}${"\n"}${lines.map(surroundWithFlow).join("\n")}
+  return `${lines.join("\n")}
+${lines.map(surroundWithFlow).join("\n")}
 `;
 }
 
@@ -171,7 +172,7 @@ function modifierMap(
     case "array":
       return "[]";
     case "option":
-      return "| undefined";
+      return " | undefined";
     default:
       return typeName(
         modifier,
@@ -179,6 +180,7 @@ function modifierMap(
         namespace,
         name,
         context,
+        false,
         false,
         false
       );
@@ -255,6 +257,20 @@ export function isPrimitiveTypeString(t: string) {
   }
 }
 
+/**
+ * Returns a typescript type definition name given a TypeScriptType
+ *
+ * @export
+ * @param {TypeScriptType} nschemaType
+ * @param {NSchemaInterface} nschema
+ * @param {(string | undefined)} namespace
+ * @param {string} name
+ * @param {TypeScriptContext} context
+ * @param {boolean} addFlowComment
+ * @param {boolean} isParameter
+ * @param {boolean} isRootTypeCall true if this function is not being called from within itself
+ * @returns
+ */
 export function typeName(
   nschemaType: TypeScriptType,
   nschema: NSchemaInterface,
@@ -262,7 +278,8 @@ export function typeName(
   name: string,
   context: TypeScriptContext,
   addFlowComment: boolean,
-  isParameter: boolean
+  isParameter: boolean,
+  isRootTypeCall: boolean
 ) {
   let result: string;
   if (typeof nschemaType === "string") {
@@ -302,14 +319,17 @@ export function typeName(
       ? [$modifier]
       : $modifier;
 
-    modifierArr.forEach(item => {
-      result = `(${result} ${modifierMap(
+    modifierArr.forEach((item, i, arr) => {
+      result = `${result}${modifierMap(
         item,
         nschema,
         namespace,
         name,
         context
-      )})`;
+      )}`;
+      if (!isRootTypeCall || i + 1 < arr.length) {
+        result = `(${result})`;
+      }
     });
   }
   if (addFlowComment) {
@@ -374,7 +394,8 @@ export function messageType(
             nschemaMessage.name,
             context,
             true,
-            false
+            false,
+            true
           )
         ]
       : $_dataItems.map((item, $i) => {
@@ -385,7 +406,8 @@ export function messageType(
             nschemaMessage.name,
             context,
             true,
-            false
+            false,
+            true
           )}`;
         });
 

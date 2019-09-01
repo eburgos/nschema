@@ -20,6 +20,7 @@ import {
 import { updateNamespace } from "../../../../../utils";
 import { computeImportMatrix } from "../../helpers";
 import { checkAndFixTarget } from "../rest";
+import * as prettier from "prettier";
 
 const { yellow, blue, green } = chalk;
 
@@ -112,14 +113,15 @@ async function execute(
     namespaceMapping
   );
 
-  result = `/* @flow */
-
-${
-  imports
-    ? `
+  result = `/* @flow */${
+    imports
+      ? `
 ${imports}`
-    : ""
-}${result}`;
+      : ""
+  }${result}`;
+  result = prettier.format(result, {
+    parser: "typescript"
+  });
 
   const location = newTarget.location;
   const filepath =

@@ -28,7 +28,7 @@ function requestArgsType(method: string) {
   return `{
       data: any | undefined;
       handleAs: string;
-      headers: {[name: string]: string };
+      headers: { [name: string]: string };
       method: "${method}";
       url: string;
     }`;
@@ -90,9 +90,9 @@ function buildRequest(
                   return getValueOf(d);
                 })
                 .join(", ")}${paramsInBody.length > 1 ? `]` : ``})`
-            : `qs.stringify({${paramsInBody.map(
-                p => `${p.name}: ${getValueOf(p)}`
-              )}})`
+            : `qs.stringify({ ${paramsInBody
+                .map(p => `${p.name}: ${getValueOf(p)}`)
+                .join(", ")} })`
           : `undefined`
       },
       handleAs: "json",
@@ -115,7 +115,8 @@ function buildRequest(
                   )}}\``;
             })
           ).join(",\n          ")}
-        }}`
+        }
+      }`
       : `
       }`
   },
@@ -128,7 +129,7 @@ function buildRequest(
           })
           .join(
             ", "
-          )}].reduce((acc, next: { key: string; value: string; }) => acc.split(\`{\${next.key}}\`).join(next.value), "${route}")}`
+          )}].reduce((acc, next: { key: string; value: string }) => acc.split(\`{\${next.key}}\`).join(next.value), "${route}")}`
       : `${route}`
   }${
     paramsInQuery.length
@@ -238,8 +239,11 @@ const constructorPart = {
    */
   private readonly ${endpointPropertyName}: string /* :string */;
 
-  public constructor(${endpointPropertyName}: string /* :string */, private ${errorHandlerPropertyName}?: ${config.name}ErrorHandler) {
-      this.${endpointPropertyName} = ${endpointPropertyName};
+  public constructor(
+    ${endpointPropertyName}: string /* :string */,
+    private ${errorHandlerPropertyName}?: ${config.name}ErrorHandler
+  ) {
+    this.${endpointPropertyName} = ${endpointPropertyName};
   }
   /*::
   ${endpointPropertyName}: string;
@@ -387,12 +391,10 @@ let $body = JSON.stringify(${paramsInBody.length > 1 ? `[` : ``}${paramsInBody
         : ``
     }${optionsVarName});
       return ${responseVarName}.data;
-    }
-    catch (err) {
+    } catch (err) {
       if (this.${errorHandlerPropertyName} && this.${errorHandlerPropertyName}.${op}) {
         return this.${errorHandlerPropertyName}.${op}(err);
-      }
-      else {
+      } else {
         throw err;
       }
     }`;
@@ -481,6 +483,7 @@ ${(inMessage.data || [])
             config.name,
             context,
             true,
+            true,
             true
           )}`;
         })
@@ -529,93 +532,91 @@ ${(inMessage.data || [])
     !config.producerContexts
       ? ""
       : `
-  ${Object.keys(config.producerContexts || {})
-    .map(contextName => {
-      if (!config.producerContexts) {
-        throw new Error("Invalid Argument");
-      }
-      const pContext = config.producerContexts[contextName];
-      const description = pContext.description || "";
-      pContext.operations.forEach(op => {
-        if (!config.operations[op]) {
-          throw new Error(
-            `Unable to generate producer context ${contextName} for service ${config.namespace ||
-              ""} :: ${
-              config.name
-            } because it defines a non-existent operation ${op}.`
-          );
-        }
-      });
-      const contextOperations: {
-        [name: string]: NSchemaRestOperation;
-      } = Object.keys(config.operations)
-        .filter(k => pContext.operations.includes(k))
-        .reduce((acc: { [name: string]: NSchemaRestOperation }, next) => {
-          acc[next] = config.operations[next];
-          return acc;
-        }, {});
-      //Validating that all parameters in context belong to all operations and have the same type
-      const operationArguments = pContext.arguments.map(arg => {
-        const { isValidType, lastType } = Object.keys(contextOperations).reduce(
-          (
-            acc: { isValidType: boolean; lastType: string | undefined },
-            cop
-          ) => {
-            const contextOperation = contextOperations[cop];
-            const operationArgument = (
-              contextOperation.inMessage.data || []
-            ).find(operationArg => operationArg.name === arg);
-            if (!operationArgument) {
-              throw new Error(
-                `Unable to generate producer context ${contextName} for service ${config.namespace ||
-                  ""} :: ${
-                  config.name
-                } because all of it's operations don't have the ${arg} argument.`
-              );
-            }
-            const argumentTypeName = typeName(
-              operationArgument.realType || operationArgument.type,
-              nschema,
-              config.namespace,
-              config.name,
-              context,
-              true,
-              true
-            );
-            if (
-              acc.isValidType &&
-              (typeof acc.lastType === "undefined" ||
-                acc.lastType === argumentTypeName)
-            ) {
-              return {
-                isValidType: true,
-                lastType: argumentTypeName
-              };
-            } else {
-              return { isValidType: false, lastType: undefined };
-            }
-          },
-          { isValidType: true, lastType: undefined }
+${Object.keys(config.producerContexts || {})
+  .map(contextName => {
+    if (!config.producerContexts) {
+      throw new Error("Invalid Argument");
+    }
+    const pContext = config.producerContexts[contextName];
+    const description = pContext.description || "";
+    pContext.operations.forEach(op => {
+      if (!config.operations[op]) {
+        throw new Error(
+          `Unable to generate producer context ${contextName} for service ${config.namespace ||
+            ""} :: ${
+            config.name
+          } because it defines a non-existent operation ${op}.`
         );
-        if (!isValidType) {
-          throw new Error(
-            `Unable to generate producer context ${contextName} for service ${config.namespace ||
-              ""} :: ${
-              config.name
-            } because all of it's operations don't have the same type for their ${arg} argument.`
+      }
+    });
+    const contextOperations: {
+      [name: string]: NSchemaRestOperation;
+    } = Object.keys(config.operations)
+      .filter(k => pContext.operations.includes(k))
+      .reduce((acc: { [name: string]: NSchemaRestOperation }, next) => {
+        acc[next] = config.operations[next];
+        return acc;
+      }, {});
+    //Validating that all parameters in context belong to all operations and have the same type
+    const operationArguments = pContext.arguments.map(arg => {
+      const { isValidType, lastType } = Object.keys(contextOperations).reduce(
+        (acc: { isValidType: boolean; lastType: string | undefined }, cop) => {
+          const contextOperation = contextOperations[cop];
+          const operationArgument = (
+            contextOperation.inMessage.data || []
+          ).find(operationArg => operationArg.name === arg);
+          if (!operationArgument) {
+            throw new Error(
+              `Unable to generate producer context ${contextName} for service ${config.namespace ||
+                ""} :: ${
+                config.name
+              } because all of it's operations don't have the ${arg} argument.`
+            );
+          }
+          const argumentTypeName = typeName(
+            operationArgument.realType || operationArgument.type,
+            nschema,
+            config.namespace,
+            config.name,
+            context,
+            true,
+            true,
+            true
           );
-        }
-        return {
-          name: arg,
-          type: lastType
-        };
-      });
-      return `/*
+          if (
+            acc.isValidType &&
+            (typeof acc.lastType === "undefined" ||
+              acc.lastType === argumentTypeName)
+          ) {
+            return {
+              isValidType: true,
+              lastType: argumentTypeName
+            };
+          } else {
+            return { isValidType: false, lastType: undefined };
+          }
+        },
+        { isValidType: true, lastType: undefined }
+      );
+      if (!isValidType) {
+        throw new Error(
+          `Unable to generate producer context ${contextName} for service ${config.namespace ||
+            ""} :: ${
+            config.name
+          } because all of it's operations don't have the same type for their ${arg} argument.`
+        );
+      }
+      return {
+        name: arg,
+        type: lastType
+      };
+    });
+    return `  /*
    * ${description}
    */
   public ${contextName}(${operationArguments
-        .map(arg => `${arg.name}: ${arg.type}`)
-        .join(", ")}) {
+      .map(arg => `${arg.name}: ${arg.type}`)
+      .join(", ")}) {
     return {
 ${Object.keys(contextOperations)
   .map(op => {
@@ -631,6 +632,7 @@ ${Object.keys(contextOperations)
             config.name,
             context,
             true,
+            true,
             true
           )}`
       )
@@ -641,8 +643,8 @@ ${Object.keys(contextOperations)
   .join(",\n")}
     };
   }`;
-    })
-    .join("\n")}`
+  })
+  .join("\n")}`
   }`;
 }
 
@@ -693,7 +695,6 @@ ${Object.keys(config.operations)
   .join("\n")}
 }
 
-
 ${classHeader[restClientStrategy](context, config)}
 export class ${config.name} {
 ${constructorPart[restClientStrategy](
@@ -709,6 +710,6 @@ ${renderOperations(
   restClientStrategy,
   endpointPropertyName,
   errorHandlerPropertyName
-)}${errorHandlerPart[restClientStrategy]()}}
-`;
+)}${errorHandlerPart[restClientStrategy]()}
+}`;
 }

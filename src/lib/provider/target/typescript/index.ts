@@ -19,6 +19,7 @@ import { AnonymousMessage } from "../../type/message";
 import { ServiceTask } from "../../type/service";
 import { TypeScriptMessage, TypeScriptObject } from "./bind/object";
 import { typeName } from "./helpers";
+import * as prettier from "prettier";
 
 const { blue, green, yellow } = chalk;
 
@@ -102,18 +103,20 @@ export class TypeScript {
         LogLevel.Default,
         `${blue("typescript")}: writing to file: ${green(filepath)}`
       );
-      return nschema.writeFile(filepath, result).then(
-        _ => {
-          return {
-            config,
-            context,
-            generated: result
-          };
-        },
-        err => {
-          throw new Error(err);
-        }
-      );
+      return nschema
+        .writeFile(filepath, prettier.format(result, { parser: "typescript" }))
+        .then(
+          _ => {
+            return {
+              config,
+              context,
+              generated: result
+            };
+          },
+          err => {
+            throw new Error(err);
+          }
+        );
     }
   }
   public async init(nschema: NSchemaInterface) {
@@ -211,7 +214,8 @@ export function messageType(
       "",
       context,
       addFlowComment,
-      false
+      false,
+      true
     )}`;
   } else {
     return (
@@ -224,7 +228,8 @@ export function messageType(
             "",
             context,
             addFlowComment,
-            false
+            false,
+            true
           )}`;
         })
         .join(typeSeparator)} }` || "void"

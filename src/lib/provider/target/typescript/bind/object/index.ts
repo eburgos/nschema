@@ -114,7 +114,8 @@ function renderClass(
               data.name,
               context,
               false,
-              false
+              false,
+              true
             )
           )
           .join(", ")}`
@@ -140,7 +141,8 @@ ${Object.keys(data.properties || {})
       data.name,
       context,
       false,
-      false
+      false,
+      true
     )};
 `;
   })

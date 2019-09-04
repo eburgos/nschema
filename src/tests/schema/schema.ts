@@ -185,7 +185,7 @@ const bundle: BundleTask = {
 
               inMessage: {
                 // This message inherits AuthMessage
-                $extends: {
+                extends: {
                   name: "AuthMessage",
                   namespace: "NSchema.Model.Invoicing"
                 },
@@ -255,7 +255,7 @@ const bundle: BundleTask = {
               description: "Tests for authentication",
               inMessage: {
                 // This message inherits AuthMessage
-                $extends: {
+                extends: {
                   name: "AuthMessage",
                   namespace: "NSchema.Model.Invoicing"
                 },
@@ -278,7 +278,7 @@ const bundle: BundleTask = {
               description: "Returns the list of invoices",
               inMessage: {
                 // This message inherits AuthMessage
-                $extends: {
+                extends: {
                   name: "AuthMessage",
                   namespace: "NSchema.Model.Invoicing"
                 },
@@ -303,7 +303,7 @@ const bundle: BundleTask = {
               description: "Tests an operation that yields 2 values",
               inMessage: {
                 // This message inherits AuthMessage
-                $extends: {
+                extends: {
                   name: "AuthMessage",
                   namespace: "NSchema.Model.Invoicing"
                 }

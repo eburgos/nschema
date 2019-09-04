@@ -172,10 +172,10 @@ function getDataItems(
   nsMessage: AnonymousMessage
 ): NSchemaMessageArgument[] {
   const r: NSchemaMessageArgument[] = [];
-  if (nsMessage.$extends) {
+  if (nsMessage.extends) {
     const parent = nschema.getMessage(
-      nsMessage.$extends.namespace || "",
-      nsMessage.$extends.name
+      nsMessage.extends.namespace || "",
+      nsMessage.extends.name
     );
     if (parent) {
       getDataItems(nschema, parent).forEach(i => {
@@ -183,8 +183,8 @@ function getDataItems(
       });
     } else {
       throw new Error(
-        `could not find parent: ns="${nsMessage.$extends.namespace ||
-          ""}" name="${nsMessage.$extends.name}"`
+        `could not find parent: ns="${nsMessage.extends.namespace ||
+          ""}" name="${nsMessage.extends.name}"`
       );
     }
   }

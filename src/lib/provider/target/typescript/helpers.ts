@@ -344,10 +344,10 @@ function getDataItems(
   $nschema: NSchemaInterface
 ) {
   const r: NSchemaMessageArgument[] = [];
-  if (nsMessage.$extends) {
+  if (nsMessage.extends) {
     const parent = $nschema.getMessage(
-      nsMessage.$extends.namespace || "",
-      nsMessage.$extends.name
+      nsMessage.extends.namespace || "",
+      nsMessage.extends.name
     );
     if (parent) {
       getDataItems(parent, $nschema).forEach(i => {
@@ -355,8 +355,8 @@ function getDataItems(
       });
     } else {
       writeError(
-        `could not find parent: ns=${nsMessage.$extends.namespace || ""} name=${
-          nsMessage.$extends.name
+        `could not find parent: ns=${nsMessage.extends.namespace || ""} name=${
+          nsMessage.extends.name
         }`
       );
       throw new Error("Could not find parent message");

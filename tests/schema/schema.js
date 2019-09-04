@@ -154,7 +154,7 @@ const bundle = {
                         AllParametersOperation: {
                             description: "Tests an operation that has parameters of all kinds",
                             inMessage: {
-                                $extends: {
+                                extends: {
                                     name: "AuthMessage",
                                     namespace: "NSchema.Model.Invoicing"
                                 },
@@ -223,7 +223,7 @@ const bundle = {
                         Authenticate: {
                             description: "Tests for authentication",
                             inMessage: {
-                                $extends: {
+                                extends: {
                                     name: "AuthMessage",
                                     namespace: "NSchema.Model.Invoicing"
                                 },
@@ -245,7 +245,7 @@ const bundle = {
                         GetInvoiceList: {
                             description: "Returns the list of invoices",
                             inMessage: {
-                                $extends: {
+                                extends: {
                                     name: "AuthMessage",
                                     namespace: "NSchema.Model.Invoicing"
                                 },
@@ -268,7 +268,7 @@ const bundle = {
                         GetTwoValueOperation: {
                             description: "Tests an operation that yields 2 values",
                             inMessage: {
-                                $extends: {
+                                extends: {
                                     name: "AuthMessage",
                                     namespace: "NSchema.Model.Invoicing"
                                 }

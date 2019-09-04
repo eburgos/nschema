@@ -88,7 +88,7 @@ export interface TargetBind extends NSchemaPlugin {
 
 export interface Identifier {
   name: string;
-  namespace: string;
+  namespace?: string;
 }
 
 export interface NSchemaMessageArgument {

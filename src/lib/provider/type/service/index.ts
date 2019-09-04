@@ -63,8 +63,16 @@ async function execute(
     const operations = parentConfig.operations;
     for (const p in operations) {
       if (operations.hasOwnProperty(p)) {
-        processMessage(operations[p].inMessage, nschema);
-        processMessage(operations[p].outMessage, nschema);
+        processMessage(
+          operations[p].inMessage,
+          nschema,
+          parentConfig.namespace || ""
+        );
+        processMessage(
+          operations[p].outMessage,
+          nschema,
+          parentConfig.namespace || ""
+        );
       }
     }
   }

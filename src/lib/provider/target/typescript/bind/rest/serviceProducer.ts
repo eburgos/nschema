@@ -611,6 +611,10 @@ ${Object.keys(config.producerContexts || {})
         type: lastType
       };
     });
+    const replacerPropertyName = findNonCollidingName(
+      `contextReplacer`,
+      Object.keys(contextOperations)
+    );
     return `  /*
    * ${description}
    */
@@ -640,7 +644,13 @@ ${Object.keys(contextOperations)
       .map(arg => arg.name)
       .join(", ")})`;
   })
-  .join(",\n")}
+  .join(",\n")}, ${replacerPropertyName}(${operationArguments
+      .map(arg => `new${arg.name}: ${arg.type}`)
+      .join(", ")}) {
+      ${operationArguments.map(arg => `${arg.name} = new${arg.name}`).join(`;
+        `)}
+    
+  } 
     };
   }`;
   })

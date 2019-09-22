@@ -31,6 +31,8 @@ function requestArgsType(method: string) {
       headers: { [name: string]: string };
       method: "${method}";
       url: string;
+      withCredentials?: boolean;
+      mode: "navigate" | "same-origin" | "no-cors" | "cors";
     }`;
 }
 
@@ -121,6 +123,7 @@ function buildRequest(
       }`
   },
       method: "${method}",
+      mode: "cors",
       url: \`\${this.${endpointPropertyName}}${routePrefix}${
     paramsInRoute.length
       ? `\${[${paramsInRoute

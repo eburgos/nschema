@@ -2,11 +2,6 @@ import chalk from "chalk";
 import { resolve as pathResolve } from "path";
 import { isArray } from "util";
 import {
-  buildTypeScriptContext,
-  TypeScriptBundle,
-  TypeScriptContext
-} from "../..";
-import {
   LogLevel,
   writeDebugLog,
   writeError,
@@ -19,18 +14,17 @@ import {
 } from "../../../../../model";
 import { updateNamespace } from "../../../../../utils";
 import { computeImportMatrix } from "../../helpers";
-import { checkAndFixTarget } from "../rest";
-import * as prettier from "prettier";
+import { PHPContext, buildPHPContext, PHPBundle } from "../..";
 
 const { yellow, blue, green } = chalk;
 
 function computeBundleImportMatrix(
-  arr: TypeScriptContext[],
+  arr: PHPContext[],
   localNamespace: string,
   namespaceMapping: { [name: string]: string }
 ) {
-  const rootContext: TypeScriptContext = {
-    ...buildTypeScriptContext(),
+  const rootContext: PHPContext = {
+    ...buildPHPContext(),
     skipWrite: true
   };
   arr.forEach(item => {
@@ -48,7 +42,7 @@ function computeBundleImportMatrix(
 }
 
 async function execute(
-  parentConfig: NSchemaTask | TypeScriptBundle,
+  parentConfig: NSchemaTask | PHPBundle,
   nschema: NSchemaInterface
 ) {
   if (parentConfig.type !== "bundle") {
@@ -56,10 +50,10 @@ async function execute(
   }
   // According from how this bundle is implemented I will always get 1 target here
   if (!parentConfig.target) {
-    throw new Error("Invalid TypeScript bundle task");
+    throw new Error("Invalid PHP bundle task");
   }
   const t: any = parentConfig;
-  const config: TypeScriptBundle = updateNamespace({
+  const config: PHPBundle = updateNamespace({
     ...parentConfig,
     $fileName: t.$fileName
   });
@@ -69,13 +63,11 @@ async function execute(
 
   const namespaceMapping = target.$namespaceMapping || {};
 
-  const newTarget = checkAndFixTarget(target, namespaceMapping);
-
   const arr = parentConfig.list || [];
 
   const r = arr.map(async (cur: NSchemaTask) => {
     writeDebugLog(
-      `bundle - ts - generating ${cur.type} ${(cur as any).namespace ||
+      `bundle - php - generating ${cur.type} ${(cur as any).namespace ||
         ""} :: ${(cur as any).name}`
     );
     return await nschema.generate(parentConfig, cur, { skipWrite: true });
@@ -83,7 +75,7 @@ async function execute(
   const dblarr: Array<any | any[]> = await Promise.all(r);
 
   const reducedArr: Array<{
-    context: TypeScriptContext;
+    context: PHPContext;
     generated: string;
   }> = dblarr.reduce((acc: any | any[], next: any | any[]) => {
     if (nschema.isArray(next)) {
@@ -113,32 +105,32 @@ async function execute(
     namespaceMapping
   );
 
-  result = `/* @flow */${
-    imports
-      ? `
+  result = `<?php
+${
+  imports
+    ? `
 ${imports}`
-      : ""
-  }${result}`;
-  result = prettier.format(result, {
-    parser: "typescript"
-  });
+    : ""
+}
+namespace ${(parentConfig.namespace || "").replace(/\./g, "\\")};
+${result}`;
 
-  const location = newTarget.location;
+  const location = target.location;
   const filepath =
     location.indexOf(".") === 0
       ? pathResolve(
           process.cwd(),
           location,
-          newTarget.$fileName || config.$fileName || `${config.namespace}.ts`
+          target.$fileName || config.$fileName || `${config.namespace}.php`
         )
       : pathResolve(
           location,
-          newTarget.$fileName || config.$fileName || `${config.namespace}.ts`
+          target.$fileName || config.$fileName || `${config.namespace}.php`
         );
 
   writeLog(
     LogLevel.Default,
-    `${yellow("bundle")}: ts - ${blue("writing")} to file: ${green(filepath)}`
+    `${yellow("bundle")}: php - ${blue("writing")} to file: ${green(filepath)}`
   );
   return nschema.writeFile(filepath, result).then(undefined, err => {
     writeError("error: ");
@@ -148,14 +140,14 @@ ${imports}`
 
 const bundle: NSchemaCustomPlugin = {
   description:
-    "Handles the concept of namespacing (TypeScript only) in the generation process",
+    "Handles the concept of namespacing (PHP only) in the generation process",
   execute,
-  language: "typescript",
-  name: "bundle-typescript-objects",
+  language: "php",
+  name: "bundle-php-objects",
   serviceType: "*",
   type: "*",
-  bind(bindName: string) {
-    return bindName !== "rest-serverless";
+  bind() {
+    return true;
   }
 };
 

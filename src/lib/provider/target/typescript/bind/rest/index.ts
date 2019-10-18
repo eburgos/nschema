@@ -46,6 +46,14 @@ export interface TypeScriptServerlessRestTarget extends Target {
   serviceType: "consumer";
 }
 
+/**
+ * returns a TypeScriptRestTarget
+ *
+ * @export
+ * @param {Target} target
+ * @param {{ [name: string]: string }} namespaceMapping
+ * @returns {TypeScriptRestTarget}
+ */
 export function checkAndFixTarget(
   target: Target,
   namespaceMapping: { [name: string]: string }
@@ -251,18 +259,24 @@ export class NRest {
     return Promise.all(
       [
         {
+          name: "typescript/rest-server",
+          description: "REST server in typescript",
           bind: "rest",
           postGen: undefined,
           template: "consumer",
           type: "consumer"
         },
         {
+          name: "typescript/rest-serverless",
+          description: "REST server (with serverless) in typescript",
           bind: "rest-serverless",
           postGen: serverlessPostGen,
           template: "consumer-serverless-exports",
           type: "consumer"
         },
         {
+          name: "typescript/rest-client",
+          description: "REST client in typescript",
           bind: "rest",
           postGen: undefined,
           template: "producer",
@@ -276,9 +290,9 @@ export class NRest {
         );
         return nschema.registerTarget({
           bind: serviceType.bind,
-          description: "Rest services in typescript",
+          description: serviceType.description,
           language: "typescript",
-          name: "typescript/rest",
+          name: serviceType.name,
           serviceType: serviceType.type,
           type: "service",
           async generate(

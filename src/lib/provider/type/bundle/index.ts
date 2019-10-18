@@ -42,6 +42,7 @@ async function execute(
     : [];
 
   let resultPromise: Promise<any> = Promise.resolve(true);
+  let customBundleWasExecuted = false;
 
   (tempTargets || []).forEach((tgt: Target) => {
     const customBundles = nschema.getCustomPlugin("customBundle", tgt);
@@ -64,6 +65,7 @@ ${customBundles.map(p => JSON.stringify(p, null, 2)).join("\n")}`
             writeDebugLog(
               `executing custom bundle ${magenta(customBundle.name)}`
             );
+            customBundleWasExecuted = true;
             return customBundle.execute(newConfig, nschema, context);
           } else {
             throw new Error("custom bundle without execute");
@@ -72,11 +74,14 @@ ${customBundles.map(p => JSON.stringify(p, null, 2)).join("\n")}`
           throw new Error("Not possible");
         }
       });
+    } else {
+      exitOrError(`No custom bundle plugins found for ${getCriteria(tgt)}`);
     }
   });
 
   await resultPromise;
-  const arr = newConfig.list || [];
+  // If a custom plugin was executed then no children are generated
+  const arr = customBundleWasExecuted ? [] : newConfig.list || [];
   newConfig.target = tempTargets;
 
   return arr.reduce(async (acc, next) => {

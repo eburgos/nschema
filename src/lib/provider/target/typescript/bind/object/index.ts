@@ -6,9 +6,7 @@ import { writeDebugLog } from "../../../../../logging";
 import {
   AppendableMixin,
   HasFilenameMixin,
-  HasImplementsMixin,
   NSchemaInterface,
-  NSchemaModifier,
   NSchemaProperty,
   NSchemaType,
   Target,
@@ -25,18 +23,9 @@ import { ObjectTask } from "../../../../type/object";
 import { ServiceTask } from "../../../../type/service";
 import { renderFileHeader, typeName } from "../../helpers";
 
-export interface TypeScriptLiteralsUnion {
-  literals: string[];
-  modifier?: NSchemaModifier;
-  name: "string";
-  namespace: "";
-}
-
-export type TypeScriptType = NSchemaType | TypeScriptLiteralsUnion;
-
 export interface TypeScriptProperty extends NSchemaProperty {
   canOmit?: boolean;
-  type: TypeScriptType;
+  type: NSchemaType;
   typescriptName?: string;
   typescriptValue?: string;
 }
@@ -44,8 +33,7 @@ export interface TypeScriptProperty extends NSchemaProperty {
 export interface TypeScriptObject
   extends ObjectTask,
     AppendableMixin,
-    HasFilenameMixin,
-    HasImplementsMixin {
+    HasFilenameMixin {
   properties?: {
     [name: string]: TypeScriptProperty;
   };

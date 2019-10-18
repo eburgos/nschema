@@ -27,6 +27,7 @@ import {
   isValidCriteriaProperty,
   propagateTarget
 } from "./utils";
+import chalk from "chalk";
 export { CleanTask } from "./provider/type/clean";
 
 declare let require: (name: string) => any;
@@ -463,6 +464,24 @@ export async function generate(parentConfig: NSchemaTask, config: NSchemaTask) {
   }
 }
 
+function groupBy<T>(
+  keyGrouper: (item: T) => string,
+  lst: T[]
+): Map<string, T[]> {
+  return lst.reduce((acc, next) => {
+    const key = keyGrouper(next);
+    if (!acc.has(key)) {
+      acc.set(key, []);
+    }
+    const groupList = acc.get(key);
+    if (groupList) {
+      groupList.push(next);
+    }
+
+    return acc;
+  }, new Map<string, T[]>());
+}
+
 export async function features() {
   const n = new NSchema();
   try {
@@ -470,15 +489,32 @@ export async function features() {
     const version: string = require("../package.json").version;
     writeLog(LogLevel.Default, `NineSchema version ${version}`);
     writeLog(LogLevel.Default, "");
-    writeLog(LogLevel.Default, "Available bindings:");
+    writeLog(LogLevel.Default, "Available targets:");
     writeLog(LogLevel.Default, "");
-    nschema.targets.forEach(target => {
-      writeLog(LogLevel.Default, `	serviceType: '${target.serviceType}'`);
-      writeLog(LogLevel.Default, `	language: '${target.language}'`);
-      writeLog(LogLevel.Default, `	bind: '${target.bind}'`);
-      writeLog(
-        LogLevel.Default,
-        `	description: ${target.description || "No description provided"}`
+
+    const typeGroups = groupBy(item => item.type, nschema.targets);
+    typeGroups.forEach((list, type) => {
+      writeLog(LogLevel.Default, `type: ${chalk.blue(type)}`);
+      console.table(
+        list.map(target => {
+          if (type === "object") {
+            return {
+              type: target.type,
+              language: target.language,
+              name: target.name,
+              description: target.description
+            };
+          } else {
+            return {
+              type: target.type,
+              language: target.language,
+              serviceType: target.serviceType || null,
+              bind: target.bind || null,
+              name: target.name,
+              description: target.description
+            };
+          }
+        })
       );
       writeLog(LogLevel.Default, "");
     });

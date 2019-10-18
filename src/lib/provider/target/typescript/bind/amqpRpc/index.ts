@@ -277,15 +277,23 @@ export class AmqpRpc {
     const typescript = this.typescript;
 
     [
-      { template: templates.consumer, serviceType: "consumer" },
-      { template: templates.producer, serviceType: "producer" }
-    ].forEach(({ template, serviceType }) => {
+      {
+        template: templates.consumer,
+        serviceType: "consumer",
+        name: "typescript/amqpRpc-server"
+      },
+      {
+        template: templates.producer,
+        serviceType: "producer",
+        name: "typescript/amqpRpc-client"
+      }
+    ].forEach(({ template, serviceType, name }) => {
       nschema.registerTarget({
         bind: "amqpRpc",
         description:
           "Generates a service layer where messages get sent over an AMQP protocol",
         language: "typescript",
-        name: "typescript/amqpRpc",
+        name,
         serviceType,
         type: "service",
         async generate(

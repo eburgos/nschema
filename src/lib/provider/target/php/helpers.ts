@@ -1,5 +1,5 @@
 import { isArray } from "util";
-import { TypeScriptContext } from ".";
+import { PHPContext } from ".";
 import { writeError } from "../../../logging";
 import {
   AppendableMixin,
@@ -18,7 +18,7 @@ import {
   isUnions,
   findTypeMap
 } from "../../../utils";
-import { TypeScriptMessage } from "./bind/object";
+import { MessageTask } from "../../type/message";
 
 const moduleSort = (a: { modulePath: string }, b: { modulePath: string }) => {
   const s1 = a.modulePath.toLocaleLowerCase();
@@ -62,28 +62,26 @@ function renderImportLine(
   wrapFn: (s: string) => string
 ): string {
   if (importNames.length === 0) {
-    return `import "${modulePath}"`;
+    return `require_once "${modulePath}"`;
   }
 
-  const tryImport = `import ${wrapFn(
+  const tryImport = `require_once /*${wrapFn(
     importNames.join(", ")
-  )} from "${modulePath}";`;
+  )}*/ "${modulePath}";`;
   if (tryImport.length < 82) {
     return tryImport;
   } else {
-    return `import {
+    return `require_once /* 
   ${importNames.join(`,
   `)}
-} from "${modulePath}";`;
+*/ "${modulePath}";`;
   }
 }
-
-const surroundWithFlow = wrap("/*:: ", " */");
 
 export function computeImportMatrix(
   localNamespace: string,
   namespaceMapping: { [name: string]: string },
-  $context: TypeScriptContext
+  $context: PHPContext
 ) {
   const rootContext = {
     imports: {} as { [name: string]: { [name: string]: string | boolean } }
@@ -127,7 +125,6 @@ export function computeImportMatrix(
     return "";
   }
   return `${lines.join("\n")}
-${lines.map(surroundWithFlow).join("\n")}
 `;
 }
 
@@ -168,7 +165,7 @@ function modifierMap(
   nschema: NSchemaInterface,
   namespace: string | undefined,
   name: string,
-  context: TypeScriptContext
+  context: PHPContext
 ): string {
   switch (modifier) {
     case "list":
@@ -199,7 +196,7 @@ function modifierMap(
  * @param {NSchemaInterface} nschema
  * @param {(string | undefined)} namespace
  * @param {string} name
- * @param {TypeScriptContext} context
+ * @param {PHPContext} context
  * @param {boolean} addFlowComment
  * @param {boolean} isParameter
  * @param {boolean} isRootTypeCall true if this function is not being called from within itself
@@ -210,7 +207,7 @@ export function typeName(
   nschema: NSchemaInterface,
   namespace: string | undefined,
   name: string,
-  context: TypeScriptContext,
+  context: PHPContext,
   addFlowComment: boolean,
   isParameter: boolean,
   isRootTypeCall: boolean
@@ -273,10 +270,7 @@ export function typeName(
   }
 }
 
-function getDataItems(
-  nsMessage: TypeScriptMessage,
-  $nschema: NSchemaInterface
-) {
+function getDataItems(nsMessage: MessageTask, $nschema: NSchemaInterface) {
   const r: NSchemaMessageArgument[] = [];
   if (nsMessage.extends) {
     const parent = $nschema.getMessage(
@@ -304,9 +298,9 @@ function getDataItems(
 
 export function messageType(
   nschema: NSchemaInterface,
-  nschemaMessage: TypeScriptMessage,
+  nschemaMessage: MessageTask,
   nschemaMessageDirection: "in" | "out",
-  context: TypeScriptContext
+  context: PHPContext
 ) {
   const $_typeSeparator =
     nschemaMessageDirection === "in"

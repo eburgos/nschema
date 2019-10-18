@@ -6,7 +6,6 @@ import fsharp, { classHeader, typeDefaultValue } from "../..";
 import {
   AppendableMixin,
   HasFilenameMixin,
-  HasImplementsMixin,
   NSchemaInterface,
   NSchemaProperty,
   NSchemaType,
@@ -28,8 +27,7 @@ export interface FSharpProperty extends NSchemaProperty {
 export interface FSharpObject
   extends ObjectTask,
     AppendableMixin,
-    HasFilenameMixin,
-    HasImplementsMixin {
+    HasFilenameMixin {
   properties?: {
     [name: string]: FSharpProperty;
   };

@@ -107,10 +107,6 @@ export interface HasFilenameMixin {
   $fileName?: string;
 }
 
-export interface HasImplementsMixin {
-  implements?: NSchemaTypeDefinition[];
-}
-
 export interface HasTargetMixin {
   target?: Target | Target[];
 }
@@ -162,7 +158,17 @@ export type NSchemaModifier =
 
 export type NSchemaPrimitiveType = "string" | "int" | "float" | "bool" | "date";
 
-export type NSchemaType = NSchemaTypeDefinition | NSchemaPrimitiveType;
+export interface NSchemaLiteralsUnionType {
+  literals: string[];
+  modifier?: NSchemaModifier;
+  name: "string";
+  namespace: "";
+}
+
+export type NSchemaType =
+  | NSchemaTypeDefinition
+  | NSchemaPrimitiveType
+  | NSchemaLiteralsUnionType;
 
 export interface AppendableProperties {
   /*

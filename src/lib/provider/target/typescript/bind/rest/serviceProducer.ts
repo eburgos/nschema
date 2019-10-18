@@ -10,13 +10,14 @@ import {
   RestMessageArgument,
   Target
 } from "../../../../../model";
-import { findNonCollidingName, isOptional, wrap } from "../../../../../utils";
-import { AnonymousMessage } from "../../../../type/message";
 import {
-  computeImportMatrix,
-  isPrimitiveTypeString,
-  typeName
-} from "../../helpers";
+  findNonCollidingName,
+  isOptional,
+  wrap,
+  isPrimitiveTypeString
+} from "../../../../../utils";
+import { AnonymousMessage } from "../../../../type/message";
+import { computeImportMatrix, typeName } from "../../helpers";
 import {
   addSpace,
   getOperationDetails,
@@ -392,7 +393,11 @@ let $body = JSON.stringify(${paramsInBody.length > 1 ? `[` : ``}${paramsInBody
       ["delete", "head", "get"].indexOf(method.toLowerCase()) < 0
         ? `${optionsVarName}.data, `
         : ``
-    }${optionsVarName});
+    }${
+      (outMessage.data || []).length
+        ? optionsVarName
+        : `{ ...${optionsVarName}, responseType: "text" }`
+    });
       return ${responseVarName}.data;
     } catch (err) {
       if (this.${errorHandlerPropertyName} && this.${errorHandlerPropertyName}.${op}) {

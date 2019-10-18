@@ -3,8 +3,10 @@ import {
   NSchemaRestOperation,
   RestMessageArgument
 } from "../../../../../model";
-import { caseInsensitiveSorter } from "../../../../../utils";
-import { isPrimitiveTypeString } from "../../helpers";
+import {
+  caseInsensitiveSorter,
+  isPrimitiveTypeString
+} from "../../../../../utils";
 
 export function realTypeMap(p: RestMessageArgument, expr: string) {
   const realType =

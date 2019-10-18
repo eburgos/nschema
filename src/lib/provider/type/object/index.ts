@@ -5,12 +5,12 @@
 import {
   AppendableProperties,
   HasTargetMixin,
-  Identifier,
   NSchemaInterface,
   NSchemaPlugin,
   NSchemaProperty,
   NSchemaTask,
-  Target
+  Target,
+  NSchemaTypeDefinition
 } from "../../../model";
 import {
   deepClone,
@@ -28,7 +28,14 @@ import {
  */
 export interface ObjectTask extends HasTargetMixin, AppendableProperties {
   description?: string;
-  extends?: Identifier;
+
+  /**
+   * List of interfaces that this type implements. Not supported in all languages.
+   *
+   * @type {NSchemaTypeDefinition[]}
+   * @memberof ObjectTask
+   */
+  implements?: NSchemaTypeDefinition[];
   name: string;
   namespace?: string;
   properties?: {

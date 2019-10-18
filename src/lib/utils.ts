@@ -2,7 +2,13 @@ import { default as deepCloneHelper } from "immutability-helper";
 import { render as renderPrettyJson } from "prettyjson";
 import { isArray } from "util";
 import { writeError } from "./logging";
-import { NSchemaTask, NSchemaType } from "./model";
+import {
+  NSchemaTask,
+  NSchemaType,
+  NSchemaPrimitiveType,
+  NSchemaLiteralsUnionType,
+  shouldNever
+} from "./model";
 
 declare const require: (name: string) => { default: NSchemaTask } | NSchemaTask;
 function hasDefault(
@@ -198,4 +204,73 @@ export function removeOptional(type: NSchemaType): NSchemaType {
     };
   }
   return type;
+}
+
+export function isUnions(t: NSchemaType): t is NSchemaLiteralsUnionType {
+  return (
+    typeof (t as NSchemaLiteralsUnionType).literals !== "undefined" &&
+    (t as NSchemaLiteralsUnionType).name === "string" &&
+    (t as NSchemaLiteralsUnionType).namespace === ""
+  );
+}
+
+export function findTypeMap(
+  t: NSchemaPrimitiveType,
+  skipError: boolean,
+  isParameter: boolean
+) {
+  switch (t) {
+    case "int":
+      return "number";
+    case "float":
+      return "number";
+    case "string":
+      return "string";
+    case "bool":
+      return "boolean";
+    case "date":
+      return isParameter ? "Date | number" : "number";
+    default:
+      shouldNever(t, skipError);
+      return undefined;
+  }
+  return "string";
+}
+
+export function typeMap(t: NSchemaPrimitiveType, isParameter: boolean) {
+  const r = findTypeMap(t, false, isParameter);
+  if (typeof r === "undefined") {
+    writeError(`Unknown type ${t}`);
+    throw new Error(`Unknown type ${t}`);
+  }
+  return r;
+}
+
+export function isPrimitiveType(nschemaType: NSchemaType): boolean {
+  if (typeof nschemaType === "string") {
+    return isPrimitiveTypeString(nschemaType);
+  } else if (isUnions(nschemaType)) {
+    return true;
+  } else {
+    if (nschemaType.namespace === "") {
+      return isPrimitiveType(nschemaType.name as NSchemaPrimitiveType);
+    } else {
+      return false;
+    }
+  }
+}
+
+export function isPrimitiveTypeString(t: string) {
+  const x = t as NSchemaPrimitiveType;
+  switch (x) {
+    case "bool":
+    case "date":
+    case "string":
+    case "int":
+    case "float":
+      return true;
+    default:
+      shouldNever(x, true);
+      return false;
+  }
 }

@@ -459,6 +459,7 @@ export async function generate(parentConfig: NSchemaTask, config: NSchemaTask) {
       return await nschema.generate(parentConfig, config, {});
     } catch (err) {
       writeError("NSchema failed to generate");
+      writeError(err);
       throw err;
     }
   }

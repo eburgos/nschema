@@ -26,7 +26,8 @@ else {
     }), Promise.resolve())
         .then(() => {
         process.exit(0);
-    }, () => {
+    }, (e) => {
+        console.log(e);
         process.exit(1);
     });
 }

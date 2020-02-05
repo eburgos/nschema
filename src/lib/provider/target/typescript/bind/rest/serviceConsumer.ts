@@ -71,132 +71,10 @@ ${(inMessage.data || [])
     .join("\n");
 }
 
-function renderOperationsForClass(
-  nschema: NSchemaInterface,
-  context: TypeScriptContext,
-  operations: { [name: string]: NSchemaRestOperation },
-  name: string,
-  namespace: string | undefined
-) {
-  const protecteds = Object.keys(operations)
-    .map(op => {
-      const operation = operations[op];
-      const { inMessage, outMessage } = getOperationDetails(operation, op);
-      const contextVarName = findNonCollidingName(
-        "context",
-        (inMessage.data || []).map(d => d.name)
-      );
-
-      return `
-  /**
-   *${addSpace((operation.description || "").replace(/\n/g, "\n   * "))}
-${(inMessage.data || [])
-  .map(par => {
-    return `   * @param ${par.name} -${addSpace(
-      (par.description || "").replace(/\n/g, "\n   * ")
-    )}`;
-  })
-  .join("\n")}
-   * @param ${contextVarName} - Operation context
-   * @returns ${(outMessage.data || [])
-     .map(d => {
-       return (d.description || "").replace(/\n/g, "\n   * ");
-     })
-     .join(", ") || `{${messageType(nschema, context, false, outMessage)}}`}
-   */
-  public abstract async ${op}(${(inMessage.data || [])
-        .map(par => {
-          return `${par.name}: ${typeName(
-            par.type,
-            nschema,
-            namespace,
-            name,
-            context,
-            true,
-            true,
-            true
-          )}`;
-        })
-        .join(", ")}${
-        (inMessage.data || []).length ? `, ` : ``
-      }${contextVarName}?: { request: Request, response: Response } /*: { request: Request, response: Response } */): Promise<${messageType(
-        nschema,
-        context,
-        true,
-        outMessage
-      )}>;
-`;
-    })
-    .join("\n");
-  const abstracts = Object.keys(operations)
-    .map(op => {
-      const operation = operations[op];
-      const { inMessage, outMessage } = getOperationDetails(operation, op);
-      const contextVarName = findNonCollidingName(
-        "context",
-        (inMessage.data || []).map(d => d.name)
-      );
-
-      return `
-  /**
-   * Raw operation. This is what the service actually calls.
-   *${addSpace((operation.description || "").replace(/\n/g, "\n   * "))}
-${(inMessage.data || [])
-  .map(par => {
-    return `   * @param ${par.name} -${addSpace(
-      (par.description || "").replace(/\n/g, "\n   * ")
-    )}`;
-  })
-  .join("\n")}
-   * @returns ${(outMessage.data || [])
-     .map(d => {
-       return (d.description || "").replace(/\n/g, "\n   * ");
-     })
-     .join(", ") || `{${messageType(nschema, context, false, outMessage)}}`}
-   */
-  protected async $raw${op}(${(inMessage.data || [])
-        .map(par => {
-          return `${par.name}: ${typeName(
-            par.type,
-            nschema,
-            namespace,
-            name,
-            context,
-            true,
-            true,
-            true
-          )}`;
-        })
-        .join(", ")}${
-        (inMessage.data || []).length ? `, ` : ``
-      }${contextVarName}?: { request: Request, response: Response } /*: { request: Request, response: Response } */): Promise<${messageType(
-        nschema,
-        context,
-        true,
-        outMessage
-      )}> {
-    this.emit("callStarted", { name: "${op}", timestamp: new Date() });
-    const result = await this.${op}(${(inMessage.data || [])
-        .map(par => {
-          return `${par.name}`;
-        })
-        .join(", ")}${
-        (inMessage.data || []).length ? `, ` : ``
-      }${contextVarName});
-    this.emit("callCompleted", { name: "${op}", timestamp: new Date(), context: ${contextVarName} });
-    return result;
-  }`;
-    })
-    .join("\n");
-
-  return `${protecteds}
-${abstracts}`;
-}
-
 function renderConstructorForClass(
-  nschema: NSchemaInterface,
-  context: TypeScriptContext,
-  config: NSchemaRestService,
+  _nschema: NSchemaInterface,
+  _context: TypeScriptContext,
+  _config: NSchemaRestService,
   operations: { [name: string]: NSchemaRestOperation }
 ) {
   return Object.keys(operations)
@@ -212,58 +90,43 @@ function renderConstructorForClass(
         queryArguments
       } = getOperationDetails(operation, op);
 
-      return `    webserver.add($verbs.${getHttpVerb(
+      console.log(outMessage);
+
+      return `    expressApp.${getHttpVerb(
         operations[op].method || "get"
-      )}<${messageType(nschema, context, true, inMessage)}, ${messageType(
-        nschema,
-        context,
-        true,
-        outMessage
-      )}>({
-      route: '${route ||
+      ).toLowerCase()}("/${route ||
         op.replace(/\{([^\}]+?)\}/g, (_match, g1) => {
           return `:${g1}`;
-        })}',
-      //contentType: 'application/json',
-      inputMap: (req: Request): ${messageType(
-        nschema,
-        context,
-        true,
-        inMessage
-      )} => {
-        const input: any = {};
+        })}", (expressRequest, expressResponse) => {
+
 ${routeArguments
   .map(p => {
-    return `      input${renderPropertyAccessor(p.name)} = ${realTypeMap(
+    return `      const input${p.name} = ${realTypeMap(
       p,
-      `req.params${renderPropertyAccessor(p.name)}`
+      `expressRequest.params${renderPropertyAccessor(p.name)}`
     )};
 `;
   })
   .join("")}${queryArguments.map(p => {
-        return `        input${renderPropertyAccessor(p.name)} = ${realTypeMap(
+        return `        const input${p.name} = ${realTypeMap(
           p,
-          `req.query${renderPropertyAccessor(p.name)}`
+          `expressRequest.query${renderPropertyAccessor(p.name)}`
         )};
         `;
       }).join(`,
         `)}${headerArguments.map(p => {
-        return `input${renderPropertyAccessor(p.name)} = ${realTypeMap(
+        return `const input${p.name} = ${realTypeMap(
           p,
-          `req.header('${p.headerName || `X-${p.name}`}')`
+          `expressRequest.header('${p.headerName || `X-${p.name}`}')`
         )};`;
       }).join(`
         `)}${
         bodyArguments.length === 1
-          ? `              input${renderPropertyAccessor(
-              bodyArguments[0].name
-            )} = req.body;`
+          ? `              const input${bodyArguments[0].name} = expressRequest.body;`
           : `${
               bodyArguments.length
                 ? `${bodyArguments.map((p, idx) => {
-                    return `input${renderPropertyAccessor(
-                      p.name
-                    )} = req.body[${idx}];
+                    return `const input${p.name} = expressRequest.body[${idx}];
 `;
                   }).join(`
             `)}`
@@ -271,39 +134,18 @@ ${routeArguments
             }`
       }
 
-            const result = input as ${messageType(
-              nschema,
-              context,
-              true,
-              inMessage
-            )};
-                return result;
-            }
-        }, (input: ${messageType(
-          nschema,
-          context,
-          true,
-          inMessage
-        )}, request: Request, response: Response) => {
-            return this.$raw${op}(${
-        (inMessage.data || []).length === 1
-          ? "input, "
-          : (inMessage.data || [])
-              .map(p => {
-                return `input${renderPropertyAccessor(p.name)}, `;
-              })
-              .join("")
-      } {request, response})
-                .catch(
-                    (e: ResponseError) => {
-                        response.statusMessage = e.message;
-                        response.status(e.statusCode || 500);
-                        this.emit('operationError', { name: '${op}', timestamp: new Date(), error: e, response: response });
-                        return undefined;
-                    });
-        })${config.routePrefix ? `, "${config.routePrefix}"` : ``});`;
+            return implementation.${op}(${(inMessage.data || [])
+        .map(arg => `input${arg.name}`)
+        .join(", ")}, { request: expressRequest, response: expressResponse });
+
+        });`;
     })
     .join("\n");
+}
+
+function camelize(text: string) {
+  text = text.replace(/[-_\s.]+(.)?/g, (_, c) => (c ? c.toUpperCase() : ""));
+  return text.substr(0, 1).toLowerCase() + text.substr(1);
 }
 
 export function render(
@@ -316,25 +158,12 @@ export function render(
   }
   context.imports["{events}"].EventEmitter = true;
 
-  if (!context.imports["{ninejs/modules/ninejs-server}"]) {
-    context.imports["{ninejs/modules/ninejs-server}"] = {};
+  if (!context.imports["{express}"]) {
+    context.imports["{express}"] = {};
   }
-  context.imports["{ninejs/modules/ninejs-server}"].NineJs = true;
-
-  if (!context.imports["{ninejs/modules/webserver/WebServer}"]) {
-    context.imports["{ninejs/modules/webserver/WebServer}"] = {};
-  }
-  context.imports["{ninejs/modules/webserver/WebServer}"].default = "WebServer";
-  context.imports["{ninejs/modules/webserver/WebServer}"].Request = true;
-  context.imports["{ninejs/modules/webserver/WebServer}"].Response = true;
-  context.imports["{ninejs/modules/webserver/WebServer}"].ResponseError = true;
-
-  if (!context.imports["{ninejs/modules/webserver/Rest}"]) {
-    context.imports["{ninejs/modules/webserver/Rest}"] = {};
-  }
-  context.imports["{ninejs/modules/webserver/Rest}"]["*"] = "$verbs";
-  context.imports["{ninejs/modules/webserver/Rest}"].get = true;
-  context.imports["{ninejs/modules/webserver/Rest}"].post = true;
+  context.imports["{express}"].Express = true;
+  context.imports["{express}"].Request = true;
+  context.imports["{express}"].Response = true;
 
   return `export interface ${config.name} {
 ${renderOperationsInterface(
@@ -350,21 +179,13 @@ ${renderOperationsInterface(
   on(eventName: string, handler: () => any): this;
 }
 
-export abstract class ${config.name}Base extends EventEmitter implements ${
+export function ${camelize(
     config.name
-  } {
+  )}Controller(expressApp: Express, implementation: ${config.name}) {
 
-  constructor(private config: any, ninejs: NineJs, webserver: WebServer) {
-    super();
+
 ${renderConstructorForClass(nschema, context, config, config.operations)}
-  }
-${renderOperationsForClass(
-  nschema,
-  context,
-  config.operations,
-  config.name,
-  config.namespace
-)}
+
 }
 `;
 }

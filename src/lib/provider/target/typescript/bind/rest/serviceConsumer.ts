@@ -84,20 +84,18 @@ function renderConstructorForClass(
         bodyArguments,
         headerArguments,
         inMessage,
-        outMessage,
+        //        outMessage,
         route,
         routeArguments,
         queryArguments
       } = getOperationDetails(operation, op);
-
-      console.log(outMessage);
 
       return `    expressApp.${getHttpVerb(
         operations[op].method || "get"
       ).toLowerCase()}("/${route ||
         op.replace(/\{([^\}]+?)\}/g, (_match, g1) => {
           return `:${g1}`;
-        })}", (expressRequest, expressResponse) => {
+        })}", async (expressRequest, expressResponse) => {
 
 ${routeArguments
   .map(p => {
@@ -134,10 +132,16 @@ ${routeArguments
             }`
       }
 
-            return implementation.${op}(${(inMessage.data || [])
+            try {
+               expressResponse.status(200).json(await implementation.${op}(${(
+        inMessage.data || []
+      )
         .map(arg => `input${arg.name}`)
-        .join(", ")}, { request: expressRequest, response: expressResponse });
-
+        .join(", ")}, { request: expressRequest, response: expressResponse }));
+            }
+            catch (e: { statusCode: number, message: string, stack: string }) {
+              expressResponse.status(e.statusCode || 400).send(\`Bad request - $\{e.message\}\`);
+            }
         });`;
     })
     .join("\n");

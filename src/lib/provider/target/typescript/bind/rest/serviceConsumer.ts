@@ -92,10 +92,12 @@ function renderConstructorForClass(
 
       return `    expressApp.${getHttpVerb(
         operations[op].method || "get"
-      ).toLowerCase()}("/${route ||
-        op.replace(/\{([^\}]+?)\}/g, (_match, g1) => {
+      ).toLowerCase()}("/${(route || op).replace(
+        /\{([^\}]+?)\}/g,
+        (_match, g1) => {
           return `:${g1}`;
-        })}", async (expressRequest, expressResponse) => {
+        }
+      )}", async (expressRequest, expressResponse) => {
 
 ${routeArguments
   .map(p => {

@@ -2,11 +2,10 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 function messages() {
     const Point = {
-        type: "object",
         description: `Points are represented as latitude-longitude pairs in the E7 representation
-(degrees multiplied by 10**7 and rounded to the nearest integer).
-Latitudes should be in the range +/- 90 degrees and longitude should be in
-the range +/- 180 degrees (inclusive).`,
+    (degrees multiplied by 10**7 and rounded to the nearest integer).
+    Latitudes should be in the range +/- 90 degrees and longitude should be in
+    the range +/- 180 degrees (inclusive).`,
         name: "Point",
         properties: {
             latitude: {
@@ -17,12 +16,12 @@ the range +/- 180 degrees (inclusive).`,
                 description: "Longitude",
                 type: "int"
             }
-        }
+        },
+        type: "object"
     };
     const Rectangle = {
-        type: "object",
         description: `A latitude-longitude rectangle, represented as two diagonally opposite
-points "lo" and "hi".`,
+    points "lo" and "hi".`,
         name: "Rectangle",
         properties: {
             lo: {
@@ -37,10 +36,10 @@ points "lo" and "hi".`,
                     name: Point.name
                 }
             }
-        }
+        },
+        type: "object"
     };
     const Feature = {
-        type: "object",
         description: `A feature names something at a given point.
 
 If a feature could not be named, the name is empty.`,
@@ -56,10 +55,10 @@ If a feature could not be named, the name is empty.`,
                 description: "The name of the feature.",
                 type: "string"
             }
-        }
+        },
+        type: "object"
     };
     const RouteNote = {
-        type: "object",
         description: `A RouteNote is a message sent while at a given point.`,
         name: "RouteNote",
         properties: {
@@ -73,10 +72,10 @@ If a feature could not be named, the name is empty.`,
                 description: "The message to be sent.",
                 type: "string"
             }
-        }
+        },
+        type: "object"
     };
     const RouteSummary = {
-        type: "object",
         description: `A RouteSummary is received in response to a RecordRoute rpc.
 
 It contains the number of individual points received, the number of
@@ -100,15 +99,16 @@ the distance between each point.`,
                 description: "The duration of the traversal in seconds.",
                 type: "int"
             }
-        }
+        },
+        type: "object"
     };
     return [Point, RouteSummary, Rectangle, Feature, RouteNote];
 }
 const $target = [];
 const bundle = {
     $target,
-    type: "bundle",
     list: messages(),
-    namespace: "io.grpc.examples.routeguide.Model"
+    namespace: "io.grpc.examples.routeguide.Model",
+    type: "bundle"
 };
 exports.default = bundle;

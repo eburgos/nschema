@@ -2,7 +2,7 @@
  * @module nschema/provider/target/javascript/javascript
  * @author Eduardo Burgos <eburgos@gmail.com>
  */
-import chalk from "chalk";
+import * as chalk from "chalk";
 import { existsSync, readdirSync, statSync } from "fs";
 import { extname, resolve as pathResolve } from "path";
 import { isArray } from "util";

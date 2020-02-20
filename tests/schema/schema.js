@@ -154,10 +154,6 @@ const bundle = {
                         AllParametersOperation: {
                             description: "Tests an operation that has parameters of all kinds",
                             inMessage: {
-                                extends: {
-                                    name: "AuthMessage",
-                                    namespace: "NSchema.Model.Invoicing"
-                                },
                                 data: [
                                     {
                                         description: "Header parameter",
@@ -192,7 +188,11 @@ const bundle = {
                                             namespace: "NSchema.Model.Invoicing"
                                         }
                                     }
-                                ]
+                                ],
+                                extends: {
+                                    name: "AuthMessage",
+                                    namespace: "NSchema.Model.Invoicing"
+                                }
                             },
                             method: "post",
                             outMessage: {
@@ -223,11 +223,11 @@ const bundle = {
                         Authenticate: {
                             description: "Tests for authentication",
                             inMessage: {
+                                data: [],
                                 extends: {
                                     name: "AuthMessage",
                                     namespace: "NSchema.Model.Invoicing"
-                                },
-                                data: []
+                                }
                             },
                             outMessage: {
                                 data: [
@@ -245,11 +245,11 @@ const bundle = {
                         GetInvoiceList: {
                             description: "Returns the list of invoices",
                             inMessage: {
+                                data: [],
                                 extends: {
                                     name: "AuthMessage",
                                     namespace: "NSchema.Model.Invoicing"
-                                },
-                                data: []
+                                }
                             },
                             outMessage: {
                                 data: [

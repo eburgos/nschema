@@ -1,4 +1,4 @@
-import chalk from "chalk";
+import * as chalk from "chalk";
 import { resolve as pathResolve } from "path";
 import { isArray } from "util";
 import { buildgRPCContext, GRPCBundle, GRPCContext } from "../..";
@@ -70,7 +70,7 @@ async function execute(
   const r = arr.map(async (cur: NSchemaTask) => {
     return nschema.generate(parentConfig, cur, { skipWrite: true });
   });
-  const dblarr: Array<any | any[]> = await Promise.all(r);
+  const dblarr: (any | any[])[] = await Promise.all(r);
 
   const reducedArr: any[] = dblarr.reduce(
     (acc: any | any[], next: any | any[]) => {

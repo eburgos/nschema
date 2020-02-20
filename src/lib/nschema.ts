@@ -27,7 +27,7 @@ import {
   isValidCriteriaProperty,
   propagateTarget
 } from "./utils";
-import chalk from "chalk";
+import * as chalk from "chalk";
 export { CleanTask } from "./provider/type/clean";
 
 declare let require: (name: string) => any;
@@ -500,19 +500,19 @@ export async function features() {
         list.map(target => {
           if (type === "object") {
             return {
-              type: target.type,
+              description: target.description,
               language: target.language,
               name: target.name,
-              description: target.description
+              type: target.type
             };
           } else {
             return {
-              type: target.type,
-              language: target.language,
-              serviceType: target.serviceType || null,
               bind: target.bind || null,
+              description: target.description,
+              language: target.language,
               name: target.name,
-              description: target.description
+              serviceType: target.serviceType || null,
+              type: target.type
             };
           }
         })

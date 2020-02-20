@@ -259,25 +259,25 @@ export class NRest {
     return Promise.all(
       [
         {
-          name: "typescript/rest-server",
-          description: "REST server in typescript",
           bind: "rest",
+          description: "REST server in typescript",
+          name: "typescript/rest-server",
           postGen: undefined,
           template: "consumer",
           type: "consumer"
         },
         {
-          name: "typescript/rest-serverless",
-          description: "REST server (with serverless) in typescript",
           bind: "rest-serverless",
+          description: "REST server (with serverless) in typescript",
+          name: "typescript/rest-serverless",
           postGen: serverlessPostGen,
           template: "consumer-serverless-exports",
           type: "consumer"
         },
         {
-          name: "typescript/rest-client",
-          description: "REST client in typescript",
           bind: "rest",
+          description: "REST client in typescript",
+          name: "typescript/rest-client",
           postGen: undefined,
           template: "producer",
           type: "producer"

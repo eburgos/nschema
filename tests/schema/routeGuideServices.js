@@ -14,7 +14,6 @@ if (!Feature) {
     throw new Error("Feature message is undefined");
 }
 const routeGuideService = {
-    type: "service",
     description: "Interface exported by the server.",
     name: "RouteGuide",
     operations: {
@@ -48,7 +47,8 @@ position.`,
                 ]
             }
         }
-    }
+    },
+    type: "service"
 };
 const $target = [
     {
@@ -60,8 +60,8 @@ const $target = [
 const list = [routeGuideService, ...routeGuideModel_1.default.list];
 const bundle = {
     $target,
-    type: "bundle",
     list,
-    namespace: "route_guide"
+    namespace: "route_guide",
+    type: "bundle"
 };
 exports.default = bundle;

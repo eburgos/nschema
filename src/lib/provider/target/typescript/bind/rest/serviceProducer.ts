@@ -657,8 +657,8 @@ ${Object.keys(contextOperations)
       .join(", ")}) {
       ${operationArguments.map(arg => `${arg.name} = new${arg.name}`).join(`;
         `)}
-    
-  } 
+
+  }
     };
   }`;
   })

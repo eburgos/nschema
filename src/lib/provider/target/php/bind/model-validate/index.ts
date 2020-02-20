@@ -25,6 +25,88 @@ import { isArray } from "util";
 const wrapDoubleQuotes = wrap('"', '"');
 const wrapDoubleQuotesEscaped = wrap('\\"', '\\"');
 
+function renderValidationLogicForModifiers(
+  indent: string,
+  nschemaType: NSchemaType,
+  thisVar: string,
+  errorsIdentifier: string,
+  path: string,
+  nschema: NSchemaInterface,
+  currentNamespace: string,
+  index: string | undefined
+) {
+  if (isUnions(nschemaType)) {
+    return `    ${indent}if (!in_array(${thisVar}, array(${nschemaType.literals
+      .map(wrapDoubleQuotes)
+      .join(", ")}))) {
+    ${indent}$${errorsIdentifier}[] = "\\"$__path/${path}\\" should be one of ${nschemaType.literals
+      .map(wrapDoubleQuotesEscaped)
+      .join(", ")}";
+  }`;
+  } else if (isPrimitiveType(nschemaType)) {
+    const primitiveType: NSchemaPrimitiveType =
+      typeof nschemaType === "object"
+        ? (nschemaType.name as NSchemaPrimitiveType)
+        : nschemaType;
+    switch (primitiveType) {
+      case "bool":
+        return `    ${indent}if (gettype(${thisVar}) !== "boolean") {
+    ${indent}$${errorsIdentifier}[] = "\\"$__path/${path}\\" should be of type boolean";
+  ${indent}}`;
+      case "date":
+        return `    ${indent}if (gettype(${thisVar}) !== "integer") {
+    ${indent}$${errorsIdentifier}[] = "\\"$__path/${path}\\" should be of type int (unix datetime)";
+  ${indent}}`;
+      case "float":
+        return `    ${indent}if ((gettype(${thisVar}) !== "double") && (gettype(${thisVar}) !== "integer")) {
+    ${indent}$${errorsIdentifier}[] = "\\"$__path/${path}\\" should be of type float";
+  ${indent}}`;
+      case "string":
+        return `    ${indent}if (gettype(${thisVar}) !== "string") {
+    ${indent}$${errorsIdentifier}[] = "\\"$__path/${path}\\" should be of type string";
+  ${indent}}`;
+      case "int":
+        return `    ${indent}if (gettype(${thisVar}) !== "integer") {
+    ${indent}$${errorsIdentifier}[] = "\\"$__path/${path}\\" should be of type int";
+  ${indent}}`;
+      default:
+        console.error("Should never ", nschemaType);
+        shouldNever(primitiveType);
+        throw new Error();
+    }
+  } else if (typeof nschemaType === "object") {
+    const existingType = nschema.getObject(
+      typeof nschemaType.namespace === "undefined"
+        ? currentNamespace
+        : nschemaType.namespace || "",
+      nschemaType.name
+    );
+    if (!existingType) {
+      return "";
+    } else {
+      return `      ${indent}if (gettype(${thisVar}) === "object") {
+    ${indent}  $_valResult = \\${(existingType.namespace || "").replace(
+        /\./g,
+        "\\"
+      )}\\${existingType.name}::validate(${thisVar}, $__path . "/${name}${
+        typeof index !== "undefined" ? `[${index}]` : ""
+      }");
+    ${indent}  if (gettype($_valResult) === "array") {
+    ${indent}    foreach ($_valResult as $__err) {
+    ${indent}      $${errorsIdentifier}[] = $__err;
+    ${indent}    }
+    ${indent}  }
+    ${indent}} else {
+    ${indent}  $${errorsIdentifier}[] = "\\"$__path/${name}${
+        typeof index !== "undefined" ? `[${index}]` : ""
+      }\\" should be an object";
+    ${indent}}`;
+    }
+  } else {
+    return "";
+  }
+}
+
 function renderValidationLogic(
   nschema: NSchemaInterface,
   currentNamespace: string,
@@ -32,7 +114,7 @@ function renderValidationLogic(
   nschemaType: NSchemaType,
   objIdentifier: string,
   errorsIdentifier: string,
-  modifiers: Array<NSchemaModifier> | undefined,
+  modifiers: NSchemaModifier[] | undefined,
   path: string,
   identifier: string | undefined,
   index: string | undefined,
@@ -44,76 +126,16 @@ function renderValidationLogic(
       ? identifier
       : `$${objIdentifier}["${name}"]`;
   if (typeof modifiers === "undefined" || !modifiers.length) {
-    if (isUnions(nschemaType)) {
-      return `    ${indent}if (!in_array(${thisVar}, array(${nschemaType.literals
-        .map(wrapDoubleQuotes)
-        .join(", ")}))) {
-      ${indent}$${errorsIdentifier}[] = "\\"$__path/${path}\\" should be one of ${nschemaType.literals
-        .map(wrapDoubleQuotesEscaped)
-        .join(", ")}";
-    }`;
-    } else if (isPrimitiveType(nschemaType)) {
-      const primitiveType: NSchemaPrimitiveType =
-        typeof nschemaType === "object"
-          ? (nschemaType.name as NSchemaPrimitiveType)
-          : nschemaType;
-      switch (primitiveType) {
-        case "bool":
-          return `    ${indent}if (gettype(${thisVar}) !== "boolean") {
-      ${indent}$${errorsIdentifier}[] = "\\"$__path/${path}\\" should be of type boolean";
-    ${indent}}`;
-        case "date":
-          return `    ${indent}if (gettype(${thisVar}) !== "integer") {
-      ${indent}$${errorsIdentifier}[] = "\\"$__path/${path}\\" should be of type int (unix datetime)";
-    ${indent}}`;
-        case "float":
-          return `    ${indent}if ((gettype(${thisVar}) !== "double") && (gettype(${thisVar}) !== "integer")) {
-      ${indent}$${errorsIdentifier}[] = "\\"$__path/${path}\\" should be of type float";
-    ${indent}}`;
-        case "string":
-          return `    ${indent}if (gettype(${thisVar}) !== "string") {
-      ${indent}$${errorsIdentifier}[] = "\\"$__path/${path}\\" should be of type string";
-    ${indent}}`;
-        case "int":
-          return `    ${indent}if (gettype(${thisVar}) !== "integer") {
-      ${indent}$${errorsIdentifier}[] = "\\"$__path/${path}\\" should be of type int";
-    ${indent}}`;
-        default:
-          console.log("Should never ", nschemaType);
-          shouldNever(primitiveType);
-          throw new Error();
-      }
-    } else if (typeof nschemaType === "object") {
-      const existingType = nschema.getObject(
-        typeof nschemaType.namespace === "undefined"
-          ? currentNamespace
-          : nschemaType.namespace || "",
-        nschemaType.name
-      );
-      if (!existingType) {
-        return "";
-      } else {
-        return `      ${indent}if (gettype(${thisVar}) === "object") {
-      ${indent}  $_valResult = \\${(existingType.namespace || "").replace(
-          /\./g,
-          "\\"
-        )}\\${existingType.name}::validate(${thisVar}, $__path . "/${name}${
-          typeof index !== "undefined" ? `[${index}]` : ""
-        }");
-      ${indent}  if (gettype($_valResult) === "array") {
-      ${indent}    foreach ($_valResult as $__err) {
-      ${indent}      $${errorsIdentifier}[] = $__err;
-      ${indent}    }
-      ${indent}  }
-      ${indent}} else {
-      ${indent}  $${errorsIdentifier}[] = "\\"$__path/${name}${
-          typeof index !== "undefined" ? `[${index}]` : ""
-        }\\" should be an object";
-      ${indent}}`;
-      }
-    } else {
-      return "";
-    }
+    return renderValidationLogicForModifiers(
+      indent,
+      nschemaType,
+      thisVar,
+      errorsIdentifier,
+      path,
+      nschema,
+      currentNamespace,
+      index
+    );
   } else {
     const lastModifier = modifiers[modifiers.length - 1];
     const restModifiers = modifiers.slice(0, modifiers.length - 1);

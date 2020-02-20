@@ -19,7 +19,6 @@ if (!Feature) {
 }
 
 const routeGuideService: GRPCService = {
-  type: "service",
   description: "Interface exported by the server.",
   name: "RouteGuide",
   operations: {
@@ -53,7 +52,8 @@ position.`,
         ]
       }
     }
-  }
+  },
+  type: "service"
 };
 
 const $target: Target[] = [
@@ -68,9 +68,9 @@ const list = [routeGuideService, ...model.list];
 
 const bundle: GRPCBundle = {
   $target,
-  type: "bundle",
   list,
-  namespace: "route_guide"
+  namespace: "route_guide",
+  type: "bundle"
   //  schema: "http://io.grpc.examples.routeguide/model/"
 };
 

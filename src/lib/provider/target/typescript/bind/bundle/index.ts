@@ -1,4 +1,4 @@
-import chalk from "chalk";
+import * as chalk from "chalk";
 import { resolve as pathResolve } from "path";
 import { isArray } from "util";
 import {
@@ -80,12 +80,12 @@ async function execute(
     );
     return await nschema.generate(parentConfig, cur, { skipWrite: true });
   });
-  const dblarr: Array<any | any[]> = await Promise.all(r);
+  const dblarr: (any | any[])[] = await Promise.all(r);
 
-  const reducedArr: Array<{
+  const reducedArr: {
     context: TypeScriptContext;
     generated: string;
-  }> = dblarr.reduce((acc: any | any[], next: any | any[]) => {
+  }[] = dblarr.reduce((acc: any | any[], next: any | any[]) => {
     if (nschema.isArray(next)) {
       return acc.concat(
         next.filter(item => {

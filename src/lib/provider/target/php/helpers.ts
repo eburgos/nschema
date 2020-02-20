@@ -71,7 +71,7 @@ function renderImportLine(
   if (tryImport.length < 82) {
     return tryImport;
   } else {
-    return `require_once /* 
+    return `require_once /*
   ${importNames.join(`,
   `)}
 */ "${modulePath}";`;

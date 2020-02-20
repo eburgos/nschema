@@ -278,14 +278,14 @@ export class AmqpRpc {
 
     [
       {
-        template: templates.consumer,
+        name: "typescript/amqpRpc-server",
         serviceType: "consumer",
-        name: "typescript/amqpRpc-server"
+        template: templates.consumer
       },
       {
-        template: templates.producer,
+        name: "typescript/amqpRpc-client",
         serviceType: "producer",
-        name: "typescript/amqpRpc-client"
+        template: templates.producer
       }
     ].forEach(({ template, serviceType, name }) => {
       nschema.registerTarget({

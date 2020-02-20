@@ -184,11 +184,6 @@ const bundle: BundleTask = {
                 "Tests an operation that has parameters of all kinds",
 
               inMessage: {
-                // This message inherits AuthMessage
-                extends: {
-                  name: "AuthMessage",
-                  namespace: "NSchema.Model.Invoicing"
-                },
                 data: [
                   {
                     description: "Header parameter",
@@ -223,7 +218,12 @@ const bundle: BundleTask = {
                       namespace: "NSchema.Model.Invoicing"
                     }
                   }
-                ] as RestMessageArgument[]
+                ] as RestMessageArgument[],
+                // This message inherits AuthMessage
+                extends: {
+                  name: "AuthMessage",
+                  namespace: "NSchema.Model.Invoicing"
+                }
               },
               method: "post",
               outMessage: {
@@ -254,12 +254,12 @@ const bundle: BundleTask = {
             Authenticate: {
               description: "Tests for authentication",
               inMessage: {
+                data: [],
                 // This message inherits AuthMessage
                 extends: {
                   name: "AuthMessage",
                   namespace: "NSchema.Model.Invoicing"
-                },
-                data: []
+                }
               },
               outMessage: {
                 data: [
@@ -277,12 +277,12 @@ const bundle: BundleTask = {
             GetInvoiceList: {
               description: "Returns the list of invoices",
               inMessage: {
+                data: [],
                 // This message inherits AuthMessage
                 extends: {
                   name: "AuthMessage",
                   namespace: "NSchema.Model.Invoicing"
-                },
-                data: []
+                }
               },
               outMessage: {
                 data: [

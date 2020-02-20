@@ -1,7 +1,7 @@
 /**
  * @author Eduardo Burgos <eburgos@gmail.com>
  */
-import chalk from "chalk";
+import * as chalk from "chalk";
 import { isArray } from "util";
 import { writeDebugLog, writeError } from "../../../logging";
 import {

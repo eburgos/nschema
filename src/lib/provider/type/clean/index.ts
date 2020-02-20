@@ -3,7 +3,7 @@
  * @author Eduardo Burgos <eburgos@gmail.com>
  */
 
-import chalk from "chalk";
+import * as chalk from "chalk";
 import { existsSync, lstatSync, readdirSync, rmdirSync, unlinkSync } from "fs";
 import { resolve as pathResolve } from "path";
 import { LogLevel, writeDebugLog, writeLog } from "../../../logging";
@@ -12,9 +12,9 @@ import { NSchemaInterface, NSchemaPlugin, Target } from "../../../model";
 const { red, green, yellow } = chalk;
 
 export interface CleanTask {
-  type: "clean";
   simulate?: boolean;
   target: Target[];
+  type: "clean";
 }
 
 function deleteFolderRecursive(folderPath: string, simulate: boolean) {

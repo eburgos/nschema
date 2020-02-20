@@ -15,8 +15,8 @@ if (argv.features) {
 }
 else {
     files
-        .reduce((acc, item) => tslib_1.__awaiter(this, void 0, void 0, function* () {
-        return acc.then(() => tslib_1.__awaiter(this, void 0, void 0, function* () {
+        .reduce((acc, item) => tslib_1.__awaiter(void 0, void 0, void 0, function* () {
+        return acc.then(() => tslib_1.__awaiter(void 0, void 0, void 0, function* () {
             if (item.indexOf("/") !== 0) {
                 item = path_1.resolve(process.cwd(), item);
             }
@@ -26,8 +26,8 @@ else {
     }), Promise.resolve())
         .then(() => {
         process.exit(0);
-    }, (e) => {
-        console.log(e);
+    }, e => {
+        console.error(e);
         process.exit(1);
     });
 }

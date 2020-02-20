@@ -29,8 +29,8 @@ if (argv.features) {
       () => {
         process.exit(0);
       },
-      (e) => {
-        console.log(e);
+      e => {
+        console.error(e);
         process.exit(1);
       }
     );

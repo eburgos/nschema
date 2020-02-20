@@ -92,7 +92,7 @@ function renderConstructorForClass(
 
       return `    expressApp.${getHttpVerb(
         operations[op].method || "get"
-      ).toLowerCase()}("/${(route || op).replace(
+      ).toLowerCase()}("/${_config.routePrefix}${(route || op).replace(
         /\{([^\}]+?)\}/g,
         (_match, g1) => {
           return `:${g1}`;

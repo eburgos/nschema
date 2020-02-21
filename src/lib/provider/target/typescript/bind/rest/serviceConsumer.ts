@@ -117,7 +117,7 @@ ${routeArguments
         `)}${headerArguments.map(p => {
         return `const input${p.name} = ${realTypeMap(
           p,
-          `expressRequest.header('${p.headerName || `X-${p.name}`}')`
+          `expressRequest.header('${p.headerName || `X-${p.name}`}') || ""`
         )};`;
       }).join(`
         `)}${
@@ -141,8 +141,8 @@ ${routeArguments
         .map(arg => `input${arg.name}`)
         .join(", ")}, { request: expressRequest, response: expressResponse }));
             }
-            catch (e: { statusCode: number, message: string, stack: string }) {
-              expressResponse.status(e.statusCode || 400).send(\`Bad request - $\{e.message\}\`);
+            catch (exception: { statusCode: number, message: string, stack: string }) {
+              expressResponse.status(exception.statusCode || 400).send(\`Bad request - $\{exception.message\}\`);
             }
         });`;
     })
@@ -162,7 +162,6 @@ export function render(
   if (!context.imports["{events}"]) {
     context.imports["{events}"] = {};
   }
-  context.imports["{events}"].EventEmitter = true;
 
   if (!context.imports["{express}"]) {
     context.imports["{express}"] = {};

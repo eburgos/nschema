@@ -19,7 +19,7 @@
     "minimist": "^1.2.0",
     "prettier": "^1.19.1",
     "prettyjson": "^1.2.1",
-    "tslib": "^1.10.0"
+    "tslib": "^1.11.0"
   },
   "devDependencies": {
     "@angular/core": "^4.0.2",
@@ -27,7 +27,7 @@
     "@types/minimist": "^1.2.0",
     "rxjs": "^6.2.2",
     "tslint": "^6.0.0",
-    "typescript": "^3.7.5"
+    "typescript": "^3.8.2"
   },
   "bin": {
     "nschema": "./bin/nschema"

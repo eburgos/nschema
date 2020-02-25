@@ -178,10 +178,6 @@ ${renderOperationsInterface(
   config.name,
   config.namespace || ""
 )}
-  on(eventName: "callStarted", handler: (eventData: { name: string, timestamp: Date }) => any): this;
-  on(eventName: "callCompleted", handler: (eventData: { name: string, timestamp: Date, result: any }) => any): this;
-  on(eventName: "operationError", handler: (eventData: { name: string, timestamp: Date, error: Error }) => any): this;
-  on(eventName: string, handler: () => any): this;
 }
 
 export function ${camelize(

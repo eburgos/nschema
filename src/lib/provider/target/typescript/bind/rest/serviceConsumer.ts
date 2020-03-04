@@ -73,7 +73,7 @@ ${(inMessage.data || [])
 
 function renderConstructorForClass(
   _nschema: NSchemaInterface,
-  _context: TypeScriptContext,
+  context: TypeScriptContext,
   _config: NSchemaRestService,
   operations: { [name: string]: NSchemaRestOperation }
 ) {
@@ -90,6 +90,23 @@ function renderConstructorForClass(
         queryArguments
       } = getOperationDetails(operation, op);
 
+      if (
+        typeof operation.inMessage.encoding === "undefined" ||
+        operation.inMessage.encoding === "json"
+      ) {
+        if (!context.imports["{body-parser}"]) {
+          context.imports["{body-parser}"] = {};
+        }
+        context.imports["{body-parser}"]["*"] = "bodyParser";
+      }
+
+      if (operation.cors) {
+        if (!context.imports["{cors}"]) {
+          context.imports["{cors}"] = {};
+        }
+        context.imports["{cors}"]["default"] = "cors";
+      }
+
       return `    expressApp.${getHttpVerb(
         operations[op].method || "get"
       ).toLowerCase()}("/${_config.routePrefix}${(route || op).replace(
@@ -97,7 +114,9 @@ function renderConstructorForClass(
         (_match, g1) => {
           return `:${g1}`;
         }
-      )}", async (expressRequest, expressResponse) => {
+      )}"${
+        operation.cors ? `, cors()` : ""
+      }, bodyParser.json(), async (expressRequest, expressResponse) => {
 
 ${routeArguments
   .map(p => {

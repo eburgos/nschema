@@ -127,6 +127,7 @@ export interface RestAnonymousMessage extends AnonymousMessage {
 }
 
 export interface NSchemaRestOperation extends NSchemaOperation {
+  cors?: boolean;
   inMessage: RestAnonymousMessage;
   method?: string;
   outMessage: RestAnonymousMessage;

@@ -18,7 +18,6 @@ const bundle: BundleTask = {
       $namespaceMapping: {
         "@angular/core": "@angular/core",
         "@angular/http": "@angular/http",
-        "ninejs/request": "ninejs/request",
         "rxjs/Rx": "rxjs/Rx"
       },
       $restClientStrategy: "Default",
@@ -132,7 +131,6 @@ const bundle: BundleTask = {
           $namespaceMapping: {
             "@angular/core": "@angular/core",
             "@angular/http": "@angular/http",
-            "ninejs/request": "ninejs/request",
             "rxjs/Rx": "rxjs/Rx"
           },
           $restClientStrategy: "Default",

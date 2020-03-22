@@ -33,7 +33,7 @@ if (argv.features) {
       () => {
         process.exit(0);
       },
-      err => {
+      (err) => {
         console.error(err);
         process.exit(1);
       }

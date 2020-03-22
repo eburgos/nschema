@@ -96,12 +96,12 @@ function buildRequest(
             ? `JSON.stringify(${
                 paramsInBody.length > 1 ? `[` : ``
               }${paramsInBody
-                .map(argument => {
+                .map((argument) => {
                   return getValueOf(argument);
                 })
                 .join(", ")}${paramsInBody.length > 1 ? `]` : ``})`
             : `qs.stringify({ ${paramsInBody
-                .map(argument => `${argument.name}: ${getValueOf(argument)}`)
+                .map((argument) => `${argument.name}: ${getValueOf(argument)}`)
                 .join(", ")} })`
           : `undefined`
       },
@@ -116,7 +116,7 @@ function buildRequest(
       ? `,
         ...{
           ${sortAlphabetically(
-            paramsInHeader.map(argument => {
+            paramsInHeader.map((argument) => {
               return isOptional(argument)
                 ? `...(typeof ${argument.name} !== "undefined")? { "${
                     argument.headerName || `X-${argument.name}`
@@ -136,7 +136,7 @@ function buildRequest(
       url: \`\${this.${endpointPropertyName}}${routePrefix}${
     paramsInRoute.length
       ? `\${[${paramsInRoute
-          .map(argument => {
+          .map((argument) => {
             return `{ key: \`${argument.name}\`, value: \`\${${getValueOf(
               argument
             )}}\`}`;
@@ -148,7 +148,7 @@ function buildRequest(
   }${
     paramsInQuery.length
       ? `?\${[${`${paramsInQuery
-          .map(argument => {
+          .map((argument) => {
             return `{ name: \`${argument.name}\`, value: ${getValueOf(
               argument
             )} }`;
@@ -323,7 +323,7 @@ const bodyPart = {
     return `${
       paramsInQuery.length
         ? `        let $queryParams: URLSearchParams = new URLSearchParams();
-    ${paramsInQuery.map(argument => {
+    ${paramsInQuery.map((argument) => {
       return `        if (typeof(${argument.name}) !== undefined) {
                 $queryParams.set("${argument.name}", ${argument.name}.toString());
             }`;
@@ -333,7 +333,7 @@ const bodyPart = {
     ${optionsVarName}.headers =  new Headers({
       "Content-Type": "application/json",
       ${paramsInHeader
-        .map(argument => {
+        .map((argument) => {
           return `"${argument.headerName || `X-${argument.name}`}": ${
             argument.name
           }`;
@@ -346,7 +346,7 @@ ${
         paramsInBody.length
           ? `
 let $body = JSON.stringify(${paramsInBody.length > 1 ? `[` : ``}${paramsInBody
-              .map(argument => {
+              .map((argument) => {
                 return argument.name;
               })
               .join(", ")}${paramsInBody.length > 1 ? `]` : ``});`
@@ -356,7 +356,7 @@ let $body = JSON.stringify(${paramsInBody.length > 1 ? `[` : ``}${paramsInBody
 }
 
     return this.http.${method.toLowerCase()}(this.${endpointPropertyName} + [${paramsInRoute
-      .map(argument => {
+      .map((argument) => {
         return `\`${argument.name}\``;
       })
       .join(
@@ -393,7 +393,7 @@ let $body = JSON.stringify(${paramsInBody.length > 1 ? `[` : ``}${paramsInBody
         ..._paramsInHeader,
         ..._paramsInQuery,
         ..._paramsInRoute
-      ].map(argument => argument.name)
+      ].map((argument) => argument.name)
     );
     return `try {
       const ${responseVarName} = await request.${method.toLowerCase()}${
@@ -442,7 +442,7 @@ function renderOperations(
 ) {
   const routePrefix = config.routePrefix || "";
   return `${Object.keys(config.operations)
-    .map(operationName => {
+    .map((operationName) => {
       const operation = config.operations[operationName];
       const {
         method,
@@ -460,13 +460,13 @@ function renderOperations(
           `Service "${
             config.name
           }" : operation "${operationName}" has method GET and body parameters "${bodyArguments
-            .map(argument => argument.name)
+            .map((argument) => argument.name)
             .join("\n")}". Fix this to continue.`
         );
       }
       const optionsVarName = findNonCollidingName(
         "options",
-        (inMessage.data || []).map(argument => argument.name)
+        (inMessage.data || []).map((argument) => argument.name)
       );
       return `  /**
    *${(operation.description ? ` ${operation.description}` : "").replace(
@@ -474,7 +474,7 @@ function renderOperations(
      "\n   * "
    )}
 ${(inMessage.data || [])
-  .map(par => {
+  .map((par) => {
     return `   * @param ${par.name} -${addSpace(
       (par.description || "")
         .split("\n")
@@ -486,7 +486,7 @@ ${(inMessage.data || [])
   .join("")}   * @returns${addSpace(
         ((outMessage.data || []).length > 1 ? wrap("[", "]") : identityStr)(
           (outMessage.data || [])
-            .map(argument => {
+            .map((argument) => {
               return (argument.description || "").trim();
             })
             .join(", ")
@@ -494,7 +494,7 @@ ${(inMessage.data || [])
       )}
    */
   public async ${operationName}(${(inMessage.data || [])
-        .map(par => {
+        .map((par) => {
           return `${par.name}: ${typeName(
             par.type,
             nschema,
@@ -552,13 +552,13 @@ ${(inMessage.data || [])
       ? ""
       : `
 ${Object.keys(config.producerContexts || {})
-  .map(contextName => {
+  .map((contextName) => {
     if (!config.producerContexts) {
       throw new Error("Invalid Argument");
     }
     const pContext = config.producerContexts[contextName];
     const description = pContext.description || "";
-    pContext.operations.forEach(operationName => {
+    pContext.operations.forEach((operationName) => {
       if (!config.operations[operationName]) {
         throw new Error(
           `Unable to generate producer context ${contextName} for service ${
@@ -572,19 +572,19 @@ ${Object.keys(config.producerContexts || {})
     const contextOperations: {
       [name: string]: NSchemaRestOperation;
     } = Object.keys(config.operations)
-      .filter(operationName => pContext.operations.includes(operationName))
+      .filter((operationName) => pContext.operations.includes(operationName))
       .reduce((acc: { [name: string]: NSchemaRestOperation }, next) => {
         acc[next] = config.operations[next];
         return acc;
       }, {});
     //Validating that all parameters in context belong to all operations and have the same type
-    const operationArguments = pContext.arguments.map(arg => {
+    const operationArguments = pContext.arguments.map((arg) => {
       const { isValidType, lastType } = Object.keys(contextOperations).reduce(
         (acc: { isValidType: boolean; lastType: string | undefined }, cop) => {
           const contextOperation = contextOperations[cop];
           const operationArgument = (
             contextOperation.inMessage.data || []
-          ).find(operationArg => operationArg.name === arg);
+          ).find((operationArg) => operationArg.name === arg);
           if (!operationArgument) {
             throw new Error(
               `Unable to generate producer context ${contextName} for service ${
@@ -641,16 +641,18 @@ ${Object.keys(config.producerContexts || {})
    * ${description}
    */
   public ${contextName}(${operationArguments
-      .map(arg => `${arg.name}: ${arg.type}`)
+      .map((arg) => `${arg.name}: ${arg.type}`)
       .join(", ")}) {
     return {
 ${Object.keys(contextOperations)
-  .map(contextOperationName => {
+  .map((contextOperationName) => {
     const operation = contextOperations[contextOperationName];
     return `      ${contextOperationName}: (${(operation.inMessage.data || [])
-      .filter(({ name }) => !operationArguments.find(arg => arg.name === name))
+      .filter(
+        ({ name }) => !operationArguments.find((arg) => arg.name === name)
+      )
       .map(
-        arg =>
+        (arg) =>
           `${arg.name}: ${typeName(
             arg.realType || arg.type,
             nschema,
@@ -665,13 +667,13 @@ ${Object.keys(contextOperations)
       .join(", ")}) => this.${contextOperationName}(${(
       operation.inMessage.data || []
     )
-      .map(arg => arg.name)
+      .map((arg) => arg.name)
       .join(", ")})`;
   })
   .join(",\n")}, ${replacerPropertyName}(${operationArguments
-      .map(arg => `new${arg.name}: ${arg.type}`)
+      .map((arg) => `new${arg.name}: ${arg.type}`)
       .join(", ")}) {
-      ${operationArguments.map(arg => `${arg.name} = new${arg.name}`).join(`;
+      ${operationArguments.map((arg) => `${arg.name} = new${arg.name}`).join(`;
         `)}
 
   }
@@ -716,7 +718,7 @@ ${computeImportMatrix(
   }
 export interface ${config.name}ErrorHandler {
 ${Object.keys(config.operations)
-  .map(operationName => {
+  .map((operationName) => {
     const operation = config.operations[operationName];
     const outMessage = operation.outMessage;
     return `  ${operationName}?(error: any): ${deferredType}<${messageType(

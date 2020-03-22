@@ -27,13 +27,13 @@ function computeBundleImportMatrix(
     ...buildPHPContext(),
     skipWrite: true
   };
-  arr.forEach(item => {
-    Object.keys(item.imports).forEach(importName => {
+  arr.forEach((item) => {
+    Object.keys(item.imports).forEach((importName) => {
       if (!rootContext.imports[importName]) {
         rootContext.imports[importName] = {};
       }
       const namespace = item.imports[importName];
-      Object.keys(namespace).forEach(name => {
+      Object.keys(namespace).forEach((name) => {
         rootContext.imports[importName][name] = item.imports[importName][name];
       });
     });
@@ -67,8 +67,9 @@ async function execute(
 
   const waitables = arr.map(async (cur: NSchemaTask) => {
     writeDebugLog(
-      `bundle - php - generating ${cur.type} ${(cur as any).namespace ||
-        ""} :: ${(cur as any).name}`
+      `bundle - php - generating ${cur.type} ${
+        (cur as any).namespace || ""
+      } :: ${(cur as any).name}`
     );
     return await nschema.generate(parentConfig, cur, { skipWrite: true });
   });
@@ -80,7 +81,7 @@ async function execute(
   }> = dblarr.reduce((acc: any | any[], next: any | any[]) => {
     if (nschema.isArray(next)) {
       return acc.concat(
-        next.filter(item => {
+        next.filter((item) => {
           return item && item.generated && item.context;
         })
       );
@@ -92,7 +93,7 @@ async function execute(
       }
     }
   }, []);
-  const results = reducedArr.map(item => {
+  const results = reducedArr.map((item) => {
     return item.generated;
   });
   if (!results.length) {
@@ -100,7 +101,7 @@ async function execute(
   }
   let result = results.join("\n");
   const imports = computeBundleImportMatrix(
-    reducedArr.map(item => item.context),
+    reducedArr.map((item) => item.context),
     config.namespace || "",
     namespaceMapping
   );
@@ -132,7 +133,7 @@ ${result}`;
     LogLevel.Default,
     `${yellow("bundle")}: php - ${blue("writing")} to file: ${green(filepath)}`
   );
-  return nschema.writeFile(filepath, result).then(undefined, err => {
+  return nschema.writeFile(filepath, result).then(undefined, (err) => {
     writeError("error: ");
     writeError(JSON.stringify(err, null, 2));
   });

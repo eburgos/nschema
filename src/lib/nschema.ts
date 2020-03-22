@@ -35,7 +35,7 @@ declare let require: (name: string) => any;
 function createDirectorySync(dirpath: string) {
   const seps = dirpath.split(pathSep);
   const tried: string[] = [];
-  seps.forEach(item => {
+  seps.forEach((item) => {
     tried.push(item);
     const tryDir = tried.join(pathSep);
     if (tryDir) {
@@ -102,7 +102,7 @@ function registerBasicTypes(nschema: NSchema) {
       type: "object"
     }
   ];
-  basics.forEach(item => nschema.registerObject(item));
+  basics.forEach((item) => nschema.registerObject(item));
 }
 
 const allowedParentToChildrenMixin: { [name: string]: any } = {
@@ -181,8 +181,9 @@ export default class NSchema implements NSchemaInterface {
 
     if (typeProvider.execute) {
       writeDebugLog(
-        `executing ${(newConfig as any).namespace || ""} :: ${(newConfig as any)
-          .name || ""} with provider ${typeProvider.name}`
+        `executing ${(newConfig as any).namespace || ""} :: ${
+          (newConfig as any).name || ""
+        } with provider ${typeProvider.name}`
       );
       return await typeProvider.execute(newConfig, this, context);
     } else {
@@ -218,7 +219,7 @@ export default class NSchema implements NSchemaInterface {
   }
 
   public getMessage(namespace: string, name: string): MessageTask | undefined {
-    const message = this.context.messages.find(message => {
+    const message = this.context.messages.find((message) => {
       return (
         (message.namespace || "") === (namespace || "") &&
         (message.name || "") === (name || "")
@@ -228,7 +229,7 @@ export default class NSchema implements NSchemaInterface {
   }
 
   public getObject(namespace: string, name: string) {
-    const obj = this.context.objects.find(currentObject => {
+    const obj = this.context.objects.find((currentObject) => {
       return (
         (currentObject.namespace || "") === (namespace || "") &&
         (currentObject.name || "") === (name || "")
@@ -237,7 +238,7 @@ export default class NSchema implements NSchemaInterface {
     return obj;
   }
   public getService(namespace: string, name: string) {
-    const service = this.context.services.find(currentService => {
+    const service = this.context.services.find((currentService) => {
       return (
         (currentService.namespace || "") === namespace &&
         (currentService.name || "") === name
@@ -299,7 +300,7 @@ export default class NSchema implements NSchemaInterface {
             return pathResolve(dir, basename);
           })
           .map(require)
-          .map(requiredModule => {
+          .map((requiredModule) => {
             if (requiredModule.default) {
               requiredModule = requiredModule.default;
             }
@@ -497,11 +498,11 @@ export async function features() {
     writeLog(LogLevel.Default, "Available targets:");
     writeLog(LogLevel.Default, "");
 
-    const typeGroups = groupBy(item => item.type, nschema.targets);
+    const typeGroups = groupBy((item) => item.type, nschema.targets);
     typeGroups.forEach((list, type) => {
       writeLog(LogLevel.Default, `type: ${chalk.blue(type)}`);
       console.table(
-        list.map(target => {
+        list.map((target) => {
           if (type === "object") {
             return {
               description: target.description,

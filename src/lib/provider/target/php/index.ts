@@ -66,9 +66,9 @@ export async function phpGenerate(
 
   if (context.skipWrite) {
     writeDebugLog(
-      `${yellow("php")}: skipped write on ${
-        target.location
-      } - ${target.$fileName || target.name || ""} due to context`
+      `${yellow("php")}: skipped write on ${target.location} - ${
+        target.$fileName || target.name || ""
+      } due to context`
     );
     return Promise.resolve({
       config,
@@ -104,12 +104,12 @@ async function init(nschema: NSchemaInterface) {
   const providerPath = pathResolve(__dirname, "bind");
   return Promise.all(
     readdirSync(providerPath)
-      .filter(item => {
+      .filter((item) => {
         return statSync(pathResolve(providerPath, item)).isDirectory();
       })
-      .map(directoryPath => {
+      .map((directoryPath) => {
         return readdirSync(pathResolve(providerPath, directoryPath)).map(
-          item => {
+          (item) => {
             return pathResolve(providerPath, directoryPath, item);
           }
         );
@@ -117,11 +117,11 @@ async function init(nschema: NSchemaInterface) {
       .reduce((accumulated, next) => {
         return accumulated.concat(next);
       })
-      .filter(item => {
+      .filter((item) => {
         return extname(item) === ".js" && existsSync(item);
       })
       .map(require)
-      .map(async requiredModule => {
+      .map(async (requiredModule) => {
         if (requiredModule.default) {
           requiredModule = requiredModule.default;
         }
@@ -140,7 +140,7 @@ async function init(nschema: NSchemaInterface) {
           }
         });
       })
-  ).then(undefined, err => {
+  ).then(undefined, (err) => {
     throw new Error(err);
   });
 }
@@ -156,17 +156,18 @@ function getDataItems(
       nsMessage.extends.name
     );
     if (parent) {
-      getDataItems(nschema, parent).forEach(dataItem => {
+      getDataItems(nschema, parent).forEach((dataItem) => {
         dataItems.push(dataItem);
       });
     } else {
       throw new Error(
-        `could not find parent: ns="${nsMessage.extends.namespace ||
-          ""}" name="${nsMessage.extends.name}"`
+        `could not find parent: ns="${
+          nsMessage.extends.namespace || ""
+        }" name="${nsMessage.extends.name}"`
       );
     }
   }
-  (nsMessage.data || []).map(item => {
+  (nsMessage.data || []).map((item) => {
     dataItems.push(item);
   });
   return dataItems;

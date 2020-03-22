@@ -117,8 +117,8 @@ export function getOperationDetails(
   let allParams: RestMessageArgument[] = (inMessage.data || []).slice(0);
   const allOutParams = (outMessage.data || []).slice(0);
   const paramsInRoute: RestMessageArgument[] = allParams
-    .filter(argument => includeInRoute(argument, route))
-    .map(argument => {
+    .filter((argument) => includeInRoute(argument, route))
+    .map((argument) => {
       return {
         ...argument,
         realType: getType(argument),
@@ -128,12 +128,12 @@ export function getOperationDetails(
         }
       };
     });
-  allParams = allParams.filter(argument => {
+  allParams = allParams.filter((argument) => {
     return !includeInRoute(argument, route);
   });
   const paramsInQuery: RestMessageArgument[] = allParams
     .filter(includeInQuery)
-    .map(argument => {
+    .map((argument) => {
       return {
         ...argument,
         realType: getType(argument),
@@ -143,12 +143,12 @@ export function getOperationDetails(
         }
       };
     });
-  allParams = allParams.filter(argument => {
+  allParams = allParams.filter((argument) => {
     return !includeInQuery(argument);
   });
   const paramsInHeader: RestMessageArgument[] = allParams
     .filter(includeInHeader)
-    .map(argument => {
+    .map((argument) => {
       return {
         ...argument,
         realType: getType(argument),
@@ -158,16 +158,16 @@ export function getOperationDetails(
         }
       };
     });
-  allParams = allParams.filter(argument => {
+  allParams = allParams.filter((argument) => {
     return !includeInHeader(argument);
   });
-  const paramsInBody = allParams.filter(argument => {
+  const paramsInBody = allParams.filter((argument) => {
     return !includeInRoute(argument, route);
   });
   const paramsOutHeader = (outMessage.data || [])
     .slice(0)
     .filter(includeInHeader);
-  const paramsOutBody = allOutParams.filter(argument => {
+  const paramsOutBody = allOutParams.filter((argument) => {
     return !includeInHeader(argument);
   });
 

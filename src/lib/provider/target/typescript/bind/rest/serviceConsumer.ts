@@ -21,7 +21,7 @@ function renderOperationsInterface(
   namespace: string
 ) {
   return Object.keys(operations)
-    .map(operationName => {
+    .map((operationName) => {
       const operation = operations[operationName];
       const { inMessage, outMessage } = getOperationDetails(
         operation,
@@ -29,28 +29,30 @@ function renderOperationsInterface(
       );
       const contextVarName = findNonCollidingName(
         "context",
-        (inMessage.data || []).map(argument => argument.name)
+        (inMessage.data || []).map((argument) => argument.name)
       );
 
       return `
   /**
    *${addSpace((operation.description || "").replace(/\n/g, "\n   * "))}
 ${(inMessage.data || [])
-  .map(par => {
+  .map((par) => {
     return `   * @param ${par.name} -${addSpace(
       (par.description || "").replace(/\n/g, "\n   * ")
     )}`;
   })
   .join("\n")}
    * @param ${contextVarName} - Operation context. Optional argument (The service always sends it but you may not implement it in your class)
-   * @returns ${(outMessage.data || [])
-     .map(argument => {
-       return (argument.description || "").replace(/\n/g, "\n   * ");
-     })
-     .join(", ") || `{${messageType(nschema, context, false, outMessage)}}`}
+   * @returns ${
+     (outMessage.data || [])
+       .map((argument) => {
+         return (argument.description || "").replace(/\n/g, "\n   * ");
+       })
+       .join(", ") || `{${messageType(nschema, context, false, outMessage)}}`
+   }
    */
   ${operationName}(${(inMessage.data || [])
-        .map(par => {
+        .map((par) => {
           return `${par.name}: ${typeName(
             par.realType || par.type,
             nschema,
@@ -81,7 +83,7 @@ function renderConstructorForClass(
   operations: { [name: string]: NSchemaRestOperation }
 ) {
   return Object.keys(operations)
-    .map(operationName => {
+    .map((operationName) => {
       const operation = operations[operationName];
       const {
         bodyArguments,
@@ -121,25 +123,26 @@ function renderConstructorForClass(
       }, bodyParser.json(), async (expressRequest, expressResponse) => {
 
 ${routeArguments
-  .map(argument => {
+  .map((argument) => {
     return `      const input${argument.name} = ${realTypeMap(
       argument,
       `expressRequest.params${renderPropertyAccessor(argument.name)}`
     )};
 `;
   })
-  .join("")}${queryArguments.map(argument => {
+  .join("")}${queryArguments.map((argument) => {
         return `        const input${argument.name} = ${realTypeMap(
           argument,
           `expressRequest.query${renderPropertyAccessor(argument.name)}`
         )};
         `;
       }).join(`,
-        `)}${headerArguments.map(argument => {
+        `)}${headerArguments.map((argument) => {
         return `const input${argument.name} = ${realTypeMap(
           argument,
-          `expressRequest.header('${argument.headerName ||
-            `X-${argument.name}`}') || ""`
+          `expressRequest.header('${
+            argument.headerName || `X-${argument.name}`
+          }') || ""`
         )};`;
       }).join(`
         `)}${
@@ -160,7 +163,7 @@ ${routeArguments
                expressResponse.status(200).json(await implementation.${operationName}(${(
         inMessage.data || []
       )
-        .map(arg => `input${arg.name}`)
+        .map((arg) => `input${arg.name}`)
         .join(", ")}, { request: expressRequest, response: expressResponse }));
             }
             catch (exception: { statusCode: number, message: string, stack: string }) {

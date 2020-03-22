@@ -88,7 +88,7 @@ async function execute(
           ? [target]
           : target;
 
-        const waitables = targetArr.map(async item => {
+        const waitables = targetArr.map(async (item) => {
           item.type = "service";
           try {
             const foundTargets = nschema.getTarget(item);

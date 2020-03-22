@@ -37,7 +37,7 @@ function getMessage(
   name: string,
   nschema: NSchemaInterface
 ) {
-  const filtered = nschema.context.messages.filter(message => {
+  const filtered = nschema.context.messages.filter((message) => {
     return (
       (message.namespace || "") === (namespace || "") &&
       (message.name || "") === (name || "")
@@ -80,7 +80,7 @@ export function processMessage(
     newConfig.extends = undefined;
   }
 
-  newConfig.data.forEach(par => {
+  newConfig.data.forEach((par) => {
     if (!par.name) {
       unnamedCount += 1;
       par.name = `unnamedParameter${unnamedCount}`;

@@ -78,7 +78,7 @@ export function typeName(
       ? [$modifier]
       : $modifier;
 
-    modifierArr.forEach(item => {
+    modifierArr.forEach((item) => {
       /* eslint-disable-next-line @typescript-eslint/no-use-before-define */
       result = `(${result} ${modifierMap(item)})`;
     });
@@ -199,10 +199,10 @@ export class GRPC {
 
     return Promise.all(
       readdirSync(providerPath)
-        .filter(item => {
+        .filter((item) => {
           return statSync(pathResolve(providerPath, item)).isDirectory();
         })
-        .map(directoryPath => {
+        .map((directoryPath) => {
           return readdirSync(pathResolve(providerPath, directoryPath)).map(
             () /* _i */ => {
               return pathResolve(providerPath, directoryPath, "index.js");
@@ -212,11 +212,11 @@ export class GRPC {
         .reduce((accumulated, next) => {
           return accumulated.concat(next);
         })
-        .filter(item => {
+        .filter((item) => {
           return extname(item) === ".js" && existsSync(item);
         })
         .map(require)
-        .map(async requiredModule => {
+        .map(async (requiredModule) => {
           if (requiredModule.default) {
             requiredModule = requiredModule.default;
           }
@@ -236,7 +236,7 @@ export class GRPC {
             }
           });
         })
-    ).then(undefined, err => {
+    ).then(undefined, (err) => {
       throw new Error(err);
     });
   }
@@ -255,17 +255,18 @@ function getDataItems(
       nsMessage.extends.name
     );
     if (parent) {
-      getDataItems(nschema, parent).forEach(dataItem => {
+      getDataItems(nschema, parent).forEach((dataItem) => {
         dataItems.push(dataItem);
       });
     } else {
       throw new Error(
-        `could not find parent: ns="${nsMessage.extends.namespace ||
-          ""}" name="${nsMessage.extends.name}"`
+        `could not find parent: ns="${
+          nsMessage.extends.namespace || ""
+        }" name="${nsMessage.extends.name}"`
       );
     }
   }
-  (nsMessage.data || []).map(item => {
+  (nsMessage.data || []).map((item) => {
     dataItems.push(item);
   });
   return dataItems;

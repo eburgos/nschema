@@ -11,7 +11,7 @@ module.exports = {
     "eslint-config-prettier"
   ],
   rules: {
-    "prettier/prettier": "warn",
+    "prettier/prettier": ["warn", { trailingComma: "none" }],
     "no-undef": 0,
     "id-length": [
       "error",

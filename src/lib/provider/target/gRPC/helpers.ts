@@ -45,8 +45,8 @@ function renderImportLine(
 }
 
 function renderImport(importNames: string[], modulePath: string) {
-  const starred = importNames.filter(name => name[0] === "*");
-  const normalExports = importNames.filter(name => name[0] !== "*");
+  const starred = importNames.filter((name) => name[0] === "*");
+  const normalExports = importNames.filter((name) => name[0] !== "*");
 
   return `${
     starred.length ? renderImportLine(starred, modulePath, noWrap) : ""
@@ -71,21 +71,21 @@ export function computeImportMatrix(
   const rootContext = {
     imports: {} as { [name: string]: { [name: string]: string | boolean } }
   };
-  Object.keys(context.imports).forEach(importItem => {
+  Object.keys(context.imports).forEach((importItem) => {
     if (!rootContext.imports[importItem]) {
       rootContext.imports[importItem] = {};
     }
     const namespace = context.imports[importItem];
-    Object.keys(namespace).forEach(name => {
+    Object.keys(namespace).forEach((name) => {
       rootContext.imports[importItem][name] = context.imports[importItem][name];
     });
   });
 
   const sortedImports = Object.keys(rootContext.imports)
-    .filter(importName => {
+    .filter((importName) => {
       return importName !== localNamespace;
     })
-    .map(importName => {
+    .map((importName) => {
       return {
         imports: rootContext.imports[importName],
         modulePath:
@@ -100,10 +100,10 @@ export function computeImportMatrix(
 
   sortedImports.sort(moduleSort);
 
-  const lines = sortedImports.map(importName => {
+  const lines = sortedImports.map((importName) => {
     const sorted = Object.keys(importName.imports);
     sorted.sort(importsSort);
-    const importNames = sorted.map(sortedImportName =>
+    const importNames = sorted.map((sortedImportName) =>
       typeof importName.imports[sortedImportName] === "string"
         ? `${sortedImportName} as ${importName.imports[sortedImportName]}`
         : sortedImportName

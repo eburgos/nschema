@@ -94,7 +94,7 @@ function renderClass(
   return `interface ${data.name}${
     data.implements && data.implements.length
       ? ` extends ${data.implements
-          .map(impl =>
+          .map((impl) =>
             typeName(
               impl,
               nschema,
@@ -110,7 +110,7 @@ function renderClass(
       : ""
   } {
 ${Object.keys(data.properties || {})
-  .map(prop => {
+  .map((prop) => {
     if (!data.properties) {
       throw new Error("Invalid argument");
     }

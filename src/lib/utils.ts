@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 
 import { default as deepCloneHelper } from "immutability-helper";
-import { render as renderPrettyJson } from "prettyjson";
 import { isArray } from "util";
 import { writeError } from "./logging";
 import {
@@ -13,6 +12,8 @@ import {
 } from "./model";
 
 declare const require: (name: string) => { default: NSchemaTask } | NSchemaTask;
+const req: any = require;
+const prettifyJson: (o: any) => string = req("prettify-json");
 function hasDefault(
   task: { default: NSchemaTask } | NSchemaTask
 ): task is { default: NSchemaTask } {
@@ -33,9 +34,7 @@ export function requireDefaultOrPackage(location: string) {
 
 export function caseInsensitiveSorter<T>(mapper: (s: T) => string) {
   return (source: T, target: T) =>
-    mapper(source)
-      .toLowerCase()
-      .localeCompare(mapper(target).toLowerCase());
+    mapper(source).toLowerCase().localeCompare(mapper(target).toLowerCase());
 }
 
 export function isRelativePath(path: string) {
@@ -137,14 +136,14 @@ export function isValidCriteriaProperty(key: string) {
 }
 
 export function prettyJson(obj: any) {
-  return renderPrettyJson(obj);
+  return prettifyJson(obj);
 }
 
 export function getCriteria(obj: any) {
   const result: any = {};
   Object.keys(obj)
     .filter(isValidCriteriaProperty)
-    .forEach(key => {
+    .forEach((key) => {
       result[key] = obj[key];
     });
   return `

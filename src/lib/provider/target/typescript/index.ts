@@ -76,9 +76,9 @@ export class TypeScript {
 
     if (context.skipWrite) {
       writeDebugLog(
-        `${yellow("typescript")}: skipped write on ${
-          target.location
-        } - ${target.$fileName || target.name || ""} due to context`
+        `${yellow("typescript")}: skipped write on ${target.location} - ${
+          target.$fileName || target.name || ""
+        } due to context`
       );
       return Promise.resolve({
         config,
@@ -115,7 +115,7 @@ export class TypeScript {
               generated: result
             };
           },
-          err => {
+          (err) => {
             throw new Error(err);
           }
         );
@@ -126,12 +126,12 @@ export class TypeScript {
 
     return Promise.all(
       readdirSync(providerPath)
-        .filter(item => {
+        .filter((item) => {
           return statSync(pathResolve(providerPath, item)).isDirectory();
         })
-        .map(directory => {
+        .map((directory) => {
           return readdirSync(pathResolve(providerPath, directory)).map(
-            dirFile => {
+            (dirFile) => {
               return pathResolve(providerPath, directory, dirFile);
             }
           );
@@ -139,11 +139,11 @@ export class TypeScript {
         .reduce((accumulated, next) => {
           return accumulated.concat(next);
         })
-        .filter(item => {
+        .filter((item) => {
           return extname(item) === ".js" && existsSync(item);
         })
         .map(require)
-        .map(async requiredModule => {
+        .map(async (requiredModule) => {
           if (requiredModule.default) {
             requiredModule = requiredModule.default;
           }
@@ -163,7 +163,7 @@ export class TypeScript {
             }
           });
         })
-    ).then(undefined, err => {
+    ).then(undefined, (err) => {
       throw new Error(err);
     });
   }
@@ -194,17 +194,18 @@ function getDataItems(
       nsMessage.extends.name
     );
     if (parent) {
-      getDataItems(nschema, parent).forEach(dataItem => {
+      getDataItems(nschema, parent).forEach((dataItem) => {
         dataItems.push(dataItem);
       });
     } else {
       throw new Error(
-        `could not find parent: ns="${nsMessage.extends.namespace ||
-          ""}" name="${nsMessage.extends.name}"`
+        `could not find parent: ns="${
+          nsMessage.extends.namespace || ""
+        }" name="${nsMessage.extends.name}"`
       );
     }
   }
-  (nsMessage.data || []).map(item => {
+  (nsMessage.data || []).map((item) => {
     dataItems.push(item);
   });
   return dataItems;

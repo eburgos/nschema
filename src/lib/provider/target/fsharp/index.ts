@@ -67,7 +67,7 @@ const fsharp: FSharp = {
       LogLevel.Default,
       `${yellow("fsharp")}: ${blue("writing")} to file: ${green(filepath)}`
     );
-    return nschema.writeFile(filepath, result).then(null, err => {
+    return nschema.writeFile(filepath, result).then(null, (err) => {
       writeError("error: ");
       writeError(JSON.stringify(err, null, 2));
     });
@@ -76,12 +76,12 @@ const fsharp: FSharp = {
     const providerPath = pathResolve(__dirname, "bind");
     await Promise.all(
       readdirSync(providerPath)
-        .filter(item => {
+        .filter((item) => {
           return statSync(pathResolve(providerPath, item)).isDirectory();
         })
-        .map(directoryPath => {
+        .map((directoryPath) => {
           return readdirSync(pathResolve(providerPath, directoryPath)).map(
-            item => {
+            (item) => {
               return pathResolve(providerPath, directoryPath, item);
             }
           );
@@ -89,11 +89,11 @@ const fsharp: FSharp = {
         .reduce((accumulated, next) => {
           return accumulated.concat(next);
         })
-        .filter(item => {
+        .filter((item) => {
           return extname(item) === ".js" && existsSync(item);
         })
         .map(require)
-        .map(async requiredModule => {
+        .map(async (requiredModule) => {
           if (requiredModule.default) {
             requiredModule = requiredModule.default;
           }
@@ -140,7 +140,7 @@ const fsharp: FSharp = {
         ? [$modifier]
         : $modifier;
 
-      modifierArr.forEach(item => {
+      modifierArr.forEach((item) => {
         result += ` ${item}`;
       });
     }

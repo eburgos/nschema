@@ -16,7 +16,7 @@ function renderOperationsInterface(
   namespace: string | undefined
 ) {
   return Object.keys(operations)
-    .map(operationName => {
+    .map((operationName) => {
       const operation = operations[operationName];
       const { inMessage, outMessage } = getOperationDetails(
         operation,
@@ -24,14 +24,14 @@ function renderOperationsInterface(
       );
       const contextVariable = findNonCollidingName(
         "context",
-        (inMessage.data || []).map(argument => argument.name)
+        (inMessage.data || []).map((argument) => argument.name)
       );
 
       return `
   /**
    *${addSpace((operation.description || "").replace(/\n/g, "\n   * "))}
 ${(inMessage.data || [])
-  .map(par => {
+  .map((par) => {
     return `   * @param ${par.name} -${addSpace(
       (par.description || "").replace(/\n/g, "\n   * ")
     )}`;
@@ -40,14 +40,14 @@ ${(inMessage.data || [])
    * @param ${contextVariable} - Operation context. Optional argument (The service always sends it but you may not implement it in your class)
    * @returns ${
      (outMessage.data || [])
-       .map(argument => {
+       .map((argument) => {
          return (argument.description || "").replace(/\n/g, "\n   * ");
        })
        .join(", ") || `{${messageType(nschema, context, false, outMessage)}}`
    }
    */
   ${operationName}(${(inMessage.data || [])
-        .map(par => {
+        .map((par) => {
           return `${par.name}: ${typeName(
             par.type,
             nschema,
@@ -79,7 +79,7 @@ function renderOperationsForClass(
   namespace: string | undefined
 ) {
   const protecteds = Object.keys(operations)
-    .map(operationName => {
+    .map((operationName) => {
       const operation = operations[operationName];
       const { inMessage, outMessage } = getOperationDetails(
         operation,
@@ -90,7 +90,7 @@ function renderOperationsForClass(
   /**
    *${addSpace((operation.description || "").replace(/\n/g, "\n   * "))}
 ${(inMessage.data || [])
-  .map(par => {
+  .map((par) => {
     return `   * @param ${par.name} -${addSpace(
       (par.description || "").replace(/\n/g, "\n   * ")
     )}`;
@@ -99,14 +99,14 @@ ${(inMessage.data || [])
    * @param $ctx - Operation context
    * @returns ${
      (outMessage.data || [])
-       .map(argument => {
+       .map((argument) => {
          return (argument.description || "").replace(/\n/g, "\n   * ");
        })
        .join(", ") || `{${messageType(nschema, context, false, outMessage)}}`
    }
    */
   public abstract async ${operationName}(${(inMessage.data || [])
-        .map(par => {
+        .map((par) => {
           return `${par.name}: ${typeName(
             par.type,
             nschema,
@@ -130,7 +130,7 @@ ${(inMessage.data || [])
     })
     .join("\n");
   const abstracts = Object.keys(operations)
-    .map(operationName => {
+    .map((operationName) => {
       const operation = operations[operationName];
       const { inMessage, outMessage } = getOperationDetails(
         operation,
@@ -142,7 +142,7 @@ ${(inMessage.data || [])
    * Raw operation. This is what the service actually calls.
    *${addSpace((operation.description || "").replace(/\n/g, "\n   * "))}
 ${(inMessage.data || [])
-  .map(par => {
+  .map((par) => {
     return `   * @param ${par.name} -${addSpace(
       (par.description || "").replace(/\n/g, "\n   * ")
     )}`;
@@ -150,14 +150,14 @@ ${(inMessage.data || [])
   .join("\n")}
    * @returns ${
      (outMessage.data || [])
-       .map(argument => {
+       .map((argument) => {
          return (argument.description || "").replace(/\n/g, "\n   * ");
        })
        .join(", ") || `{${messageType(nschema, context, false, outMessage)}}`
    }
    */
   protected async $raw${operationName}(${(inMessage.data || [])
-        .map(par => {
+        .map((par) => {
           return `${par.name}: ${typeName(
             par.type,
             nschema,
@@ -179,7 +179,7 @@ ${(inMessage.data || [])
       )}> {
     this.emit("callStarted", { name: "${operationName}", timestamp: new Date() });
     const result = await this.${operationName}(${(inMessage.data || [])
-        .map(par => {
+        .map((par) => {
           return `${par.name}`;
         })
         .join(", ")}${(inMessage.data || []).length ? `, ` : ``}$ctx);

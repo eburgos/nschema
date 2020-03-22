@@ -10,14 +10,14 @@ function messages() {
         properties: {
             latitude: {
                 description: "Latitude",
-                type: "int"
+                type: "int",
             },
             longitude: {
                 description: "Longitude",
-                type: "int"
-            }
+                type: "int",
+            },
         },
-        type: "object"
+        type: "object",
     };
     const Rectangle = {
         description: `A latitude-longitude rectangle, represented as two diagonally opposite
@@ -27,17 +27,17 @@ function messages() {
             lo: {
                 description: "One corner of the rectangle.",
                 type: {
-                    name: Point.name
-                }
+                    name: Point.name,
+                },
             },
             hi: {
                 description: "The other corner of the rectangle.",
                 type: {
-                    name: Point.name
-                }
-            }
+                    name: Point.name,
+                },
+            },
         },
-        type: "object"
+        type: "object",
     };
     const Feature = {
         description: `A feature names something at a given point.
@@ -48,15 +48,15 @@ If a feature could not be named, the name is empty.`,
             location: {
                 description: "The point where the feature is detected.",
                 type: {
-                    name: Point.name
-                }
+                    name: Point.name,
+                },
             },
             name: {
                 description: "The name of the feature.",
-                type: "string"
-            }
+                type: "string",
+            },
         },
-        type: "object"
+        type: "object",
     };
     const RouteNote = {
         description: `A RouteNote is a message sent while at a given point.`,
@@ -65,15 +65,15 @@ If a feature could not be named, the name is empty.`,
             location: {
                 description: "The location from which the message is sent.",
                 type: {
-                    name: Point.name
-                }
+                    name: Point.name,
+                },
             },
             message: {
                 description: "The message to be sent.",
-                type: "string"
-            }
+                type: "string",
+            },
         },
-        type: "object"
+        type: "object",
     };
     const RouteSummary = {
         description: `A RouteSummary is received in response to a RecordRoute rpc.
@@ -85,22 +85,22 @@ the distance between each point.`,
         properties: {
             point_count: {
                 description: "The number of points received.",
-                type: "int"
+                type: "int",
             },
             feature_count: {
                 description: "The number of known features passed while traversing the route.",
-                type: "int"
+                type: "int",
             },
             distance: {
                 description: "The distance covered in metres.",
-                type: "int"
+                type: "int",
             },
             elapsed_time: {
                 description: "The duration of the traversal in seconds.",
-                type: "int"
-            }
+                type: "int",
+            },
         },
-        type: "object"
+        type: "object",
     };
     return [Point, RouteSummary, Rectangle, Feature, RouteNote];
 }
@@ -109,6 +109,6 @@ const bundle = {
     $target,
     list: messages(),
     namespace: "io.grpc.examples.routeguide.Model",
-    type: "bundle"
+    type: "bundle",
 };
 exports.default = bundle;

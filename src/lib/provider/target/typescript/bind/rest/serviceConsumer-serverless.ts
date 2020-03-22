@@ -21,7 +21,7 @@ function renderOperations(
   }
 ) {
   return Object.keys(operations)
-    .map(operationName => {
+    .map((operationName) => {
       const operation = operations[operationName];
       const {
         bodyArguments,
@@ -33,7 +33,7 @@ function renderOperations(
       } = getOperationDetails(operation, operationName);
       const bodyVarName = findNonCollidingName(
         "body",
-        (inMessage.data || []).map(argument => argument.name)
+        (inMessage.data || []).map((argument) => argument.name)
       );
       return `export async function ${operationName}(event: any, context: any, callback: (err: Error | undefined, r?: ${serverlessReturnType}) => void) {
   const input: any = {};
@@ -48,13 +48,13 @@ function renderOperations(
       }
       return undefined;
     })();
-${routeArguments.map(argument => {
+${routeArguments.map((argument) => {
   return `    input${renderPropertyAccessor(argument.name)} = ${realTypeMap(
     argument,
     `unescape(event.pathParameters${renderPropertyAccessor(argument.name)})`
   )};
 `;
-})}${queryArguments.map(argument => {
+})}${queryArguments.map((argument) => {
         return `    input${renderPropertyAccessor(
           argument.name
         )} = ${realTypeMap(
@@ -63,7 +63,7 @@ ${routeArguments.map(argument => {
         )};`;
       })}
 ${headerArguments
-  .map(argument => {
+  .map((argument) => {
     return `    input${renderPropertyAccessor(argument.name)} = ${realTypeMap(
       argument,
       `event.headers${renderPropertyAccessor(
@@ -97,7 +97,7 @@ ${
         (inMessage.data || []).length === 1
           ? "$req, "
           : (inMessage.data || [])
-              .map(argument => {
+              .map((argument) => {
                 return `$req.${argument.name}, `;
               })
               .join("")

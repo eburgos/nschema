@@ -10,10 +10,10 @@ function isObjectTask(task: NSchemaTask): task is ObjectTask {
 const messagesNamespace = model.namespace;
 const Point = model.list
   .filter(isObjectTask)
-  .find(models => models.name === "Point");
+  .find((models) => models.name === "Point");
 const Feature = model.list
   .filter(isObjectTask)
-  .find(models => models.name === "Feature");
+  .find((models) => models.name === "Feature");
 
 if (!Point) {
   throw new Error("Point message is undefined");

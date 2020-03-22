@@ -282,7 +282,7 @@ export class NRest {
           template: "producer",
           type: "producer"
         }
-      ].map(async serviceType => {
+      ].map(async (serviceType) => {
         writeDebugLog(
           `Registering target: type =>"service", bind => ${
             serviceType.bind

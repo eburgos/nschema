@@ -81,7 +81,7 @@ ${Object.keys(data.properties || {})
 const serviceTemplate: TemplateFunction<
   GRPCMessage | GRPCObject | GRPCService,
   GRPCContext
-> = data => {
+> = (data) => {
   if (data.type === "message" || data.type === "object") {
     throw new Error("Invalid argument");
   }

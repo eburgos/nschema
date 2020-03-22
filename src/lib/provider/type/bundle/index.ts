@@ -54,7 +54,7 @@ Unable to generate ${parentConfig.namespace || ""}.
 Available options are:
 
 ${customBundles
-  .map(customBundle => JSON.stringify(customBundle, null, 2))
+  .map((customBundle) => JSON.stringify(customBundle, null, 2))
   .join("\n")}`
       );
       throw new Error(`Error: multiple plugins found for ${getCriteria(tgt)}.`);

@@ -65,7 +65,7 @@ async function execute(
         const targetArr: Target[] = !nschema.isArray(target)
           ? [target]
           : target;
-        const result = targetArr.map(async arrayItem => {
+        const result = targetArr.map(async (arrayItem) => {
           const item: Target = { ...arrayItem, type: "object" };
           const foundTargets = nschema.getTarget(item);
           if (foundTargets.length > 1) {

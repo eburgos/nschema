@@ -65,8 +65,8 @@ function renderImportLine(
 }
 
 function renderImport(importNames: string[], modulePath: string) {
-  const starred = importNames.filter(name => name[0] === "*");
-  const normalExports = importNames.filter(name => name[0] !== "*");
+  const starred = importNames.filter((name) => name[0] === "*");
+  const normalExports = importNames.filter((name) => name[0] !== "*");
 
   return `${
     starred.length ? renderImportLine(starred, modulePath, noWrap) : ""
@@ -89,22 +89,22 @@ export function computeImportMatrix(
   const rootContext = {
     imports: {} as { [name: string]: { [name: string]: string | boolean } }
   };
-  Object.keys($context.imports).forEach(importName => {
+  Object.keys($context.imports).forEach((importName) => {
     if (!rootContext.imports[importName]) {
       rootContext.imports[importName] = {};
     }
     const namespace = $context.imports[importName];
-    Object.keys(namespace).forEach(name => {
+    Object.keys(namespace).forEach((name) => {
       rootContext.imports[importName][name] =
         $context.imports[importName][name];
     });
   });
 
   const sortedImports = Object.keys(rootContext.imports)
-    .filter(importName => {
+    .filter((importName) => {
       return importName !== localNamespace;
     })
-    .map(importName => {
+    .map((importName) => {
       return {
         imports: rootContext.imports[importName],
         modulePath:
@@ -119,10 +119,10 @@ export function computeImportMatrix(
 
   sortedImports.sort(moduleSort);
 
-  const lines = sortedImports.map(sortedImport => {
+  const lines = sortedImports.map((sortedImport) => {
     const sorted = Object.keys(sortedImport.imports);
     sorted.sort(importsSort);
-    const importNames = sorted.map(sortedName =>
+    const importNames = sorted.map((sortedName) =>
       typeof sortedImport.imports[sortedName] === "string"
         ? `${sortedName} as ${sortedImport.imports[sortedName]}`
         : sortedName
@@ -287,7 +287,7 @@ function getDataItems(nsMessage: MessageTask, $nschema: NSchemaInterface) {
       nsMessage.extends.name
     );
     if (parent) {
-      getDataItems(parent, $nschema).forEach(dataItem => {
+      getDataItems(parent, $nschema).forEach((dataItem) => {
         dataItems.push(dataItem);
       });
     } else {
@@ -299,7 +299,7 @@ function getDataItems(nsMessage: MessageTask, $nschema: NSchemaInterface) {
       throw new Error("Could not find parent message");
     }
   }
-  (nsMessage.data || []).forEach(item => {
+  (nsMessage.data || []).forEach((item) => {
     dataItems.push(item);
   });
   return dataItems;

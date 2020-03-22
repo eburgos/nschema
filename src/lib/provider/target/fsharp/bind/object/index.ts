@@ -56,8 +56,9 @@ function enumTemplate(data: FSharpObject) {
               ? property.fsharpValue
               : cnt;
           return `  // ${property.description || ""}
-        | [<EnumMember>][<JsonProperty("${prop}")>] ${property.fsharpName ||
-            initialCaps(prop)} = ${$currentVal}`;
+        | [<EnumMember>][<JsonProperty("${prop}")>] ${
+            property.fsharpName || initialCaps(prop)
+          } = ${$currentVal}`;
         })
         .join("\n")}`;
 }
@@ -76,7 +77,7 @@ function classTemplate(data: FSharpObject, nschema: NSchemaInterface) {
     !data.implements
       ? ""
       : `${data.implements
-          .map(imp => {
+          .map((imp) => {
             return `${indent(indentIndex, "  ")}  implements ${fsharp.typeName(
               imp,
               nschema,
@@ -86,7 +87,7 @@ function classTemplate(data: FSharpObject, nschema: NSchemaInterface) {
           .join("\n")}`
   }
   ${Object.keys(data.properties || {})
-    .map(prop => {
+    .map((prop) => {
       if (!data.properties) {
         throw new Error("Invalid argument");
       }
@@ -99,8 +100,9 @@ function classTemplate(data: FSharpObject, nschema: NSchemaInterface) {
               $nschemaType.namespace || data.namespace || "",
               $nschemaType.name
             );
-      return `${indent(indentIndex, "  ")}  /// <summary>${data.description ||
-        ""}</summary>
+      return `${indent(indentIndex, "  ")}  /// <summary>${
+        data.description || ""
+      }</summary>
       ${indent(indentIndex, "  ")}  ${
         $registeredType && $registeredType.subType === "enumeration"
           ? `[<JsonConverter(typeof<StringEnumConverter>)>]
@@ -110,8 +112,9 @@ ${indent(indentIndex, "  ")}  `
         property.options && property.options.ignoreSerialization
           ? "[<System.Runtime.Serialization.IgnoreDataMember>][<System.Xml.Serialization.XmlIgnore()>][<JsonIgnore()>]"
           : `[<DataMember>][<JsonProperty("${prop}")>]`
-      } member val ${property.fsharpName ||
-        initialCaps(prop)}: ${fsharp.typeName(
+      } member val ${
+        property.fsharpName || initialCaps(prop)
+      }: ${fsharp.typeName(
         $nschemaType,
         nschema,
         data.namespace || ""

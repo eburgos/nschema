@@ -27,13 +27,13 @@ function computeBundleImportMatrix(
     ...buildgRPCContext(),
     skipWrite: true
   };
-  arr.forEach(item => {
-    Object.keys(item.imports).forEach(property => {
+  arr.forEach((item) => {
+    Object.keys(item.imports).forEach((property) => {
       if (!rootContext.imports[property]) {
         rootContext.imports[property] = {};
       }
       const namespace = item.imports[property];
-      Object.keys(namespace).forEach(name => {
+      Object.keys(namespace).forEach((name) => {
         rootContext.imports[property][name] = item.imports[property][name];
       });
     });
@@ -76,7 +76,7 @@ async function execute(
     (acc: any | any[], next: any | any[]) => {
       if (nschema.isArray(next)) {
         return acc.concat(
-          next.filter(item => {
+          next.filter((item) => {
             return item && item.generated && item.context;
           })
         );
@@ -90,7 +90,7 @@ async function execute(
     },
     []
   );
-  const results = reducedArr.map(item => {
+  const results = reducedArr.map((item) => {
     return item.generated;
   });
   if (!results.length) {
@@ -98,7 +98,7 @@ async function execute(
   }
   let result = results.join("\n");
   const imports = computeBundleImportMatrix(
-    reducedArr.map(item => item.context),
+    reducedArr.map((item) => item.context),
     config.namespace || "",
     namespaceMapping
   );
@@ -134,13 +134,13 @@ ${result}`;
   return nschema.writeFile(filepath, result).then(
     () => {
       writeDebugLog(
-        `${yellow(
-          "bundle-gRPC-objects"
-        )}: clearing children list in ${parentConfig.namespace || ""}`
+        `${yellow("bundle-gRPC-objects")}: clearing children list in ${
+          parentConfig.namespace || ""
+        }`
       );
       parentConfig.list = [];
     },
-    err => {
+    (err) => {
       writeError("error: ");
       writeError(JSON.stringify(err, null, 2));
     }

@@ -7,10 +7,10 @@ function isObjectTask(task) {
 const messagesNamespace = routeGuideModel_1.default.namespace;
 const Point = routeGuideModel_1.default.list
     .filter(isObjectTask)
-    .find(models => models.name === "Point");
+    .find((models) => models.name === "Point");
 const Feature = routeGuideModel_1.default.list
     .filter(isObjectTask)
-    .find(models => models.name === "Feature");
+    .find((models) => models.name === "Feature");
 if (!Point) {
     throw new Error("Point message is undefined");
 }
@@ -34,10 +34,10 @@ position.`,
                         name: "point",
                         type: {
                             name: Point.name,
-                            namespace: messagesNamespace
-                        }
-                    }
-                ]
+                            namespace: messagesNamespace,
+                        },
+                    },
+                ],
             },
             outMessage: {
                 data: [
@@ -45,27 +45,27 @@ position.`,
                         name: "feature",
                         type: {
                             name: Feature.name,
-                            namespace: messagesNamespace
-                        }
-                    }
-                ]
-            }
-        }
+                            namespace: messagesNamespace,
+                        },
+                    },
+                ],
+            },
+        },
     },
-    type: "service"
+    type: "service",
 };
 const $target = [
     {
         $namespaceMapping: {},
         language: "gRPC",
-        location: `${__dirname}../../../generated/routeguide`
-    }
+        location: `${__dirname}../../../generated/routeguide`,
+    },
 ];
 const list = [routeGuideService, ...routeGuideModel_1.default.list];
 const bundle = {
     $target,
     list,
     namespace: "route_guide",
-    type: "bundle"
+    type: "bundle",
 };
 exports.default = bundle;

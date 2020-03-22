@@ -4,25 +4,25 @@ const bundle = {
     $target: [
         {
             language: "fsharp",
-            location: "./generated/test1/schema",
+            location: "./generated/test1/schema"
         },
         {
             $namespaceMapping: {
                 "@angular/core": "@angular/core",
                 "@angular/http": "@angular/http",
-                "rxjs/Rx": "rxjs/Rx",
+                "rxjs/Rx": "rxjs/Rx"
             },
             $restClientStrategy: "Default",
             bind: "rest",
             language: "typescript",
             location: "./generated/typescriptClient/schema",
-            serviceType: "producer",
-        },
+            serviceType: "producer"
+        }
     ],
     list: [
         {
             importLocation: "./subschema.json",
-            type: "import",
+            type: "import"
         },
         {
             $namespace: "Invoicing",
@@ -32,49 +32,49 @@ const bundle = {
                     properties: {
                         customerId: {
                             description: "Customer's number",
-                            type: "int",
+                            type: "int"
                         },
                         details: {
                             description: "Invoice details",
                             type: {
                                 modifier: "list",
                                 name: "InvoiceDetail",
-                                namespace: "NSchema.Model.InvoicingDetail",
-                            },
-                        },
+                                namespace: "NSchema.Model.InvoicingDetail"
+                            }
+                        }
                     },
-                    type: "object",
+                    type: "object"
                 },
                 {
                     name: "AuthenticationStatus",
                     properties: {
                         LoggedIn: {
                             description: "User is logged in",
-                            type: "string",
+                            type: "string"
                         },
                         LoggedOut: {
                             description: "User is logged out",
-                            type: "string",
-                        },
+                            type: "string"
+                        }
                     },
                     subType: "enumeration",
-                    type: "object",
+                    type: "object"
                 },
                 {
                     name: "UserInfo",
                     properties: {
                         name: {
                             description: "User name",
-                            type: "string",
+                            type: "string"
                         },
                         status: {
                             description: "Auth Status",
                             type: {
-                                name: "AuthenticationStatus",
-                            },
-                        },
+                                name: "AuthenticationStatus"
+                            }
+                        }
                     },
-                    type: "object",
+                    type: "object"
                 },
                 {
                     data: [
@@ -82,20 +82,20 @@ const bundle = {
                             description: "Your login that you registered",
                             name: "userName",
                             paramType: "query",
-                            type: "string",
+                            type: "string"
                         },
                         {
                             description: "Your secret password",
                             name: "password",
                             paramType: "query",
-                            type: "string",
-                        },
+                            type: "string"
+                        }
                     ],
                     name: "AuthMessage",
-                    type: "message",
-                },
+                    type: "message"
+                }
             ],
-            type: "bundle",
+            type: "bundle"
         },
         {
             $namespace: "Services",
@@ -104,14 +104,14 @@ const bundle = {
                     $namespaceMapping: {
                         "@angular/core": "@angular/core",
                         "@angular/http": "@angular/http",
-                        "rxjs/Rx": "rxjs/Rx",
+                        "rxjs/Rx": "rxjs/Rx"
                     },
                     $restClientStrategy: "Default",
                     bind: "rest",
                     language: "typescript",
                     location: "./generated/typescriptClient/schema",
-                    serviceType: "producer",
-                },
+                    serviceType: "producer"
+                }
             ],
             list: [
                 {
@@ -120,32 +120,32 @@ const bundle = {
                             bind: "amqpRpc",
                             language: "fsharp",
                             location: "./generated/test1/schema/client",
-                            serviceType: "producer",
+                            serviceType: "producer"
                         },
                         {
                             $fileName: "InvoiceServiceConsumer.fs",
                             bind: "amqpRpc",
                             language: "fsharp",
                             location: "./generated/test1/schema/server",
-                            serviceType: "consumer",
+                            serviceType: "consumer"
                         },
                         {
                             $namespaceMapping: {
                                 "@angular/core": "@angular/core",
                                 "@angular/http": "@angular/http",
-                                "rxjs/Rx": "rxjs/Rx",
+                                "rxjs/Rx": "rxjs/Rx"
                             },
                             bind: "rest",
                             language: "typescript",
                             location: "./generated/typescriptClient/schema/client",
-                            serviceType: "producer",
+                            serviceType: "producer"
                         },
                         {
                             bind: "rest",
                             language: "typescript",
                             location: "./generated/typescriptClient/schema/server",
-                            serviceType: "consumer",
-                        },
+                            serviceType: "consumer"
+                        }
                     ],
                     name: "InvoiceService",
                     operations: {
@@ -157,25 +157,25 @@ const bundle = {
                                         description: "Header parameter",
                                         name: "headerParameter1",
                                         paramType: "header",
-                                        type: "string",
+                                        type: "string"
                                     },
                                     {
                                         description: "Get parameter",
                                         name: "getParameter1",
                                         paramType: "query",
-                                        type: "int",
+                                        type: "int"
                                     },
                                     {
                                         description: "route parameter",
                                         name: "routeParameter1",
                                         paramType: "query",
-                                        type: "int",
+                                        type: "int"
                                     },
                                     {
                                         description: "body parameter",
                                         name: "bodyParameter1",
                                         paramType: "body",
-                                        type: "string",
+                                        type: "string"
                                     },
                                     {
                                         description: "body parameter 2",
@@ -183,14 +183,14 @@ const bundle = {
                                         paramType: "body",
                                         type: {
                                             name: "Invoice",
-                                            namespace: "NSchema.Model.Invoicing",
-                                        },
-                                    },
+                                            namespace: "NSchema.Model.Invoicing"
+                                        }
+                                    }
                                 ],
                                 extends: {
                                     name: "AuthMessage",
-                                    namespace: "NSchema.Model.Invoicing",
-                                },
+                                    namespace: "NSchema.Model.Invoicing"
+                                }
                             },
                             method: "post",
                             outMessage: {
@@ -200,23 +200,23 @@ const bundle = {
                                         type: {
                                             modifier: "list",
                                             name: "Invoice",
-                                            namespace: "NSchema.Model.Invoicing",
-                                        },
+                                            namespace: "NSchema.Model.Invoicing"
+                                        }
                                     },
                                     {
                                         description: "error message",
                                         paramType: "header",
-                                        type: "string",
+                                        type: "string"
                                     },
                                     {
                                         description: "Instance name who took the message",
                                         name: "instanceName",
                                         paramType: "header",
-                                        type: "string",
-                                    },
-                                ],
+                                        type: "string"
+                                    }
+                                ]
                             },
-                            route: "parameters/{routeParameter1}/all",
+                            route: "parameters/{routeParameter1}/all"
                         },
                         Authenticate: {
                             description: "Tests for authentication",
@@ -224,8 +224,8 @@ const bundle = {
                                 data: [],
                                 extends: {
                                     name: "AuthMessage",
-                                    namespace: "NSchema.Model.Invoicing",
-                                },
+                                    namespace: "NSchema.Model.Invoicing"
+                                }
                             },
                             outMessage: {
                                 data: [
@@ -234,11 +234,11 @@ const bundle = {
                                         name: "userInfo",
                                         type: {
                                             name: "UserInfo",
-                                            namespace: "NSchema.Model.Invoicing",
-                                        },
-                                    },
-                                ],
-                            },
+                                            namespace: "NSchema.Model.Invoicing"
+                                        }
+                                    }
+                                ]
+                            }
                         },
                         GetInvoiceList: {
                             description: "Returns the list of invoices",
@@ -246,8 +246,8 @@ const bundle = {
                                 data: [],
                                 extends: {
                                     name: "AuthMessage",
-                                    namespace: "NSchema.Model.Invoicing",
-                                },
+                                    namespace: "NSchema.Model.Invoicing"
+                                }
                             },
                             outMessage: {
                                 data: [
@@ -257,19 +257,19 @@ const bundle = {
                                         type: {
                                             modifier: "list",
                                             name: "Invoice",
-                                            namespace: "NSchema.Model.Invoicing",
-                                        },
-                                    },
-                                ],
-                            },
+                                            namespace: "NSchema.Model.Invoicing"
+                                        }
+                                    }
+                                ]
+                            }
                         },
                         GetTwoValueOperation: {
                             description: "Tests an operation that yields 2 values",
                             inMessage: {
                                 extends: {
                                     name: "AuthMessage",
-                                    namespace: "NSchema.Model.Invoicing",
-                                },
+                                    namespace: "NSchema.Model.Invoicing"
+                                }
                             },
                             outMessage: {
                                 data: [
@@ -279,25 +279,25 @@ const bundle = {
                                         type: {
                                             modifier: "list",
                                             name: "Invoice",
-                                            namespace: "NSchema.Model.Invoicing",
-                                        },
+                                            namespace: "NSchema.Model.Invoicing"
+                                        }
                                     },
                                     {
                                         description: "error message",
                                         name: "errorMessage",
-                                        type: "string",
-                                    },
-                                ],
-                            },
-                        },
+                                        type: "string"
+                                    }
+                                ]
+                            }
+                        }
                     },
-                    type: "service",
-                },
+                    type: "service"
+                }
             ],
-            type: "bundle",
-        },
+            type: "bundle"
+        }
     ],
     namespace: "NSchema.Model",
-    type: "bundle",
+    type: "bundle"
 };
 exports.default = bundle;

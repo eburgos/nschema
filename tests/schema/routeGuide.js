@@ -7,16 +7,16 @@ const $target = [];
 const clean = {
     target: [
         {
-            location: `${__dirname}/../../generated/routeguide`,
-        },
+            location: `${__dirname}/../../generated/routeguide`
+        }
     ],
-    type: "clean",
+    type: "clean"
 };
 const list = [clean, routeGuideServices_1.default];
 const bundle = {
     $target,
     list,
     namespace,
-    type,
+    type
 };
 exports.default = bundle;

@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/camelcase */
+
 import { Target } from "../../lib/model";
 import { GRPCBundle, GRPCObject } from "../../lib/provider/target/gRPC";
 
@@ -93,7 +95,6 @@ the distance between each point.`,
         description: "The number of points received.",
         type: "int"
       },
-      // tslint:disable-next-line: object-literal-sort-keys
       feature_count: {
         description:
           "The number of known features passed while traversing the route.",

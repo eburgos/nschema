@@ -210,7 +210,7 @@ export type TemplateFunction<T, X = any> = (
   target: Target
 ) => string;
 
-export function shouldNever(_t: never, skipError?: boolean) {
+export function shouldNever(_: never, skipError?: boolean) {
   if (!skipError) {
     throw new Error(`Should never ${new Error().stack}`);
   }

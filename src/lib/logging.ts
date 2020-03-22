@@ -30,6 +30,10 @@ export enum LogLevel {
   Debug = 3
 }
 
+const loggingConfig = {
+  level: LogLevel.Default
+};
+
 /**
  * Sets current log level
  *
@@ -53,10 +57,6 @@ export function setLogLevel(
       loggingConfig.level = LogLevel.Default;
   }
 }
-
-const loggingConfig = {
-  level: LogLevel.Default
-};
 
 /**
  * Writes output to the log

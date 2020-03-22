@@ -20,15 +20,18 @@ import {
 } from "../../../utils";
 import { MessageTask } from "../../type/message";
 
-const moduleSort = (a: { modulePath: string }, b: { modulePath: string }) => {
-  const s1 = a.modulePath.toLocaleLowerCase();
-  const s2 = b.modulePath.toLocaleLowerCase();
-  for (let cnt = 0; cnt < s1.length; cnt += 1) {
-    if (s1[cnt] !== s2[cnt]) {
-      if (s1[cnt] === ".") {
+const moduleSort = (
+  source: { modulePath: string },
+  target: { modulePath: string }
+) => {
+  const sourceLowercased = source.modulePath.toLocaleLowerCase();
+  const targetLowercased = target.modulePath.toLocaleLowerCase();
+  for (let cnt = 0; cnt < sourceLowercased.length; cnt += 1) {
+    if (sourceLowercased[cnt] !== targetLowercased[cnt]) {
+      if (sourceLowercased[cnt] === ".") {
         return -1;
       }
-      return s1[cnt].localeCompare(s2[cnt]);
+      return sourceLowercased[cnt].localeCompare(targetLowercased[cnt]);
     }
   }
   return 0;
@@ -38,23 +41,6 @@ const importsSort = caseInsensitiveSorter((item: string) => item);
 const noWrap = wrap("", "");
 const curlyWrap = wrap("{ ", " }");
 const quotesWrap = wrap(`"`, `"`);
-
-function renderImport(importNames: string[], modulePath: string) {
-  const starred = importNames.filter(n => n[0] === "*");
-  const normalExports = importNames.filter(n => n[0] !== "*");
-
-  return `${
-    starred.length ? renderImportLine(starred, modulePath, noWrap) : ""
-  }${
-    normalExports.length
-      ? `${starred.length ? "\n" : ""}${renderImportLine(
-          normalExports,
-          modulePath,
-          curlyWrap
-        )}`
-      : ""
-  }`;
-}
 
 function renderImportLine(
   importNames: string[],
@@ -78,6 +64,23 @@ function renderImportLine(
   }
 }
 
+function renderImport(importNames: string[], modulePath: string) {
+  const starred = importNames.filter(name => name[0] === "*");
+  const normalExports = importNames.filter(name => name[0] !== "*");
+
+  return `${
+    starred.length ? renderImportLine(starred, modulePath, noWrap) : ""
+  }${
+    normalExports.length
+      ? `${starred.length ? "\n" : ""}${renderImportLine(
+          normalExports,
+          modulePath,
+          curlyWrap
+        )}`
+      : ""
+  }`;
+}
+
 export function computeImportMatrix(
   localNamespace: string,
   namespaceMapping: { [name: string]: string },
@@ -86,40 +89,45 @@ export function computeImportMatrix(
   const rootContext = {
     imports: {} as { [name: string]: { [name: string]: string | boolean } }
   };
-  Object.keys($context.imports).forEach(p => {
-    if (!rootContext.imports[p]) {
-      rootContext.imports[p] = {};
+  Object.keys($context.imports).forEach(importName => {
+    if (!rootContext.imports[importName]) {
+      rootContext.imports[importName] = {};
     }
-    const ns = $context.imports[p];
-    Object.keys(ns).forEach(name => {
-      rootContext.imports[p][name] = $context.imports[p][name];
+    const namespace = $context.imports[importName];
+    Object.keys(namespace).forEach(name => {
+      rootContext.imports[importName][name] =
+        $context.imports[importName][name];
     });
   });
 
   const sortedImports = Object.keys(rootContext.imports)
-    .filter(p => {
-      return p !== localNamespace;
+    .filter(importName => {
+      return importName !== localNamespace;
     })
-    .map(p => {
+    .map(importName => {
       return {
-        imports: rootContext.imports[p],
+        imports: rootContext.imports[importName],
         modulePath:
-          p.indexOf("{") === 0 && p.lastIndexOf("}") === p.length - 1
-            ? p.slice(1, p.length - 1)
-            : namespaceMapping[p] || (isRelativePath(p) ? p : `./${p}`),
-        name: p
+          importName.indexOf("{") === 0 &&
+          importName.lastIndexOf("}") === importName.length - 1
+            ? importName.slice(1, importName.length - 1)
+            : namespaceMapping[importName] ||
+              (isRelativePath(importName) ? importName : `./${importName}`),
+        name: importName
       };
     });
 
   sortedImports.sort(moduleSort);
 
-  const lines = sortedImports.map(p => {
-    const sorted = Object.keys(p.imports);
+  const lines = sortedImports.map(sortedImport => {
+    const sorted = Object.keys(sortedImport.imports);
     sorted.sort(importsSort);
-    const importNames = sorted.map(k =>
-      typeof p.imports[k] === "string" ? `${k} as ${p.imports[k]}` : k
+    const importNames = sorted.map(sortedName =>
+      typeof sortedImport.imports[sortedName] === "string"
+        ? `${sortedName} as ${sortedImport.imports[sortedName]}`
+        : sortedName
     );
-    return renderImport(importNames, p.modulePath);
+    return renderImport(importNames, sortedImport.modulePath);
   });
   if (!lines.length) {
     return "";
@@ -128,7 +136,7 @@ export function computeImportMatrix(
 `;
 }
 
-const unQuotedPropertyRegex = /^[a-zA-Z\_\$][a-zA-Z0-9\$\_]*$/;
+const unQuotedPropertyRegex = /^[a-zA-Z_$][a-zA-Z0-9$_]*$/;
 export function renderPropertyAccessor(property: string) {
   if (unQuotedPropertyRegex.test(property)) {
     return `.${property}`;
@@ -160,34 +168,6 @@ export function renderFileHeader(
   }
 }
 
-function modifierMap(
-  modifier: NSchemaModifier,
-  nschema: NSchemaInterface,
-  namespace: string | undefined,
-  name: string,
-  context: PHPContext
-): string {
-  switch (modifier) {
-    case "list":
-      return "[]";
-    case "array":
-      return "[]";
-    case "option":
-      return " | undefined";
-    default:
-      return typeName(
-        modifier,
-        nschema,
-        namespace,
-        name,
-        context,
-        false,
-        false,
-        false
-      );
-  }
-}
-
 /**
  * Returns a typescript type definition name given a TypeScriptType
  *
@@ -216,15 +196,15 @@ export function typeName(
   if (typeof nschemaType === "string") {
     result = typeMap(nschemaType, isParameter);
   } else if (typeof nschemaType === "object") {
-    let ns = nschemaType.namespace;
-    if (typeof ns === "undefined") {
-      ns = namespace || "";
+    let namespace = nschemaType.namespace;
+    if (typeof namespace === "undefined") {
+      namespace = namespace || "";
     }
-    if (ns !== namespace && !isPrimitiveType(nschemaType) && context) {
-      if (!context.imports[ns]) {
-        context.imports[ns] = {};
+    if (namespace !== namespace && !isPrimitiveType(nschemaType) && context) {
+      if (!context.imports[namespace]) {
+        context.imports[namespace] = {};
       }
-      context.imports[ns][nschemaType.name] = true;
+      context.imports[namespace][nschemaType.name] = true;
     }
     if (isUnions(nschemaType)) {
       result = nschemaType.literals.map(quotesWrap).join(" | ");
@@ -250,7 +230,8 @@ export function typeName(
       ? [$modifier]
       : $modifier;
 
-    modifierArr.forEach((item, i, arr) => {
+    modifierArr.forEach((item, itemIndex, arr) => {
+      /* eslint-disable-next-line @typescript-eslint/no-use-before-define */
       result = `${result}${modifierMap(
         item,
         nschema,
@@ -258,7 +239,7 @@ export function typeName(
         name,
         context
       )}`;
-      if (!isRootTypeCall || i + 1 < arr.length) {
+      if (!isRootTypeCall || itemIndex + 1 < arr.length) {
         result = `(${result})`;
       }
     });
@@ -270,16 +251,44 @@ export function typeName(
   }
 }
 
+function modifierMap(
+  modifier: NSchemaModifier,
+  nschema: NSchemaInterface,
+  namespace: string | undefined,
+  name: string,
+  context: PHPContext
+): string {
+  switch (modifier) {
+    case "list":
+      return "[]";
+    case "array":
+      return "[]";
+    case "option":
+      return " | undefined";
+    default:
+      return typeName(
+        modifier,
+        nschema,
+        namespace,
+        name,
+        context,
+        false,
+        false,
+        false
+      );
+  }
+}
+
 function getDataItems(nsMessage: MessageTask, $nschema: NSchemaInterface) {
-  const r: NSchemaMessageArgument[] = [];
+  const dataItems: NSchemaMessageArgument[] = [];
   if (nsMessage.extends) {
     const parent = $nschema.getMessage(
       nsMessage.extends.namespace || "",
       nsMessage.extends.name
     );
     if (parent) {
-      getDataItems(parent, $nschema).forEach(i => {
-        r.push(i);
+      getDataItems(parent, $nschema).forEach(dataItem => {
+        dataItems.push(dataItem);
       });
     } else {
       writeError(
@@ -291,9 +300,9 @@ function getDataItems(nsMessage: MessageTask, $nschema: NSchemaInterface) {
     }
   }
   (nsMessage.data || []).forEach(item => {
-    r.push(item);
+    dataItems.push(item);
   });
-  return r;
+  return dataItems;
 }
 
 export function messageType(
@@ -302,21 +311,21 @@ export function messageType(
   nschemaMessageDirection: "in" | "out",
   context: PHPContext
 ) {
-  const $_typeSeparator =
+  const typeSeparator =
     nschemaMessageDirection === "in"
       ? ", "
       : nschemaMessageDirection === "out"
       ? ", "
       : "";
 
-  const $_dataItems = getDataItems(nschemaMessage, nschema);
+  const dataItems = getDataItems(nschemaMessage, nschema);
   const result =
-    $_dataItems.length === 0
+    dataItems.length === 0
       ? ["void"]
-      : $_dataItems.length === 1
+      : dataItems.length === 1
       ? [
           typeName(
-            $_dataItems[0].type,
+            dataItems[0].type,
             nschema,
             nschemaMessage.namespace,
             nschemaMessage.name,
@@ -326,8 +335,8 @@ export function messageType(
             true
           )
         ]
-      : $_dataItems.map((item, $i) => {
-          return `${item.name || `item${$i}`}: ${typeName(
+      : dataItems.map((item, itemIndex) => {
+          return `${item.name || `item${itemIndex}`}: ${typeName(
             item.type,
             nschema,
             nschemaMessage.namespace,
@@ -339,7 +348,5 @@ export function messageType(
           )}`;
         });
 
-  return result.length === 1
-    ? result[0]
-    : `{ ${result.join($_typeSeparator)} }`;
+  return result.length === 1 ? result[0] : `{ ${result.join(typeSeparator)} }`;
 }

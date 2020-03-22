@@ -28,13 +28,13 @@ function computeBundleImportMatrix(
     skipWrite: true
   };
   arr.forEach(item => {
-    Object.keys(item.imports).forEach(p => {
-      if (!rootContext.imports[p]) {
-        rootContext.imports[p] = {};
+    Object.keys(item.imports).forEach(importName => {
+      if (!rootContext.imports[importName]) {
+        rootContext.imports[importName] = {};
       }
-      const ns = item.imports[p];
-      Object.keys(ns).forEach(name => {
-        rootContext.imports[p][name] = item.imports[p][name];
+      const namespace = item.imports[importName];
+      Object.keys(namespace).forEach(name => {
+        rootContext.imports[importName][name] = item.imports[importName][name];
       });
     });
   });
@@ -52,10 +52,10 @@ async function execute(
   if (!parentConfig.target) {
     throw new Error("Invalid PHP bundle task");
   }
-  const t: any = parentConfig;
+  const parentConfigAny: any = parentConfig;
   const config: PHPBundle = updateNamespace({
     ...parentConfig,
-    $fileName: t.$fileName
+    $fileName: parentConfigAny.$fileName
   });
   const target = isArray(parentConfig.target)
     ? parentConfig.target[0]
@@ -65,19 +65,19 @@ async function execute(
 
   const arr = parentConfig.list || [];
 
-  const r = arr.map(async (cur: NSchemaTask) => {
+  const waitables = arr.map(async (cur: NSchemaTask) => {
     writeDebugLog(
       `bundle - php - generating ${cur.type} ${(cur as any).namespace ||
         ""} :: ${(cur as any).name}`
     );
     return await nschema.generate(parentConfig, cur, { skipWrite: true });
   });
-  const dblarr: (any | any[])[] = await Promise.all(r);
+  const dblarr: Array<any | any[]> = await Promise.all(waitables);
 
-  const reducedArr: {
+  const reducedArr: Array<{
     context: PHPContext;
     generated: string;
-  }[] = dblarr.reduce((acc: any | any[], next: any | any[]) => {
+  }> = dblarr.reduce((acc: any | any[], next: any | any[]) => {
     if (nschema.isArray(next)) {
       return acc.concat(
         next.filter(item => {

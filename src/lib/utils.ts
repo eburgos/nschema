@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-var-requires */
+
 import { default as deepCloneHelper } from "immutability-helper";
 import { render as renderPrettyJson } from "prettyjson";
 import { isArray } from "util";
@@ -12,9 +14,9 @@ import {
 
 declare const require: (name: string) => { default: NSchemaTask } | NSchemaTask;
 function hasDefault(
-  t: { default: NSchemaTask } | NSchemaTask
-): t is { default: NSchemaTask } {
-  const x: any = t;
+  task: { default: NSchemaTask } | NSchemaTask
+): task is { default: NSchemaTask } {
+  const x: any = task;
   if (x.default) {
     return true;
   }
@@ -30,14 +32,14 @@ export function requireDefaultOrPackage(location: string) {
 }
 
 export function caseInsensitiveSorter<T>(mapper: (s: T) => string) {
-  return (a: T, b: T) =>
-    mapper(a)
+  return (source: T, target: T) =>
+    mapper(source)
       .toLowerCase()
-      .localeCompare(mapper(b).toLowerCase());
+      .localeCompare(mapper(target).toLowerCase());
 }
 
-export function isRelativePath(p: string) {
-  return p[0] === "." || p[0] === "/";
+export function isRelativePath(path: string) {
+  return path[0] === "." || path[0] === "/";
 }
 
 export function wrap(left: string, right: string) {
@@ -64,11 +66,11 @@ export function updateNamespace<
   }
 }
 
-export function initialCaps(n: string) {
-  if (!n) {
-    return n;
+export function initialCaps(srcString: string) {
+  if (!srcString) {
+    return srcString;
   }
-  return n[0].toUpperCase() + n.substr(1);
+  return srcString[0].toUpperCase() + srcString.substr(1);
 }
 
 /**
@@ -123,26 +125,30 @@ export function propagateTarget(
 }
 
 export function indent(amount: number, seed: string) {
-  let r = "";
+  let result = "";
   for (let cnt = 0; cnt < (amount || 0); cnt += 1) {
-    r += seed;
+    result += seed;
   }
-  return r;
+  return result;
 }
 
-export function isValidCriteriaProperty(k: string) {
-  return k !== "location" && k.indexOf("$") !== 0;
+export function isValidCriteriaProperty(key: string) {
+  return key !== "location" && key.indexOf("$") !== 0;
+}
+
+export function prettyJson(obj: any) {
+  return renderPrettyJson(obj);
 }
 
 export function getCriteria(obj: any) {
-  const r: any = {};
+  const result: any = {};
   Object.keys(obj)
     .filter(isValidCriteriaProperty)
-    .forEach(k => {
-      r[k] = obj[k];
+    .forEach(key => {
+      result[key] = obj[key];
     });
   return `
-${prettyJson(r)}
+${prettyJson(result)}
 `;
 }
 
@@ -150,10 +156,6 @@ export function exitOrError(err: any) {
   writeError(err);
   writeError("nineschema exited");
   process.exit(1);
-}
-
-export function prettyJson(obj: any) {
-  return renderPrettyJson(obj);
 }
 
 export function findNonCollidingName(
@@ -170,18 +172,18 @@ export function findNonCollidingName(
   return current;
 }
 
-export function isOptional(p: {
+export function isOptional(property: {
   realType?: NSchemaType;
   type: NSchemaType;
 }): boolean {
-  if (p.realType) {
-    return isOptional({ type: p.realType });
+  if (property.realType) {
+    return isOptional({ type: property.realType });
   }
-  if (typeof p.type === "object") {
-    if (p.type.modifier) {
-      const mods = isArray(p.type.modifier)
-        ? p.type.modifier
-        : [p.type.modifier];
+  if (typeof property.type === "object") {
+    if (property.type.modifier) {
+      const mods = isArray(property.type.modifier)
+        ? property.type.modifier
+        : [property.type.modifier];
       return mods.indexOf("option") === mods.length - 1;
     }
   }
@@ -206,20 +208,20 @@ export function removeOptional(type: NSchemaType): NSchemaType {
   return type;
 }
 
-export function isUnions(t: NSchemaType): t is NSchemaLiteralsUnionType {
+export function isUnions(type: NSchemaType): type is NSchemaLiteralsUnionType {
   return (
-    typeof (t as NSchemaLiteralsUnionType).literals !== "undefined" &&
-    (t as NSchemaLiteralsUnionType).name === "string" &&
-    (t as NSchemaLiteralsUnionType).namespace === ""
+    typeof (type as NSchemaLiteralsUnionType).literals !== "undefined" &&
+    (type as NSchemaLiteralsUnionType).name === "string" &&
+    (type as NSchemaLiteralsUnionType).namespace === ""
   );
 }
 
 export function findTypeMap(
-  t: NSchemaPrimitiveType,
+  primitiveType: NSchemaPrimitiveType,
   skipError: boolean,
   isParameter: boolean
 ) {
-  switch (t) {
+  switch (primitiveType) {
     case "int":
       return "number";
     case "float":
@@ -231,19 +233,36 @@ export function findTypeMap(
     case "date":
       return isParameter ? "Date | number" : "number";
     default:
-      shouldNever(t, skipError);
+      shouldNever(primitiveType, skipError);
       return undefined;
   }
-  return "string";
 }
 
-export function typeMap(t: NSchemaPrimitiveType, isParameter: boolean) {
-  const r = findTypeMap(t, false, isParameter);
-  if (typeof r === "undefined") {
-    writeError(`Unknown type ${t}`);
-    throw new Error(`Unknown type ${t}`);
+export function typeMap(
+  primitiveType: NSchemaPrimitiveType,
+  isParameter: boolean
+) {
+  const result = findTypeMap(primitiveType, false, isParameter);
+  if (typeof result === "undefined") {
+    writeError(`Unknown type ${primitiveType}`);
+    throw new Error(`Unknown type ${primitiveType}`);
   }
-  return r;
+  return result;
+}
+
+export function isPrimitiveTypeString(primitiveType: string) {
+  const x = primitiveType as NSchemaPrimitiveType;
+  switch (x) {
+    case "bool":
+    case "date":
+    case "string":
+    case "int":
+    case "float":
+      return true;
+    default:
+      shouldNever(x, true);
+      return false;
+  }
 }
 
 export function isPrimitiveType(nschemaType: NSchemaType): boolean {
@@ -257,20 +276,5 @@ export function isPrimitiveType(nschemaType: NSchemaType): boolean {
     } else {
       return false;
     }
-  }
-}
-
-export function isPrimitiveTypeString(t: string) {
-  const x = t as NSchemaPrimitiveType;
-  switch (x) {
-    case "bool":
-    case "date":
-    case "string":
-    case "int":
-    case "float":
-      return true;
-    default:
-      shouldNever(x, true);
-      return false;
   }
 }

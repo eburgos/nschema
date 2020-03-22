@@ -58,25 +58,25 @@ export function checkAndFixTarget(
   target: Target,
   namespaceMapping: { [name: string]: string }
 ): TypeScriptRestTarget {
-  const r: TypeScriptRestTarget = {
+  const restTarget: TypeScriptRestTarget = {
     $typeScriptRest: { requestModule: "axios" },
     ...target,
     bind: "rest"
   };
-  if (!r.$typeScriptRest) {
+  if (!restTarget.$typeScriptRest) {
     throw new Error("Invalid target for TypeScript Rest");
   }
-  if (!r.$typeScriptRest.requestModule) {
+  if (!restTarget.$typeScriptRest.requestModule) {
     throw new Error("Invalid target requestModule for TypeScript Rest");
   }
   if (namespaceMapping) {
-    if (!namespaceMapping[r.$typeScriptRest.requestModule]) {
+    if (!namespaceMapping[restTarget.$typeScriptRest.requestModule]) {
       //If there is no mapping already set for request module then leave it as it is to avoid a local relative reference
-      namespaceMapping[r.$typeScriptRest.requestModule] =
-        r.$typeScriptRest.requestModule;
+      namespaceMapping[restTarget.$typeScriptRest.requestModule] =
+        restTarget.$typeScriptRest.requestModule;
     }
   }
-  return r;
+  return restTarget;
 }
 
 async function baseGenerate(
@@ -149,19 +149,19 @@ async function serverlessPostGen(
   if (!serverlessYml.functions) {
     serverlessYml.functions = {};
   }
-  const fns = serverlessYml.functions;
-  for (const p in fns) {
-    if (fns.hasOwnProperty(p)) {
-      delete fns[p];
+  const functions = serverlessYml.functions;
+  for (const functionName in functions) {
+    if (Object.prototype.hasOwnProperty.call(functions, functionName)) {
+      delete functions[functionName];
     }
   }
 
   const operations = config.operations;
-  Object.keys(operations).forEach((op: string) => {
+  Object.keys(operations).forEach((operationName: string) => {
     const operation: NSchemaRestOperation = operations[
-      op
+      operationName
     ] as NSchemaRestOperation;
-    fns[op] = {
+    functions[operationName] = {
       events: [
         {
           http: {
@@ -173,7 +173,7 @@ async function serverlessPostGen(
       ],
       handler: `${path.relative(path.dirname(realYamlPath), realLocation)}/${
         config.namespace
-      }/${config.name}.${op}`
+      }/${config.name}.${operationName}`
     };
   });
 
@@ -355,11 +355,11 @@ export default rest;
 export function isServerlessTarget(
   target: Target
 ): target is TypeScriptServerlessRestTarget {
-  const t: any = target;
-  return !!t.$serverless;
+  const rawTarget: any = target;
+  return !!rawTarget.$serverless;
 }
 
 export function isRestTarget(target: Target): target is TypeScriptRestTarget {
-  const t: any = target;
-  return t.bind === "rest";
+  const rawTarget: any = target;
+  return rawTarget.bind === "rest";
 }

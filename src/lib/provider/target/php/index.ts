@@ -57,6 +57,7 @@ export async function phpGenerate(
   const config = deepClone(nsconfig);
 
   const context: PHPContext = {
+    /* eslint-disable-next-line @typescript-eslint/no-use-before-define */
     ...buildPHPContext(),
     ...providedContext,
     imports: {}
@@ -90,18 +91,12 @@ export async function phpGenerate(
       LogLevel.Default,
       `${blue("php")}: writing to file: ${green(filepath)}`
     );
-    return nschema.writeFile(filepath, result).then(
-      _ => {
-        return {
-          config,
-          context,
-          generated: result
-        };
-      },
-      err => {
-        throw new Error(err);
-      }
-    );
+    await nschema.writeFile(filepath, result);
+    return {
+      config,
+      context,
+      generated: result
+    };
   }
 }
 
@@ -112,25 +107,27 @@ async function init(nschema: NSchemaInterface) {
       .filter(item => {
         return statSync(pathResolve(providerPath, item)).isDirectory();
       })
-      .map(d => {
-        return readdirSync(pathResolve(providerPath, d)).map(i => {
-          return pathResolve(providerPath, d, i);
-        });
+      .map(directoryPath => {
+        return readdirSync(pathResolve(providerPath, directoryPath)).map(
+          item => {
+            return pathResolve(providerPath, directoryPath, item);
+          }
+        );
       })
-      .reduce((a, b) => {
-        return a.concat(b);
+      .reduce((accumulated, next) => {
+        return accumulated.concat(next);
       })
       .filter(item => {
         return extname(item) === ".js" && existsSync(item);
       })
       .map(require)
-      .map(async m => {
-        if (m.default) {
-          m = m.default;
+      .map(async requiredModule => {
+        if (requiredModule.default) {
+          requiredModule = requiredModule.default;
         }
         return new Promise<boolean>((resolve, reject) => {
-          if (typeof m.init === "function") {
-            m.init(nschema).then(
+          if (typeof requiredModule.init === "function") {
+            requiredModule.init(nschema).then(
               () => {
                 resolve(true);
               },
@@ -152,15 +149,15 @@ function getDataItems(
   nschema: NSchemaInterface,
   nsMessage: AnonymousMessage
 ): NSchemaMessageArgument[] {
-  const r: NSchemaMessageArgument[] = [];
+  const dataItems: NSchemaMessageArgument[] = [];
   if (nsMessage.extends) {
     const parent = nschema.getMessage(
       nsMessage.extends.namespace || "",
       nsMessage.extends.name
     );
     if (parent) {
-      getDataItems(nschema, parent).forEach(i => {
-        r.push(i);
+      getDataItems(nschema, parent).forEach(dataItem => {
+        dataItems.push(dataItem);
       });
     } else {
       throw new Error(
@@ -170,9 +167,115 @@ function getDataItems(
     }
   }
   (nsMessage.data || []).map(item => {
-    r.push(item);
+    dataItems.push(item);
   });
-  return r;
+  return dataItems;
+}
+
+const quotesWrap = wrap(`"`, `"`);
+
+function findTypeMap(
+  primitiveType: NSchemaPrimitiveType,
+  skipError: boolean,
+  isParameter: boolean
+) {
+  switch (primitiveType) {
+    case "int":
+      return "number";
+    case "float":
+      return "number";
+    case "string":
+      return "string";
+    case "bool":
+      return "boolean";
+    case "date":
+      return isParameter ? "Date | number" : "number";
+    default:
+      shouldNever(primitiveType, skipError);
+      return undefined;
+  }
+}
+
+function typeMap(primitiveType: NSchemaPrimitiveType, isParameter: boolean) {
+  const result = findTypeMap(primitiveType, false, isParameter);
+  if (typeof result === "undefined") {
+    writeError(`Unknown type ${primitiveType}`);
+    throw new Error(`Unknown type ${primitiveType}`);
+  }
+  return result;
+}
+
+export function typeName(
+  nschemaType: NSchemaType,
+  nschema: NSchemaInterface,
+  namespace: string | undefined,
+  name: string,
+  context: PHPContext,
+  addFlowComment: boolean,
+  isParameter: boolean,
+  isRootTypeCall: boolean
+) {
+  let result: string;
+  if (typeof nschemaType === "string") {
+    result = typeMap(nschemaType, isParameter);
+  } else if (typeof nschemaType === "object") {
+    let typeNamespace = nschemaType.namespace;
+    if (typeof typeNamespace === "undefined") {
+      typeNamespace = namespace || "";
+    }
+    if (
+      typeNamespace !== namespace &&
+      !isPrimitiveType(nschemaType) &&
+      context
+    ) {
+      if (!context.imports[typeNamespace]) {
+        context.imports[typeNamespace] = {};
+      }
+      context.imports[typeNamespace][nschemaType.name] = true;
+    }
+    if (isUnions(nschemaType)) {
+      result = nschemaType.literals.map(quotesWrap).join(" | ");
+    } else {
+      if (
+        typeof findTypeMap(
+          nschemaType.name as NSchemaPrimitiveType,
+          true,
+          true
+        ) === "string"
+      ) {
+        result = typeMap(nschemaType.name as NSchemaPrimitiveType, isParameter);
+      } else {
+        result = nschemaType.name;
+      }
+    }
+  } else {
+    result = typeMap("string", isParameter);
+  }
+  if (nschemaType && typeof nschemaType === "object" && nschemaType.modifier) {
+    const modifier = nschemaType.modifier;
+    const modifierArr: NSchemaModifier[] = !isArray(modifier)
+      ? [modifier]
+      : modifier;
+
+    modifierArr.forEach((item, itemIndex, arr) => {
+      /* eslint-disable-next-line @typescript-eslint/no-use-before-define */
+      result = `${result}${modifierMap(
+        item,
+        nschema,
+        namespace,
+        name,
+        context
+      )}`;
+      if (!isRootTypeCall || itemIndex + 1 < arr.length) {
+        result = `(${result})`;
+      }
+    });
+  }
+  if (addFlowComment) {
+    return `${result} /* :${result} */`;
+  } else {
+    return result;
+  }
 }
 
 export function messageType(
@@ -201,8 +304,8 @@ export function messageType(
   } else {
     return (
       `{ ${dataItems
-        .map((item, $i) => {
-          return `${item.name || `item${$i}`}: ${typeName(
+        .map((item, itemIndex) => {
+          return `${item.name || `item${itemIndex}`}: ${typeName(
             item.type,
             nschema,
             "",
@@ -217,38 +320,6 @@ export function messageType(
     );
   }
 }
-
-function findTypeMap(
-  t: NSchemaPrimitiveType,
-  skipError: boolean,
-  isParameter: boolean
-) {
-  switch (t) {
-    case "int":
-      return "number";
-    case "float":
-      return "number";
-    case "string":
-      return "string";
-    case "bool":
-      return "boolean";
-    case "date":
-      return isParameter ? "Date | number" : "number";
-    default:
-      shouldNever(t, skipError);
-      return undefined;
-  }
-}
-
-function typeMap(t: NSchemaPrimitiveType, isParameter: boolean) {
-  const r = findTypeMap(t, false, isParameter);
-  if (typeof r === "undefined") {
-    writeError(`Unknown type ${t}`);
-    throw new Error(`Unknown type ${t}`);
-  }
-  return r;
-}
-const quotesWrap = wrap(`"`, `"`);
 
 function modifierMap(
   modifier: NSchemaModifier,
@@ -275,74 +346,6 @@ function modifierMap(
         false,
         false
       );
-  }
-}
-
-export function typeName(
-  nschemaType: NSchemaType,
-  nschema: NSchemaInterface,
-  namespace: string | undefined,
-  name: string,
-  context: PHPContext,
-  addFlowComment: boolean,
-  isParameter: boolean,
-  isRootTypeCall: boolean
-) {
-  let result: string;
-  if (typeof nschemaType === "string") {
-    result = typeMap(nschemaType, isParameter);
-  } else if (typeof nschemaType === "object") {
-    let ns = nschemaType.namespace;
-    if (typeof ns === "undefined") {
-      ns = namespace || "";
-    }
-    if (ns !== namespace && !isPrimitiveType(nschemaType) && context) {
-      if (!context.imports[ns]) {
-        context.imports[ns] = {};
-      }
-      context.imports[ns][nschemaType.name] = true;
-    }
-    if (isUnions(nschemaType)) {
-      result = nschemaType.literals.map(quotesWrap).join(" | ");
-    } else {
-      if (
-        typeof findTypeMap(
-          nschemaType.name as NSchemaPrimitiveType,
-          true,
-          true
-        ) === "string"
-      ) {
-        result = typeMap(nschemaType.name as NSchemaPrimitiveType, isParameter);
-      } else {
-        result = nschemaType.name;
-      }
-    }
-  } else {
-    result = typeMap("string", isParameter);
-  }
-  if (nschemaType && typeof nschemaType === "object" && nschemaType.modifier) {
-    const modifier = nschemaType.modifier;
-    const modifierArr: NSchemaModifier[] = !isArray(modifier)
-      ? [modifier]
-      : modifier;
-
-    modifierArr.forEach((item, i, arr) => {
-      result = `${result}${modifierMap(
-        item,
-        nschema,
-        namespace,
-        name,
-        context
-      )}`;
-      if (!isRootTypeCall || i + 1 < arr.length) {
-        result = `(${result})`;
-      }
-    });
-  }
-  if (addFlowComment) {
-    return `${result} /* :${result} */`;
-  } else {
-    return result;
   }
 }
 

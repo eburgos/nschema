@@ -21,12 +21,15 @@ function renderOperationsInterface(
   namespace: string
 ) {
   return Object.keys(operations)
-    .map(op => {
-      const operation = operations[op];
-      const { inMessage, outMessage } = getOperationDetails(operation, op);
+    .map(operationName => {
+      const operation = operations[operationName];
+      const { inMessage, outMessage } = getOperationDetails(
+        operation,
+        operationName
+      );
       const contextVarName = findNonCollidingName(
         "context",
-        (inMessage.data || []).map(d => d.name)
+        (inMessage.data || []).map(argument => argument.name)
       );
 
       return `
@@ -41,12 +44,12 @@ ${(inMessage.data || [])
   .join("\n")}
    * @param ${contextVarName} - Operation context. Optional argument (The service always sends it but you may not implement it in your class)
    * @returns ${(outMessage.data || [])
-     .map(d => {
-       return (d.description || "").replace(/\n/g, "\n   * ");
+     .map(argument => {
+       return (argument.description || "").replace(/\n/g, "\n   * ");
      })
      .join(", ") || `{${messageType(nschema, context, false, outMessage)}}`}
    */
-  ${op}(${(inMessage.data || [])
+  ${operationName}(${(inMessage.data || [])
         .map(par => {
           return `${par.name}: ${typeName(
             par.realType || par.type,
@@ -78,8 +81,8 @@ function renderConstructorForClass(
   operations: { [name: string]: NSchemaRestOperation }
 ) {
   return Object.keys(operations)
-    .map(op => {
-      const operation = operations[op];
+    .map(operationName => {
+      const operation = operations[operationName];
       const {
         bodyArguments,
         headerArguments,
@@ -88,7 +91,7 @@ function renderConstructorForClass(
         route,
         routeArguments,
         queryArguments
-      } = getOperationDetails(operation, op);
+      } = getOperationDetails(operation, operationName);
 
       if (
         typeof operation.inMessage.encoding === "undefined" ||
@@ -108,35 +111,35 @@ function renderConstructorForClass(
       }
 
       return `    expressApp.${getHttpVerb(
-        operations[op].method || "get"
-      ).toLowerCase()}("/${_config.routePrefix}${(route || op).replace(
-        /\{([^\}]+?)\}/g,
-        (_match, g1) => {
-          return `:${g1}`;
-        }
-      )}"${
+        operations[operationName].method || "get"
+      ).toLowerCase()}("/${_config.routePrefix}${(
+        route || operationName
+      ).replace(/\{([^}]+?)\}/g, (_match, firstGroup) => {
+        return `:${firstGroup}`;
+      })}"${
         operation.cors ? `, cors()` : ""
       }, bodyParser.json(), async (expressRequest, expressResponse) => {
 
 ${routeArguments
-  .map(p => {
-    return `      const input${p.name} = ${realTypeMap(
-      p,
-      `expressRequest.params${renderPropertyAccessor(p.name)}`
+  .map(argument => {
+    return `      const input${argument.name} = ${realTypeMap(
+      argument,
+      `expressRequest.params${renderPropertyAccessor(argument.name)}`
     )};
 `;
   })
-  .join("")}${queryArguments.map(p => {
-        return `        const input${p.name} = ${realTypeMap(
-          p,
-          `expressRequest.query${renderPropertyAccessor(p.name)}`
+  .join("")}${queryArguments.map(argument => {
+        return `        const input${argument.name} = ${realTypeMap(
+          argument,
+          `expressRequest.query${renderPropertyAccessor(argument.name)}`
         )};
         `;
       }).join(`,
-        `)}${headerArguments.map(p => {
-        return `const input${p.name} = ${realTypeMap(
-          p,
-          `expressRequest.header('${p.headerName || `X-${p.name}`}') || ""`
+        `)}${headerArguments.map(argument => {
+        return `const input${argument.name} = ${realTypeMap(
+          argument,
+          `expressRequest.header('${argument.headerName ||
+            `X-${argument.name}`}') || ""`
         )};`;
       }).join(`
         `)}${
@@ -144,8 +147,8 @@ ${routeArguments
           ? `              const input${bodyArguments[0].name} = expressRequest.body;`
           : `${
               bodyArguments.length
-                ? `${bodyArguments.map((p, idx) => {
-                    return `const input${p.name} = expressRequest.body[${idx}];
+                ? `${bodyArguments.map((argument, index) => {
+                    return `const input${argument.name} = expressRequest.body[${index}];
 `;
                   }).join(`
             `)}`
@@ -154,14 +157,14 @@ ${routeArguments
       }
 
             try {
-               expressResponse.status(200).json(await implementation.${op}(${(
+               expressResponse.status(200).json(await implementation.${operationName}(${(
         inMessage.data || []
       )
         .map(arg => `input${arg.name}`)
         .join(", ")}, { request: expressRequest, response: expressResponse }));
             }
             catch (exception: { statusCode: number, message: string, stack: string }) {
-              expressResponse.status(exception.statusCode || 400).send(\`Bad request - $\{exception.message\}\`);
+              expressResponse.status(exception.statusCode || 400).send(\`Bad request - $\{exception.message}\`);
             }
         });`;
     })
@@ -169,7 +172,9 @@ ${routeArguments
 }
 
 function camelize(text: string) {
-  text = text.replace(/[-_\s.]+(.)?/g, (_, c) => (c ? c.toUpperCase() : ""));
+  text = text.replace(/[-_\s.]+(.)?/g, (_, captureGroup) =>
+    captureGroup ? captureGroup.toUpperCase() : ""
+  );
   return text.substr(0, 1).toLowerCase() + text.substr(1);
 }
 

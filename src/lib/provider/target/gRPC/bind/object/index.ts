@@ -95,8 +95,8 @@ const serviceTemplate: TemplateFunction<
   }
 service ${data.name} {
 ${Object.keys(data.operations)
-  .map((op: string) => {
-    const operation = data.operations[op];
+  .map((operationName: string) => {
+    const operation = data.operations[operationName];
     return `${
       operation.description
         ? operation.description
@@ -105,10 +105,14 @@ ${Object.keys(data.operations)
             .join("\n")
         : ""
     }
-  rpc ${op}(${(operation.inMessage.data || [])
-      .map((f: any) => (typeof f.type === "object" ? f.type.name : f.type))
+  rpc ${operationName}(${(operation.inMessage.data || [])
+      .map((argument: any) =>
+        typeof argument.type === "object" ? argument.type.name : argument.type
+      )
       .join(", ")}) returns (${(operation.outMessage.data || [])
-      .map((f: any) => (typeof f.type === "object" ? f.type.name : f.type))
+      .map((argument: any) =>
+        typeof argument.type === "object" ? argument.type.name : argument.type
+      )
       .join(", ")}) {}`;
   })
   .join("\n")}

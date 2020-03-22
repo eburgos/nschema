@@ -53,7 +53,9 @@ Unable to generate ${parentConfig.namespace || ""}.
 
 Available options are:
 
-${customBundles.map(p => JSON.stringify(p, null, 2)).join("\n")}`
+${customBundles
+  .map(customBundle => JSON.stringify(customBundle, null, 2))
+  .join("\n")}`
       );
       throw new Error(`Error: multiple plugins found for ${getCriteria(tgt)}.`);
     } else if (customBundles.length === 1) {

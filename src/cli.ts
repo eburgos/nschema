@@ -1,11 +1,12 @@
-import * as minimist from "minimist";
+/* eslint-disable @typescript-eslint/no-var-requires */
+import * as yargs from "yargs";
 import { dirname, resolve as pathResolve } from "path";
 import { setLogLevel } from "./lib/logging";
 import { features, generate, getConfig } from "./lib/nschema";
 
 declare let require: (name: string) => any;
 
-const argv = minimist(process.argv.slice(2));
+const argv: any = yargs(process.argv.slice(2)).argv;
 const files: string[] = argv._;
 
 if (argv.logLevel) {
@@ -21,16 +22,19 @@ if (argv.features) {
         if (item.indexOf("/") !== 0) {
           item = pathResolve(process.cwd(), item);
         }
-        const r = require(item);
-        return generate(getConfig(dirname(item)), r.default ? r.default : r);
+        const requiredItem = require(item);
+        return generate(
+          getConfig(dirname(item)),
+          requiredItem.default ? requiredItem.default : requiredItem
+        );
       });
     }, Promise.resolve())
     .then(
       () => {
         process.exit(0);
       },
-      e => {
-        console.error(e);
+      err => {
+        console.error(err);
         process.exit(1);
       }
     );

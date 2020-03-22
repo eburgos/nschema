@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-use-before-define */
+
 /**
  * @module nschema/provider/target/javascript/javascript
  * @author Eduardo Burgos <eburgos@gmail.com>
@@ -106,7 +108,7 @@ export class TypeScript {
       return nschema
         .writeFile(filepath, prettier.format(result, { parser: "typescript" }))
         .then(
-          _ => {
+          () => {
             return {
               config,
               context,
@@ -121,32 +123,34 @@ export class TypeScript {
   }
   public async init(nschema: NSchemaInterface) {
     const providerPath = pathResolve(__dirname, "bind");
-    const self = this;
+
     return Promise.all(
       readdirSync(providerPath)
         .filter(item => {
           return statSync(pathResolve(providerPath, item)).isDirectory();
         })
-        .map(d => {
-          return readdirSync(pathResolve(providerPath, d)).map(i => {
-            return pathResolve(providerPath, d, i);
-          });
+        .map(directory => {
+          return readdirSync(pathResolve(providerPath, directory)).map(
+            dirFile => {
+              return pathResolve(providerPath, directory, dirFile);
+            }
+          );
         })
-        .reduce((a, b) => {
-          return a.concat(b);
+        .reduce((accumulated, next) => {
+          return accumulated.concat(next);
         })
         .filter(item => {
           return extname(item) === ".js" && existsSync(item);
         })
         .map(require)
-        .map(async m => {
-          if (m.default) {
-            m = m.default;
+        .map(async requiredModule => {
+          if (requiredModule.default) {
+            requiredModule = requiredModule.default;
           }
-          m.typescript = self;
+          requiredModule.typescript = this;
           return new Promise<boolean>((resolve, reject) => {
-            if (typeof m.init === "function") {
-              m.init(nschema).then(
+            if (typeof requiredModule.init === "function") {
+              requiredModule.init(nschema).then(
                 () => {
                   resolve(true);
                 },
@@ -167,19 +171,31 @@ export class TypeScript {
 
 const typescript = new TypeScript();
 
+let count = 0;
+
+export function buildTypeScriptContext(): TypeScriptContext {
+  return {
+    hasTypeScript: true,
+    id: count++,
+    imports: {},
+    skipWrite: false,
+    typescript
+  };
+}
+
 function getDataItems(
   nschema: NSchemaInterface,
   nsMessage: AnonymousMessage
 ): NSchemaMessageArgument[] {
-  const r: NSchemaMessageArgument[] = [];
+  const dataItems: NSchemaMessageArgument[] = [];
   if (nsMessage.extends) {
     const parent = nschema.getMessage(
       nsMessage.extends.namespace || "",
       nsMessage.extends.name
     );
     if (parent) {
-      getDataItems(nschema, parent).forEach(i => {
-        r.push(i);
+      getDataItems(nschema, parent).forEach(dataItem => {
+        dataItems.push(dataItem);
       });
     } else {
       throw new Error(
@@ -189,9 +205,9 @@ function getDataItems(
     }
   }
   (nsMessage.data || []).map(item => {
-    r.push(item);
+    dataItems.push(item);
   });
-  return r;
+  return dataItems;
 }
 
 export function messageType(
@@ -220,8 +236,8 @@ export function messageType(
   } else {
     return (
       `{ ${dataItems
-        .map((item, $i) => {
-          return `${item.name || `item${$i}`}: ${typeName(
+        .map((item, mapIndex) => {
+          return `${item.name || `item${mapIndex}`}: ${typeName(
             item.type,
             nschema,
             "",
@@ -235,18 +251,6 @@ export function messageType(
         .join(typeSeparator)} }` || "void"
     );
   }
-}
-
-let count = 0;
-
-export function buildTypeScriptContext(): TypeScriptContext {
-  return {
-    hasTypeScript: true,
-    id: count++,
-    imports: {},
-    skipWrite: false,
-    typescript
-  };
 }
 
 export default typescript;

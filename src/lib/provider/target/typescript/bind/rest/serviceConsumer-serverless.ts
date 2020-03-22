@@ -21,8 +21,8 @@ function renderOperations(
   }
 ) {
   return Object.keys(operations)
-    .map(op => {
-      const operation = operations[op];
+    .map(operationName => {
+      const operation = operations[operationName];
       const {
         bodyArguments,
         headerArguments,
@@ -30,12 +30,12 @@ function renderOperations(
         outMessage,
         routeArguments,
         queryArguments
-      } = getOperationDetails(operation, op);
+      } = getOperationDetails(operation, operationName);
       const bodyVarName = findNonCollidingName(
         "body",
-        (inMessage.data || []).map(d => d.name)
+        (inMessage.data || []).map(argument => argument.name)
       );
-      return `export async function ${op}(event: any, context: any, callback: (err: Error | undefined, r?: ${serverlessReturnType}) => void) {
+      return `export async function ${operationName}(event: any, context: any, callback: (err: Error | undefined, r?: ${serverlessReturnType}) => void) {
   const input: any = {};
   try {
     const ${bodyVarName}: any | undefined = (() => {
@@ -48,23 +48,27 @@ function renderOperations(
       }
       return undefined;
     })();
-${routeArguments.map(p => {
-  return `    input${renderPropertyAccessor(p.name)} = ${realTypeMap(
-    p,
-    `unescape(event.pathParameters${renderPropertyAccessor(p.name)})`
+${routeArguments.map(argument => {
+  return `    input${renderPropertyAccessor(argument.name)} = ${realTypeMap(
+    argument,
+    `unescape(event.pathParameters${renderPropertyAccessor(argument.name)})`
   )};
 `;
-})}${queryArguments.map(p => {
-        return `    input${renderPropertyAccessor(p.name)} = ${realTypeMap(
-          p,
-          `event.queryStringParameters${renderPropertyAccessor(p.name)}`
+})}${queryArguments.map(argument => {
+        return `    input${renderPropertyAccessor(
+          argument.name
+        )} = ${realTypeMap(
+          argument,
+          `event.queryStringParameters${renderPropertyAccessor(argument.name)}`
         )};`;
       })}
 ${headerArguments
-  .map(p => {
-    return `    input${renderPropertyAccessor(p.name)} = ${realTypeMap(
-      p,
-      `event.headers${renderPropertyAccessor(p.headerName || `X-${p.name}`)}`
+  .map(argument => {
+    return `    input${renderPropertyAccessor(argument.name)} = ${realTypeMap(
+      argument,
+      `event.headers${renderPropertyAccessor(
+        argument.headerName || `X-${argument.name}`
+      )}`
     )};`;
   })
   .join("\n")}
@@ -74,10 +78,10 @@ ${
         bodyArguments[0].name
       )} = ${bodyVarName};`
     : bodyArguments
-        .map((p, idx) => {
+        .map((argument, index) => {
           return `    input${renderPropertyAccessor(
-            p.name
-          )} = ${bodyVarName}[${idx}];`;
+            argument.name
+          )} = ${bodyVarName}[${index}];`;
         })
         .join("\n")
 }
@@ -89,12 +93,12 @@ ${
       context,
       true,
       outMessage
-    )} = await $service.${op}(${
+    )} = await $service.${operationName}(${
         (inMessage.data || []).length === 1
           ? "$req, "
           : (inMessage.data || [])
-              .map(p => {
-                return `$req.${p.name}, `;
+              .map(argument => {
+                return `$req.${argument.name}, `;
               })
               .join("")
       }{

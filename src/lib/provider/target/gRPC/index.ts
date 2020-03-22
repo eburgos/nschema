@@ -25,6 +25,71 @@ import { ServiceTask } from "../../type/service";
 
 declare let require: (name: string) => any;
 
+export function typeName(
+  $nschemaType: NSchemaType,
+  _nschema?: NSchemaInterface,
+  namespace?: string,
+  _name?: string,
+  context?: GRPCContext,
+  addFlowComment?: boolean
+) {
+  let result: string;
+  const typeMap = (primitiveType: NSchemaPrimitiveType) => {
+    switch (primitiveType) {
+      case "int":
+        return "int32";
+      case "float":
+        return "number";
+      case "string":
+        return "string";
+      case "bool":
+        return "boolean";
+      case "date":
+        return "Date";
+      default:
+        shouldNever(primitiveType);
+    }
+    return "string";
+  };
+  if (typeof $nschemaType === "string") {
+    result = typeMap($nschemaType);
+  } else if (typeof $nschemaType === "object") {
+    let typeNamespace = $nschemaType.namespace;
+    if (typeof typeNamespace === "undefined") {
+      typeNamespace = namespace || "";
+    }
+    if (typeNamespace !== namespace && context) {
+      if (!context.imports[typeNamespace]) {
+        context.imports[typeNamespace] = {};
+      }
+      context.imports[typeNamespace][$nschemaType.name] = true;
+    }
+    result = $nschemaType.name;
+  } else {
+    result = typeMap("string");
+  }
+  if (
+    $nschemaType &&
+    typeof $nschemaType === "object" &&
+    $nschemaType.modifier
+  ) {
+    const $modifier = $nschemaType.modifier;
+    const modifierArr: NSchemaModifier[] = !isArray($modifier)
+      ? [$modifier]
+      : $modifier;
+
+    modifierArr.forEach(item => {
+      /* eslint-disable-next-line @typescript-eslint/no-use-before-define */
+      result = `(${result} ${modifierMap(item)})`;
+    });
+  }
+  if (addFlowComment) {
+    return `${result} /* :${result} */`;
+  } else {
+    return result;
+  }
+}
+
 function modifierMap(modifier: NSchemaModifier): string {
   switch (modifier) {
     case "list":
@@ -39,7 +104,7 @@ function modifierMap(modifier: NSchemaModifier): string {
 }
 
 // tslint:disable-next-line:no-empty-interface
-export interface GRPCOperation extends NSchemaOperation {}
+export type GRPCOperation = NSchemaOperation;
 
 export interface GRPCService extends ServiceTask, HasFilenameMixin {
   operations: { [name: string]: GRPCOperation };
@@ -55,7 +120,7 @@ export interface GRPCBundle extends BundleTask, HasFilenameMixin {}
 export interface GRPCObject extends ObjectTask, HasFilenameMixin {}
 
 // tslint:disable-next-line:no-empty-interface
-export interface GRPCMessageArgument extends NSchemaMessageArgument {}
+export type GRPCMessageArgument = NSchemaMessageArgument;
 
 export interface GRPCContext {
   /*
@@ -73,7 +138,6 @@ export interface GRPCContext {
 }
 
 export class GRPC {
-  // tslint:disable-next-line:prefer-function-over-method
   public async generate(
     nschema: NSchemaInterface,
     grpcConfig: GRPCMessage | GRPCObject | GRPCService,
@@ -84,6 +148,7 @@ export class GRPC {
     const config = deepClone(grpcConfig);
 
     const context: GRPCContext = {
+      /* eslint-disable-next-line @typescript-eslint/no-use-before-define */
       ...buildgRPCContext(),
       ...providedContext,
       imports: {}
@@ -121,48 +186,44 @@ export class GRPC {
             );
 
       writeLog(LogLevel.Default, `gRPC: writing to file: ${filepath}`);
-      return nschema.writeFile(filepath, result).then(
-        _ => {
-          return {
-            config,
-            context,
-            generated: result
-          };
-        },
-        err => {
-          throw new Error(err);
-        }
-      );
+      await nschema.writeFile(filepath, result);
+      return {
+        config,
+        context,
+        generated: result
+      };
     }
   }
   public async init(nschema: NSchemaInterface) {
     const providerPath = pathResolve(__dirname, "bind");
-    const self = this;
+
     return Promise.all(
       readdirSync(providerPath)
         .filter(item => {
           return statSync(pathResolve(providerPath, item)).isDirectory();
         })
-        .map(d => {
-          return readdirSync(pathResolve(providerPath, d)).map(_i => {
-            return pathResolve(providerPath, d, "index.js");
-          });
+        .map(directoryPath => {
+          return readdirSync(pathResolve(providerPath, directoryPath)).map(
+            () /* _i */ => {
+              return pathResolve(providerPath, directoryPath, "index.js");
+            }
+          );
         })
-        .reduce((a, b) => {
-          return a.concat(b);
+        .reduce((accumulated, next) => {
+          return accumulated.concat(next);
         })
         .filter(item => {
           return extname(item) === ".js" && existsSync(item);
         })
         .map(require)
-        .map(async m => {
-          if (m.default) {
-            m = m.default;
+        .map(async requiredModule => {
+          if (requiredModule.default) {
+            requiredModule = requiredModule.default;
           }
-          m.grpc = self;
+          requiredModule.grpc = this;
           return new Promise<boolean>((resolve, reject) => {
-            if (typeof m.init === "function") {
-              m.init(nschema).then(
+            if (typeof requiredModule.init === "function") {
+              requiredModule.init(nschema).then(
                 () => {
                   resolve(true);
                 },
@@ -187,15 +248,15 @@ function getDataItems(
   nschema: NSchemaInterface,
   nsMessage: MessageTask
 ): GRPCMessageArgument[] {
-  const r: GRPCMessageArgument[] = [];
+  const dataItems: GRPCMessageArgument[] = [];
   if (nsMessage.extends) {
     const parent = nschema.getMessage(
       nsMessage.extends.namespace || "",
       nsMessage.extends.name
     );
     if (parent) {
-      getDataItems(nschema, parent).forEach(i => {
-        r.push(i);
+      getDataItems(nschema, parent).forEach(dataItem => {
+        dataItems.push(dataItem);
       });
     } else {
       throw new Error(
@@ -205,9 +266,9 @@ function getDataItems(
     }
   }
   (nsMessage.data || []).map(item => {
-    r.push(item);
+    dataItems.push(item);
   });
-  return r;
+  return dataItems;
 }
 
 export function messageType(
@@ -227,8 +288,8 @@ export function messageType(
   } else {
     return (
       `{ ${dataItems
-        .map((item, $i) => {
-          return `${item.name || `item${$i}`}: ${typeName(
+        .map((item, itemIndex) => {
+          return `${item.name || `item${itemIndex}`}: ${typeName(
             item.type,
             nschema,
             "",
@@ -254,67 +315,3 @@ export function buildgRPCContext(): GRPCContext {
 }
 
 export default grpc;
-
-export function typeName(
-  $nschemaType: NSchemaType,
-  _nschema?: NSchemaInterface,
-  namespace?: string,
-  _name?: string,
-  context?: GRPCContext,
-  addFlowComment?: boolean
-) {
-  let result: string;
-  const typeMap = (t: NSchemaPrimitiveType) => {
-    switch (t) {
-      case "int":
-        return "int32";
-      case "float":
-        return "number";
-      case "string":
-        return "string";
-      case "bool":
-        return "boolean";
-      case "date":
-        return "Date";
-      default:
-        shouldNever(t);
-    }
-    return "string";
-  };
-  if (typeof $nschemaType === "string") {
-    result = typeMap($nschemaType);
-  } else if (typeof $nschemaType === "object") {
-    let ns = $nschemaType.namespace;
-    if (typeof ns === "undefined") {
-      ns = namespace || "";
-    }
-    if (ns !== namespace && context) {
-      if (!context.imports[ns]) {
-        context.imports[ns] = {};
-      }
-      context.imports[ns][$nschemaType.name] = true;
-    }
-    result = $nschemaType.name;
-  } else {
-    result = typeMap("string");
-  }
-  if (
-    $nschemaType &&
-    typeof $nschemaType === "object" &&
-    $nschemaType.modifier
-  ) {
-    const $modifier = $nschemaType.modifier;
-    const modifierArr: NSchemaModifier[] = !isArray($modifier)
-      ? [$modifier]
-      : $modifier;
-
-    modifierArr.forEach(item => {
-      result = `(${result} ${modifierMap(item)})`;
-    });
-  }
-  if (addFlowComment) {
-    return `${result} /* :${result} */`;
-  } else {
-    return result;
-  }
-}

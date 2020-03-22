@@ -9,24 +9,28 @@
   },
   "main": "lib/nschema",
   "dependencies": {
+    "chalk": "^3.0.0",
+    "immutability-helper": "^3.0.1",
+    "js-yaml": "^3.13.1",
+    "prettier": "^2.0.1",
+    "prettyjson": "^1.2.1",
+    "tslib": "^1.11.1",
+    "yargs": "^15.3.1"
+  },
+  "devDependencies": {
     "@types/js-yaml": "^3.12.2",
     "@types/node": "^13.9.2",
     "@types/prettier": "^1.19.0",
     "@types/prettyjson": "^0.0.29",
-    "chalk": "^3.0.0",
-    "immutability-helper": "^3.0.1",
-    "js-yaml": "^3.13.1",
-    "minimist": "^1.2.5",
-    "prettier": "^1.19.1",
-    "prettyjson": "^1.2.1",
-    "tslib": "^1.11.1"
-  },
-  "devDependencies": {
     "@angular/core": "^4.0.2",
     "@angular/http": "^4.0.2",
-    "@types/minimist": "^1.2.0",
+    "@types/yargs": "^15.0.4",
+    "@typescript-eslint/eslint-plugin": "^2.24.0",
+    "@typescript-eslint/parser": "^2.24.0",
+    "eslint": "^6.8.0",
+    "eslint-config-prettier": "^6.10.0",
+    "eslint-plugin-prettier": "^3.1.2",
     "rxjs": "^6.2.2",
-    "tslint": "^6.1.0",
     "typescript": "^3.8.3"
   },
   "bin": {
@@ -36,7 +40,7 @@
     "scripts": {}
   },
   "scripts": {
-    "ts-lint": "npx tslint --project tsconfig.json --fix",
+    "lint": "./node_modules/.bin/eslint . --ext .ts,.tsx --fix",
     "tsc": "npx tsc",
     "build": "yarn run tsc && yarn run ts-lint"
   },

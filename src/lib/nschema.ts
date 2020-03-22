@@ -57,22 +57,22 @@ function isArray(obj: any): obj is any[] {
  * @param {(o: any, t: any, p: string) => boolean} [filter] is this function returns false then the property p will be mixed in
  */
 function mixinRecursive(
-  mixedInto: any,
-  from: any,
+  mixedInto: { [k: string]: any },
+  from: { [k: string]: any },
   filter?: (o: any, t: any, p: string) => boolean
 ) {
-  for (const p in from) {
-    if (from.hasOwnProperty(p)) {
-      if (!filter || !filter(mixedInto, from, p)) {
+  for (const property in from) {
+    if (Object.prototype.hasOwnProperty.call(from, property)) {
+      if (!filter || !filter(mixedInto, from, property)) {
         if (
-          !isArray(mixedInto[p]) &&
-          !isArray(from[p]) &&
-          typeof mixedInto[p] === "object" &&
-          typeof from[p] === "object"
+          !isArray(mixedInto[property]) &&
+          !isArray(from[property]) &&
+          typeof mixedInto[property] === "object" &&
+          typeof from[property] === "object"
         ) {
-          mixinRecursive(mixedInto[p], from[p]);
+          mixinRecursive(mixedInto[property], from[property]);
         } else {
-          mixedInto[p] = from[p];
+          mixedInto[property] = from[property];
         }
       }
     }
@@ -167,9 +167,13 @@ export default class NSchema implements NSchemaInterface {
     }
     const newConfigCloned = deepClone(config);
 
-    mixinRecursive(newConfigCloned, parentConfig, (_a, _b, prop) => {
-      return !allowedParentToChildrenMixin[prop];
-    });
+    mixinRecursive(
+      newConfigCloned,
+      parentConfig,
+      (_intoProperty, _fromProperty, propertyName) => {
+        return !allowedParentToChildrenMixin[propertyName];
+      }
+    );
 
     const newConfig = appendTarget(
       propagateTarget(newConfigCloned, parentConfig)
@@ -190,13 +194,19 @@ export default class NSchema implements NSchemaInterface {
       (target: NSchemaPlugin) => {
         const tgt: any = target;
 
-        for (const p in obj) {
-          if (obj.hasOwnProperty(p) && isValidCriteriaProperty(p)) {
-            if (typeof tgt[p] === "function") {
-              if (!tgt[p](obj[p])) {
+        for (const property in obj) {
+          if (
+            Object.prototype.hasOwnProperty.call(obj, property) &&
+            isValidCriteriaProperty(property)
+          ) {
+            if (typeof tgt[property] === "function") {
+              if (!tgt[property](obj[property])) {
                 return false;
               }
-            } else if (tgt[p] !== obj[p] && tgt[p] !== "*") {
+            } else if (
+              tgt[property] !== obj[property] &&
+              tgt[property] !== "*"
+            ) {
               return false;
             }
           }
@@ -207,44 +217,43 @@ export default class NSchema implements NSchemaInterface {
     return customPlugins;
   }
 
-  public getMessage(ns: string, name: string): MessageTask | undefined {
-    const r = this.context.messages.filter(t => {
+  public getMessage(namespace: string, name: string): MessageTask | undefined {
+    const message = this.context.messages.find(message => {
       return (
-        (t.namespace || "") === (ns || "") && (t.name || "") === (name || "")
+        (message.namespace || "") === (namespace || "") &&
+        (message.name || "") === (name || "")
       );
     });
-    if (r.length) {
-      return r[0];
-    }
-    return undefined;
+    return message;
   }
 
-  public getObject(ns: string, name: string) {
-    const r = this.context.objects.filter(t => {
+  public getObject(namespace: string, name: string) {
+    const obj = this.context.objects.find(currentObject => {
       return (
-        (t.namespace || "") === (ns || "") && (t.name || "") === (name || "")
+        (currentObject.namespace || "") === (namespace || "") &&
+        (currentObject.name || "") === (name || "")
       );
     });
-    if (r.length) {
-      return r[0];
-    }
-    return undefined;
+    return obj;
   }
-  public getService(ns: string, name: string) {
-    const r = this.context.services.filter(t => {
-      return (t.namespace || "") === ns && (t.name || "") === name;
+  public getService(namespace: string, name: string) {
+    const service = this.context.services.find(currentService => {
+      return (
+        (currentService.namespace || "") === namespace &&
+        (currentService.name || "") === name
+      );
     });
-    if (r.length) {
-      return r[0];
-    }
-    return undefined;
+    return service;
   }
-  public getTarget(obj: any): TargetBind[] {
+  public getTarget(obj: { [key: string]: any }): TargetBind[] {
     const targets = this.targets.filter((target: TargetBind) => {
       const tgt: any = target;
-      for (const p in obj) {
-        if (obj.hasOwnProperty(p) && isValidCriteriaProperty(p)) {
-          if (tgt[p] !== obj[p]) {
+      for (const property in obj) {
+        if (
+          Object.prototype.hasOwnProperty.call(obj, property) &&
+          isValidCriteriaProperty(property)
+        ) {
+          if (tgt[property] !== obj[property]) {
             return false;
           }
         }
@@ -255,14 +264,13 @@ export default class NSchema implements NSchemaInterface {
   }
 
   public async init(loadPath?: string) {
-    const self: NSchema = this;
-    const providerPath: string = !!loadPath
+    const providerPath: string = loadPath
       ? loadPath
       : pathResolve(__dirname, "provider");
 
     if (this.loadDefer) {
       await this.loadDefer;
-      return self;
+      return this;
     } else {
       this.loadDefer = Promise.all(
         fs
@@ -270,40 +278,36 @@ export default class NSchema implements NSchemaInterface {
           .filter((item: string) => {
             return fs.statSync(pathResolve(providerPath, item)).isDirectory();
           })
-          .map((d: string) => {
+          .map((directoryPath: string) => {
             return fs
-              .readdirSync(pathResolve(providerPath, d))
-              .map((i: string) => {
-                return pathResolve(providerPath, d, i);
+              .readdirSync(pathResolve(providerPath, directoryPath))
+              .map((item: string) => {
+                return pathResolve(providerPath, directoryPath, item);
               });
           })
-          .reduce((a: string[], b: string[]) => {
-            return a.concat(b);
+          .reduce((accumulated: string[], next: string[]) => {
+            return accumulated.concat(next);
           })
-          .filter((d: string) => {
-            const dir = pathResolve(providerPath, d);
+          .filter((directoryPath: string) => {
+            const dir = pathResolve(providerPath, directoryPath);
             const basename = "index"; // pathBasename(dir);
             return fs.existsSync(pathResolve(dir, `${basename}.js`));
           })
-          .map((d: string) => {
-            const dir = pathResolve(providerPath, d);
+          .map((directoryPath: string) => {
+            const dir = pathResolve(providerPath, directoryPath);
             const basename = "index";
             return pathResolve(dir, basename);
           })
           .map(require)
-          .map(m => {
-            if (m.default) {
-              m = m.default;
+          .map(requiredModule => {
+            if (requiredModule.default) {
+              requiredModule = requiredModule.default;
             }
-            return m.init(self);
+            return requiredModule.init(this);
           })
       );
-      try {
-        await this.loadDefer;
-        return self;
-      } catch (err) {
-        throw err;
-      }
+      await this.loadDefer;
+      return this;
     }
   }
 
@@ -334,28 +338,28 @@ export default class NSchema implements NSchemaInterface {
     return await Promise.resolve(null);
   }
   public registerMessage(typeConfig: MessageTask) {
-    const t = this.getMessage(
+    const message = this.getMessage(
       typeConfig.namespace || "",
       typeConfig.name || ""
     );
-    if (!t) {
+    if (!message) {
       this.context.messages.push(typeConfig);
     }
   }
 
   public registerObject(typeConfig: ObjectTask) {
-    const t = this.getObject(typeConfig.namespace || "", typeConfig.name);
-    if (!t) {
+    const obj = this.getObject(typeConfig.namespace || "", typeConfig.name);
+    if (!obj) {
       this.context.objects.push(typeConfig);
     }
   }
 
   public registerService(serviceConfig: ServiceTask) {
-    const t = this.getService(
+    const service = this.getService(
       serviceConfig.namespace || "",
       serviceConfig.name
     );
-    if (!t) {
+    if (!service) {
       this.context.services.push(serviceConfig);
     }
   }
@@ -380,15 +384,14 @@ export default class NSchema implements NSchemaInterface {
     done: (err: Error | undefined, data?: string[]) => void
   ) {
     let results: string[] = [];
-    const self = this;
     fs.readdir(dir, (err: NodeJS.ErrnoException | null, list: string[]) => {
       if (err) {
         return done(err);
       }
-      let i = 0;
-      (function next() {
-        let file = list[i];
-        i += 1;
+      let index = 0;
+      const next = () => {
+        let file = list[index];
+        index += 1;
         if (!file) {
           return done(undefined, results);
         }
@@ -400,7 +403,7 @@ export default class NSchema implements NSchemaInterface {
           }
           /* jshint unused: true */
           if (stat && stat.isDirectory()) {
-            self.walk(file, (err3, res) => {
+            this.walk(file, (err3, res) => {
               if (err3) {
                 writeError(err3);
                 throw err3;
@@ -415,7 +418,8 @@ export default class NSchema implements NSchemaInterface {
             next();
           }
         });
-      })();
+      };
+      next();
     });
   }
   // NSchemaInterface ends
@@ -442,11 +446,11 @@ export default class NSchema implements NSchemaInterface {
 }
 
 export async function generate(parentConfig: NSchemaTask, config: NSchemaTask) {
-  const n = new NSchema();
+  const nschemaInstance = new NSchema();
 
   const nschema: NSchemaInterface | undefined = await (async () => {
     try {
-      return await n.init();
+      return await nschemaInstance.init();
     } catch (err) {
       return undefined;
     }
@@ -484,9 +488,9 @@ function groupBy<T>(
 }
 
 export async function features() {
-  const n = new NSchema();
+  const nschemaInstance = new NSchema();
   try {
-    const nschema = await n.init();
+    const nschema = await nschemaInstance.init();
     const version: string = require("../package.json").version;
     writeLog(LogLevel.Default, `NineSchema version ${version}`);
     writeLog(LogLevel.Default, "");

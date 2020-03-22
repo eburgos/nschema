@@ -1,12 +1,16 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const routeGuideModel_1 = require("./routeGuideModel");
-function isObjectTask(t) {
-    return t.type === "object";
+function isObjectTask(task) {
+    return task.type === "object";
 }
 const messagesNamespace = routeGuideModel_1.default.namespace;
-const Point = routeGuideModel_1.default.list.filter(isObjectTask).find(i => i.name === "Point");
-const Feature = routeGuideModel_1.default.list.filter(isObjectTask).find(i => i.name === "Feature");
+const Point = routeGuideModel_1.default.list
+    .filter(isObjectTask)
+    .find(models => models.name === "Point");
+const Feature = routeGuideModel_1.default.list
+    .filter(isObjectTask)
+    .find(models => models.name === "Feature");
 if (!Point) {
     throw new Error("Point message is undefined");
 }

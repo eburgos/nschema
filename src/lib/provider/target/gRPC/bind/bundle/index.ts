@@ -28,13 +28,13 @@ function computeBundleImportMatrix(
     skipWrite: true
   };
   arr.forEach(item => {
-    Object.keys(item.imports).forEach(p => {
-      if (!rootContext.imports[p]) {
-        rootContext.imports[p] = {};
+    Object.keys(item.imports).forEach(property => {
+      if (!rootContext.imports[property]) {
+        rootContext.imports[property] = {};
       }
-      const ns = item.imports[p];
-      Object.keys(ns).forEach(name => {
-        rootContext.imports[p][name] = item.imports[p][name];
+      const namespace = item.imports[property];
+      Object.keys(namespace).forEach(name => {
+        rootContext.imports[property][name] = item.imports[property][name];
       });
     });
   });
@@ -52,10 +52,10 @@ async function execute(
   if (!parentConfig.target) {
     throw new Error("Invalid gRPC bundle task");
   }
-  const t: any = parentConfig;
+  const parentConfigAny: any = parentConfig;
   const config: GRPCBundle = updateNamespace({
     ...parentConfig,
-    $fileName: t.$fileName
+    $fileName: parentConfigAny.$fileName
   });
 
   const target = isArray(parentConfig.target)
@@ -67,10 +67,10 @@ async function execute(
 
   const arr = parentConfig.list || [];
 
-  const r = arr.map(async (cur: NSchemaTask) => {
+  const waitables = arr.map(async (cur: NSchemaTask) => {
     return nschema.generate(parentConfig, cur, { skipWrite: true });
   });
-  const dblarr: (any | any[])[] = await Promise.all(r);
+  const dblarr: Array<any | any[]> = await Promise.all(waitables);
 
   const reducedArr: any[] = dblarr.reduce(
     (acc: any | any[], next: any | any[]) => {

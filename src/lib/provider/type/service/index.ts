@@ -61,15 +61,15 @@ async function execute(
 
   if (parentConfig.operations) {
     const operations = parentConfig.operations;
-    for (const p in operations) {
-      if (operations.hasOwnProperty(p)) {
+    for (const operationKey in operations) {
+      if (Object.prototype.hasOwnProperty.call(operations, operationKey)) {
         processMessage(
-          operations[p].inMessage,
+          operations[operationKey].inMessage,
           nschema,
           parentConfig.namespace || ""
         );
         processMessage(
-          operations[p].outMessage,
+          operations[operationKey].outMessage,
           nschema,
           parentConfig.namespace || ""
         );
@@ -88,7 +88,7 @@ async function execute(
           ? [target]
           : target;
 
-        const r = targetArr.map(async item => {
+        const waitables = targetArr.map(async item => {
           item.type = "service";
           try {
             const foundTargets = nschema.getTarget(item);
@@ -121,7 +121,7 @@ Unable to generate service ${newConfig.namespace || ""} :: ${newConfig.name}`);
           }
         });
 
-        Promise.all(r).then(resolve, reject);
+        Promise.all(waitables).then(resolve, reject);
       } else {
         resolve(false);
       }

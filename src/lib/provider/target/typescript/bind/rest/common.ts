@@ -8,12 +8,12 @@ import {
   isPrimitiveTypeString
 } from "../../../../../utils";
 
-export function realTypeMap(p: RestMessageArgument, expr: string) {
+export function realTypeMap(argument: RestMessageArgument, expr: string) {
   const realType =
-    typeof p.realType === "string"
-      ? { name: p.realType }
-      : p.realType
-      ? p.realType
+    typeof argument.realType === "string"
+      ? { name: argument.realType }
+      : argument.realType
+      ? argument.realType
       : { name: null };
   switch (realType.name) {
     case "string":
@@ -29,59 +29,61 @@ export function realTypeMap(p: RestMessageArgument, expr: string) {
       return null;
   }
 }
-export function getHttpVerb(v: string) {
-  if (v === "delete") {
+export function getHttpVerb(verb: string) {
+  if (verb === "delete") {
     return "del";
   }
-  return v;
+  return verb;
 }
 
-export function getType(p: RestMessageArgument) {
-  return typeof p.type === "string" ? { namespace: "", name: p.type } : p.type;
+export function getType(argument: RestMessageArgument) {
+  return typeof argument.type === "string"
+    ? { namespace: "", name: argument.type }
+    : argument.type;
 }
 
-function isPrimitiveOptional(p: RestMessageArgument) {
-  const t = getType(p);
+function isPrimitiveOptional(argument: RestMessageArgument) {
+  const type = getType(argument);
 
   return (
-    t.namespace === "" &&
-    isPrimitiveTypeString(t.name) &&
-    (t.modifier === "option" ||
-      (isArray(t.modifier) &&
-        t.modifier.length === 1 &&
-        t.modifier[0] === "option"))
+    type.namespace === "" &&
+    isPrimitiveTypeString(type.name) &&
+    (type.modifier === "option" ||
+      (isArray(type.modifier) &&
+        type.modifier.length === 1 &&
+        type.modifier[0] === "option"))
   );
 }
 
-export function includeInRoute(p: RestMessageArgument, route: string) {
-  const t = getType(p);
+export function includeInRoute(argument: RestMessageArgument, route: string) {
+  const type = getType(argument);
 
-  const isInRoute = route.indexOf(`{${p.name}}`) >= 0;
+  const isInRoute = route.indexOf(`{${argument.name}}`) >= 0;
 
   return (
     isInRoute &&
-    (!t.modifier || (isArray(t.modifier) && !t.modifier.length)) &&
-    t.namespace === "" &&
-    isPrimitiveTypeString(t.name)
+    (!type.modifier || (isArray(type.modifier) && !type.modifier.length)) &&
+    type.namespace === "" &&
+    isPrimitiveTypeString(type.name)
   );
 }
-export function includeInQuery(p: RestMessageArgument) {
-  const t = getType(p);
+export function includeInQuery(argument: RestMessageArgument) {
+  const type = getType(argument);
   return (
-    p.paramType === "query" &&
-    (!t.modifier ||
-      (isArray(t.modifier) && !t.modifier.length) ||
-      isPrimitiveOptional(p)) &&
-    t.namespace === "" &&
-    (t.name === "string" ||
-      t.name === "int" ||
-      t.name === "float" ||
-      t.name === "bool" ||
-      t.name === "date")
+    argument.paramType === "query" &&
+    (!type.modifier ||
+      (isArray(type.modifier) && !type.modifier.length) ||
+      isPrimitiveOptional(argument)) &&
+    type.namespace === "" &&
+    (type.name === "string" ||
+      type.name === "int" ||
+      type.name === "float" ||
+      type.name === "bool" ||
+      type.name === "date")
   );
 }
-export function includeInHeader(p: RestMessageArgument) {
-  return p.paramType === "header";
+export function includeInHeader(argument: RestMessageArgument) {
+  return argument.paramType === "header";
 }
 
 export function identityStr(src: string) {
@@ -97,9 +99,9 @@ export function addSpace(str: string) {
 
 const alphabeticSorter = caseInsensitiveSorter(identityStr);
 export function sortAlphabetically(arr: string[]) {
-  const r = [...arr];
-  r.sort(alphabeticSorter);
-  return r;
+  const clonedArray = [...arr];
+  clonedArray.sort(alphabeticSorter);
+  return clonedArray;
 }
 
 export function getOperationDetails(
@@ -115,58 +117,58 @@ export function getOperationDetails(
   let allParams: RestMessageArgument[] = (inMessage.data || []).slice(0);
   const allOutParams = (outMessage.data || []).slice(0);
   const paramsInRoute: RestMessageArgument[] = allParams
-    .filter(p => includeInRoute(p, route))
-    .map(p => {
+    .filter(argument => includeInRoute(argument, route))
+    .map(argument => {
       return {
-        ...p,
-        realType: getType(p),
+        ...argument,
+        realType: getType(argument),
         type: {
           name: "string",
           namespace: ""
         }
       };
     });
-  allParams = allParams.filter(p => {
-    return !includeInRoute(p, route);
+  allParams = allParams.filter(argument => {
+    return !includeInRoute(argument, route);
   });
   const paramsInQuery: RestMessageArgument[] = allParams
     .filter(includeInQuery)
-    .map(p => {
+    .map(argument => {
       return {
-        ...p,
-        realType: getType(p),
+        ...argument,
+        realType: getType(argument),
         type: {
           name: "string",
           namespace: ""
         }
       };
     });
-  allParams = allParams.filter(p => {
-    return !includeInQuery(p);
+  allParams = allParams.filter(argument => {
+    return !includeInQuery(argument);
   });
   const paramsInHeader: RestMessageArgument[] = allParams
     .filter(includeInHeader)
-    .map(p => {
+    .map(argument => {
       return {
-        ...p,
-        realType: getType(p),
+        ...argument,
+        realType: getType(argument),
         type: {
           name: "string",
           namespace: ""
         }
       };
     });
-  allParams = allParams.filter(p => {
-    return !includeInHeader(p);
+  allParams = allParams.filter(argument => {
+    return !includeInHeader(argument);
   });
-  const paramsInBody = allParams.filter(p => {
-    return !includeInRoute(p, route);
+  const paramsInBody = allParams.filter(argument => {
+    return !includeInRoute(argument, route);
   });
   const paramsOutHeader = (outMessage.data || [])
     .slice(0)
     .filter(includeInHeader);
-  const paramsOutBody = allOutParams.filter(p => {
-    return !includeInHeader(p);
+  const paramsOutBody = allOutParams.filter(argument => {
+    return !includeInHeader(argument);
   });
 
   return {

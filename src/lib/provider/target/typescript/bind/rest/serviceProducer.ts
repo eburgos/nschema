@@ -37,30 +37,37 @@ function requestArgsType(method: string) {
     }`;
 }
 
-function isSingleDate(t: NSchemaType) {
-  if (isPrimitiveTypeString(t as string)) {
-    return t === "date";
+/**
+ * Tells if a data type is a single date
+ *
+ * @param {NSchemaType} type
+ * @returns
+ */
+function isSingleDate(type: NSchemaType) {
+  if (isPrimitiveTypeString(type as string)) {
+    return type === "date";
   } else if (
-    typeof t !== "string" &&
-    (t.name === "date" && t.namespace === "")
+    typeof type !== "string" &&
+    type.name === "date" &&
+    type.namespace === ""
   ) {
-    if (!t.modifier) {
+    if (!type.modifier) {
       return true;
     } else {
-      const mods = isArray(t.modifier) ? t.modifier : [t.modifier];
+      const mods = isArray(type.modifier) ? type.modifier : [type.modifier];
       return mods.length === 1 && mods[0] === "option";
     }
   }
   return false;
 }
 
-function getValueOf(p: RestMessageArgument) {
-  const type = p.realType || p.type;
+function getValueOf(parameter: RestMessageArgument) {
+  const type = parameter.realType || parameter.type;
   if (isSingleDate(type)) {
-    return `${p.name} instanceof Date? ${p.name}.getTime() : ${p.name}`;
+    return `${parameter.name} instanceof Date? ${parameter.name}.getTime() : ${parameter.name}`;
   }
 
-  return p.name;
+  return parameter.name;
 }
 
 function buildRequest(
@@ -89,12 +96,12 @@ function buildRequest(
             ? `JSON.stringify(${
                 paramsInBody.length > 1 ? `[` : ``
               }${paramsInBody
-                .map(d => {
-                  return getValueOf(d);
+                .map(argument => {
+                  return getValueOf(argument);
                 })
                 .join(", ")}${paramsInBody.length > 1 ? `]` : ``})`
             : `qs.stringify({ ${paramsInBody
-                .map(p => `${p.name}: ${getValueOf(p)}`)
+                .map(argument => `${argument.name}: ${getValueOf(argument)}`)
                 .join(", ")} })`
           : `undefined`
       },
@@ -109,13 +116,14 @@ function buildRequest(
       ? `,
         ...{
           ${sortAlphabetically(
-            paramsInHeader.map(p => {
-              return isOptional(p)
-                ? `...(typeof ${p.name} !== "undefined")? { "${p.headerName ||
-                    `X-${p.name}`}": \`\${${getValueOf(p)}}\` } : {}`
-                : `"${p.headerName || `X-${p.name}`}": \`\${${getValueOf(
-                    p
-                  )}}\``;
+            paramsInHeader.map(argument => {
+              return isOptional(argument)
+                ? `...(typeof ${argument.name} !== "undefined")? { "${
+                    argument.headerName || `X-${argument.name}`
+                  }": \`\${${getValueOf(argument)}}\` } : {}`
+                : `"${
+                    argument.headerName || `X-${argument.name}`
+                  }": \`\${${getValueOf(argument)}}\``;
             })
           ).join(",\n          ")}
         }
@@ -128,8 +136,10 @@ function buildRequest(
       url: \`\${this.${endpointPropertyName}}${routePrefix}${
     paramsInRoute.length
       ? `\${[${paramsInRoute
-          .map(p => {
-            return `{ key: \`${p.name}\`, value: \`\${${getValueOf(p)}}\`}`;
+          .map(argument => {
+            return `{ key: \`${argument.name}\`, value: \`\${${getValueOf(
+              argument
+            )}}\`}`;
           })
           .join(
             ", "
@@ -138,8 +148,10 @@ function buildRequest(
   }${
     paramsInQuery.length
       ? `?\${[${`${paramsInQuery
-          .map(p => {
-            return `{ name: \`${p.name}\`, value: ${getValueOf(p)} }`;
+          .map(argument => {
+            return `{ name: \`${argument.name}\`, value: ${getValueOf(
+              argument
+            )} }`;
             //return `\`${p.name}=\${encodeURIComponent(\`\${${p.name}}\`)}\`}`;
           })
           .join(
@@ -151,10 +163,7 @@ function buildRequest(
 }
 
 const prepareImports = {
-  [RestClientStrategy.Angular2]: (
-    context: TypeScriptContext,
-    _target: TypeScriptRestTarget
-  ) => {
+  [RestClientStrategy.Angular2]: (context: TypeScriptContext) => {
     if (!context.imports["@angular/core"]) {
       context.imports["@angular/core"] = {};
     }
@@ -257,18 +266,18 @@ const constructorPart = {
 };
 
 const requestOptionsPart = {
-  [RestClientStrategy.Angular2]: (
-    _method: string,
+  [RestClientStrategy.Angular2]: () =>
+    /*_method: string,
     _route: string,
     _routePrefix: string,
     _endpointPropertyName: string,
     _paramsInQuery: NSchemaMessageArgument[],
     _paramsInBody: NSchemaMessageArgument[],
     _paramsInHeader: NSchemaMessageArgument[],
-    _paramsInRoute: NSchemaMessageArgument[]
-  ) => {
-    return ` = new RequestOptions();`;
-  },
+    _paramsInRoute: NSchemaMessageArgument[]*/
+    {
+      return ` = new RequestOptions();`;
+    },
   [RestClientStrategy.Default]: (
     method: string,
     route: string,
@@ -307,16 +316,16 @@ const bodyPart = {
     _nschema: NSchemaInterface,
     _context: TypeScriptContext,
     _outMessage: AnonymousMessage,
-    op: string,
+    operationName: string,
     optionsVarName: string,
     endpointPropertyName: string
   ) => {
     return `${
       paramsInQuery.length
         ? `        let $queryParams: URLSearchParams = new URLSearchParams();
-    ${paramsInQuery.map(p => {
-      return `        if (typeof(${p.name}) !== undefined) {
-                $queryParams.set("${p.name}", ${p.name}.toString());
+    ${paramsInQuery.map(argument => {
+      return `        if (typeof(${argument.name}) !== undefined) {
+                $queryParams.set("${argument.name}", ${argument.name}.toString());
             }`;
     })}        ${optionsVarName}.params = $queryParams;`
         : ``
@@ -324,8 +333,10 @@ const bodyPart = {
     ${optionsVarName}.headers =  new Headers({
       "Content-Type": "application/json",
       ${paramsInHeader
-        .map(p => {
-          return `"${p.headerName || `X-${p.name}`}": ${p.name}`;
+        .map(argument => {
+          return `"${argument.headerName || `X-${argument.name}`}": ${
+            argument.name
+          }`;
         })
         .join(",\n                ")}
     });
@@ -335,8 +346,8 @@ ${
         paramsInBody.length
           ? `
 let $body = JSON.stringify(${paramsInBody.length > 1 ? `[` : ``}${paramsInBody
-              .map(d => {
-                return d.name;
+              .map(argument => {
+                return argument.name;
               })
               .join(", ")}${paramsInBody.length > 1 ? `]` : ``});`
           : `let $body = "";`
@@ -345,8 +356,8 @@ let $body = JSON.stringify(${paramsInBody.length > 1 ? `[` : ``}${paramsInBody
 }
 
     return this.http.${method.toLowerCase()}(this.${endpointPropertyName} + [${paramsInRoute
-      .map(p => {
-        return `\`${p.name}\``;
+      .map(argument => {
+        return `\`${argument.name}\``;
       })
       .join(
         ", "
@@ -357,7 +368,7 @@ let $body = JSON.stringify(${paramsInBody.length > 1 ? `[` : ``}${paramsInBody
     } ${optionsVarName})
                     .map($toJson)
                     .catch((error) => {
-                        return this.$errorHandler(error, "${op}");
+                        return this.$errorHandler(error, "${operationName}");
                     });`;
   },
   [RestClientStrategy.Default]: (
@@ -370,7 +381,7 @@ let $body = JSON.stringify(${paramsInBody.length > 1 ? `[` : ``}${paramsInBody
     nschema: NSchemaInterface,
     context: TypeScriptContext,
     outMessage: AnonymousMessage,
-    op: string,
+    operationName: string,
     optionsVarName: string,
     _endpointPropertyName: string,
     errorHandlerPropertyName: string
@@ -382,7 +393,7 @@ let $body = JSON.stringify(${paramsInBody.length > 1 ? `[` : ``}${paramsInBody
         ..._paramsInHeader,
         ..._paramsInQuery,
         ..._paramsInRoute
-      ].map(p => p.name)
+      ].map(argument => argument.name)
     );
     return `try {
       const ${responseVarName} = await request.${method.toLowerCase()}${
@@ -400,8 +411,8 @@ let $body = JSON.stringify(${paramsInBody.length > 1 ? `[` : ``}${paramsInBody
     });
       return ${responseVarName}.data;
     } catch (err) {
-      if (this.${errorHandlerPropertyName} && this.${errorHandlerPropertyName}.${op}) {
-        return this.${errorHandlerPropertyName}.${op}(err);
+      if (this.${errorHandlerPropertyName} && this.${errorHandlerPropertyName}.${operationName}) {
+        return this.${errorHandlerPropertyName}.${operationName}(err);
       } else {
         throw err;
       }
@@ -431,8 +442,8 @@ function renderOperations(
 ) {
   const routePrefix = config.routePrefix || "";
   return `${Object.keys(config.operations)
-    .map(op => {
-      const operation = config.operations[op];
+    .map(operationName => {
+      const operation = config.operations[operationName];
       const {
         method,
         bodyArguments,
@@ -442,20 +453,20 @@ function renderOperations(
         route,
         routeArguments,
         queryArguments
-      } = getOperationDetails(operation, op);
+      } = getOperationDetails(operation, operationName);
 
       if (method === "get" && bodyArguments.length) {
         throw new Error(
           `Service "${
             config.name
-          }" : operation "${op}" has method GET and body parameters "${bodyArguments
-            .map(d => d.name)
+          }" : operation "${operationName}" has method GET and body parameters "${bodyArguments
+            .map(argument => argument.name)
             .join("\n")}". Fix this to continue.`
         );
       }
       const optionsVarName = findNonCollidingName(
         "options",
-        (inMessage.data || []).map(m => m.name)
+        (inMessage.data || []).map(argument => argument.name)
       );
       return `  /**
    *${(operation.description ? ` ${operation.description}` : "").replace(
@@ -475,14 +486,14 @@ ${(inMessage.data || [])
   .join("")}   * @returns${addSpace(
         ((outMessage.data || []).length > 1 ? wrap("[", "]") : identityStr)(
           (outMessage.data || [])
-            .map(d => {
-              return (d.description || "").trim();
+            .map(argument => {
+              return (argument.description || "").trim();
             })
             .join(", ")
         )
       )}
    */
-  public async ${op}(${(inMessage.data || [])
+  public async ${operationName}(${(inMessage.data || [])
         .map(par => {
           return `${par.name}: ${typeName(
             par.type,
@@ -528,7 +539,7 @@ ${(inMessage.data || [])
       nschema,
       context,
       outMessage,
-      op,
+      operationName,
       optionsVarName,
       endpointPropertyName,
       errorHandlerPropertyName
@@ -547,20 +558,21 @@ ${Object.keys(config.producerContexts || {})
     }
     const pContext = config.producerContexts[contextName];
     const description = pContext.description || "";
-    pContext.operations.forEach(op => {
-      if (!config.operations[op]) {
+    pContext.operations.forEach(operationName => {
+      if (!config.operations[operationName]) {
         throw new Error(
-          `Unable to generate producer context ${contextName} for service ${config.namespace ||
-            ""} :: ${
+          `Unable to generate producer context ${contextName} for service ${
+            config.namespace || ""
+          } :: ${
             config.name
-          } because it defines a non-existent operation ${op}.`
+          } because it defines a non-existent operation ${operationName}.`
         );
       }
     });
     const contextOperations: {
       [name: string]: NSchemaRestOperation;
     } = Object.keys(config.operations)
-      .filter(k => pContext.operations.includes(k))
+      .filter(operationName => pContext.operations.includes(operationName))
       .reduce((acc: { [name: string]: NSchemaRestOperation }, next) => {
         acc[next] = config.operations[next];
         return acc;
@@ -575,8 +587,9 @@ ${Object.keys(config.producerContexts || {})
           ).find(operationArg => operationArg.name === arg);
           if (!operationArgument) {
             throw new Error(
-              `Unable to generate producer context ${contextName} for service ${config.namespace ||
-                ""} :: ${
+              `Unable to generate producer context ${contextName} for service ${
+                config.namespace || ""
+              } :: ${
                 config.name
               } because all of it's operations don't have the ${arg} argument.`
             );
@@ -608,8 +621,9 @@ ${Object.keys(config.producerContexts || {})
       );
       if (!isValidType) {
         throw new Error(
-          `Unable to generate producer context ${contextName} for service ${config.namespace ||
-            ""} :: ${
+          `Unable to generate producer context ${contextName} for service ${
+            config.namespace || ""
+          } :: ${
             config.name
           } because all of it's operations don't have the same type for their ${arg} argument.`
         );
@@ -631,9 +645,9 @@ ${Object.keys(config.producerContexts || {})
       .join(", ")}) {
     return {
 ${Object.keys(contextOperations)
-  .map(op => {
-    const operation = contextOperations[op];
-    return `      ${op}: (${(operation.inMessage.data || [])
+  .map(contextOperationName => {
+    const operation = contextOperations[contextOperationName];
+    return `      ${contextOperationName}: (${(operation.inMessage.data || [])
       .filter(({ name }) => !operationArguments.find(arg => arg.name === name))
       .map(
         arg =>
@@ -648,7 +662,9 @@ ${Object.keys(contextOperations)
             true
           )}`
       )
-      .join(", ")}) => this.${op}(${(operation.inMessage.data || [])
+      .join(", ")}) => this.${contextOperationName}(${(
+      operation.inMessage.data || []
+    )
       .map(arg => arg.name)
       .join(", ")})`;
   })
@@ -700,10 +716,10 @@ ${computeImportMatrix(
   }
 export interface ${config.name}ErrorHandler {
 ${Object.keys(config.operations)
-  .map(op => {
-    const operation = config.operations[op];
+  .map(operationName => {
+    const operation = config.operations[operationName];
     const outMessage = operation.outMessage;
-    return `  ${op}?(error: any): ${deferredType}<${messageType(
+    return `  ${operationName}?(error: any): ${deferredType}<${messageType(
       nschema,
       context,
       false,

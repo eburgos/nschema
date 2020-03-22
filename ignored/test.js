@@ -9,5 +9,5 @@ if (item.indexOf("/") !== 0) {
     item = path.resolve(process.cwd(), item);
 }
 logging_1.setLogLevel("Debug");
-const r = require(item);
-nschema_1.generate(nschema_1.getConfig(path.dirname(item)), r);
+const definition = require(item);
+nschema_1.generate(nschema_1.getConfig(path.dirname(item)), definition);

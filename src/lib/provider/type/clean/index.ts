@@ -45,9 +45,9 @@ function deleteFolderRecursive(folderPath: string, simulate: boolean) {
     }
   }
 }
-async function execute(parentConfig: CleanTask, _nschema: NSchemaInterface) {
-  const arr = (parentConfig.target || []).map(i => {
-    return i.location;
+async function execute(parentConfig: CleanTask) {
+  const arr = (parentConfig.target || []).map(target => {
+    return target.location;
   });
   const len = arr.length;
 

@@ -63,21 +63,21 @@ function enumTemplate(data: FSharpObject) {
 }
 
 function classTemplate(data: FSharpObject, nschema: NSchemaInterface) {
-  const i = data.append ? 1 : 0;
+  const indentIndex = data.append ? 1 : 0;
   return `${data.append ? " and " : ""}${indent(
-    i,
+    indentIndex,
     "  "
   )}[<System.CLSCompliant (true)>]
-  ${indent(i, "  ")}[<System.Serializable ()>]
-  ${indent(i, "  ")}[<DataContract>]
-  ${indent(i, "  ")}[<AllowNullLiteral>]
-  ${indent(i, "  ")}${data.append ? "" : "type "}${data.name}() =
+  ${indent(indentIndex, "  ")}[<System.Serializable ()>]
+  ${indent(indentIndex, "  ")}[<DataContract>]
+  ${indent(indentIndex, "  ")}[<AllowNullLiteral>]
+  ${indent(indentIndex, "  ")}${data.append ? "" : "type "}${data.name}() =
   ${
     !data.implements
       ? ""
       : `${data.implements
           .map(imp => {
-            return `${indent(i, "  ")}  implements ${fsharp.typeName(
+            return `${indent(indentIndex, "  ")}  implements ${fsharp.typeName(
               imp,
               nschema,
               data.namespace || ""
@@ -99,12 +99,12 @@ function classTemplate(data: FSharpObject, nschema: NSchemaInterface) {
               $nschemaType.namespace || data.namespace || "",
               $nschemaType.name
             );
-      return `${indent(i, "  ")}  /// <summary>${data.description ||
+      return `${indent(indentIndex, "  ")}  /// <summary>${data.description ||
         ""}</summary>
-      ${indent(i, "  ")}  ${
+      ${indent(indentIndex, "  ")}  ${
         $registeredType && $registeredType.subType === "enumeration"
           ? `[<JsonConverter(typeof<StringEnumConverter>)>]
-${indent(i, "  ")}  `
+${indent(indentIndex, "  ")}  `
           : ""
       }${
         property.options && property.options.ignoreSerialization

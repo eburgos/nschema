@@ -32,10 +32,15 @@ export interface MessageTask
   type: "message";
 }
 
-function getMessage(ns: string, name: string, nschema: NSchemaInterface) {
-  const filtered = nschema.context.messages.filter(m => {
+function getMessage(
+  namespace: string,
+  name: string,
+  nschema: NSchemaInterface
+) {
+  const filtered = nschema.context.messages.filter(message => {
     return (
-      (m.namespace || "") === (ns || "") && (m.name || "") === (name || "")
+      (message.namespace || "") === (namespace || "") &&
+      (message.name || "") === (name || "")
     );
   });
   if (filtered.length) {

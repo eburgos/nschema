@@ -3,13 +3,17 @@ import { GRPCBundle, GRPCService } from "../../lib/provider/target/gRPC";
 import { ObjectTask } from "../../lib/provider/type/object";
 import model from "./routeGuideModel";
 
-function isObjectTask(t: NSchemaTask): t is ObjectTask {
-  return t.type === "object";
+function isObjectTask(task: NSchemaTask): task is ObjectTask {
+  return task.type === "object";
 }
 
 const messagesNamespace = model.namespace;
-const Point = model.list.filter(isObjectTask).find(i => i.name === "Point");
-const Feature = model.list.filter(isObjectTask).find(i => i.name === "Feature");
+const Point = model.list
+  .filter(isObjectTask)
+  .find(models => models.name === "Point");
+const Feature = model.list
+  .filter(isObjectTask)
+  .find(models => models.name === "Feature");
 
 if (!Point) {
   throw new Error("Point message is undefined");

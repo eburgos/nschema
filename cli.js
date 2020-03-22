@@ -1,11 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const tslib_1 = require("tslib");
-const minimist = require("minimist");
+const yargs = require("yargs");
 const path_1 = require("path");
 const logging_1 = require("./lib/logging");
 const nschema_1 = require("./lib/nschema");
-const argv = minimist(process.argv.slice(2));
+const argv = yargs(process.argv.slice(2)).argv;
 const files = argv._;
 if (argv.logLevel) {
     logging_1.setLogLevel(argv.logLevel);
@@ -15,19 +14,19 @@ if (argv.features) {
 }
 else {
     files
-        .reduce((acc, item) => tslib_1.__awaiter(void 0, void 0, void 0, function* () {
-        return acc.then(() => tslib_1.__awaiter(void 0, void 0, void 0, function* () {
+        .reduce(async (acc, item) => {
+        return acc.then(async () => {
             if (item.indexOf("/") !== 0) {
                 item = path_1.resolve(process.cwd(), item);
             }
-            const r = require(item);
-            return nschema_1.generate(nschema_1.getConfig(path_1.dirname(item)), r.default ? r.default : r);
-        }));
-    }), Promise.resolve())
+            const requiredItem = require(item);
+            return nschema_1.generate(nschema_1.getConfig(path_1.dirname(item)), requiredItem.default ? requiredItem.default : requiredItem);
+        });
+    }, Promise.resolve())
         .then(() => {
         process.exit(0);
-    }, e => {
-        console.error(e);
+    }, err => {
+        console.error(err);
         process.exit(1);
     });
 }

@@ -74,52 +74,46 @@ const fsharp: FSharp = {
   },
   async init(nschema: NSchemaInterface) {
     const providerPath = pathResolve(__dirname, "bind");
-    return Promise.all(
+    await Promise.all(
       readdirSync(providerPath)
         .filter(item => {
           return statSync(pathResolve(providerPath, item)).isDirectory();
         })
-        .map(d => {
-          return readdirSync(pathResolve(providerPath, d)).map(i => {
-            return pathResolve(providerPath, d, i);
-          });
+        .map(directoryPath => {
+          return readdirSync(pathResolve(providerPath, directoryPath)).map(
+            item => {
+              return pathResolve(providerPath, directoryPath, item);
+            }
+          );
         })
-        .reduce((a, b) => {
-          return a.concat(b);
+        .reduce((accumulated, next) => {
+          return accumulated.concat(next);
         })
         .filter(item => {
           return extname(item) === ".js" && existsSync(item);
         })
         .map(require)
-        .map(async m => {
-          if (m.default) {
-            m = m.default;
+        .map(async requiredModule => {
+          if (requiredModule.default) {
+            requiredModule = requiredModule.default;
           }
 
-          return new Promise<boolean>((resolve, reject) => {
-            if (typeof m.init === "function") {
-              m.init(nschema).then(
-                () => {
-                  resolve(true);
-                },
-                (err: Error) => {
-                  reject(err);
-                }
-              );
-            } else {
-              resolve(true);
-            }
-          });
+          if (typeof requiredModule.init === "function") {
+            await requiredModule.init(nschema);
+          }
+
+          return true;
         })
-    ).then(undefined, err => {
-      throw err;
-    });
+    );
   },
-  // tslint:disable-next-line:prefer-function-over-method
-  typeName($nschemaType: any, $nschema: NSchemaInterface, namespace: string) {
+
+  typeName(
+    $nschemaType: any,
+    $nschema: NSchemaInterface /*, namespace: string*/
+  ) {
     let result: string;
-    const typeMap = (t: string) => {
-      switch (t) {
+    const typeMap = (primitiveType: string) => {
+      switch (primitiveType) {
         case "int":
           return "int";
         case "float":
@@ -132,11 +126,11 @@ const fsharp: FSharp = {
     if (typeof $nschemaType === "string") {
       result = typeMap($nschemaType);
     } else if (typeof $nschemaType === "object") {
-      let ns = $nschemaType.namespace;
-      if (typeof ns === "undefined") {
-        ns = namespace || "";
+      let namespace = $nschemaType.namespace;
+      if (typeof namespace === "undefined") {
+        namespace = namespace || "";
       }
-      result = `${ns}.${$nschemaType.name}`;
+      result = `${namespace}.${$nschemaType.name}`;
     } else {
       result = typeMap("string");
     }
@@ -168,8 +162,8 @@ export function classHeader(data: FSharpObject) {
 `;
 }
 
-function $_typeMap(t: string) {
-  switch (t) {
+function defaultValueType(type: string) {
+  switch (type) {
     case "int":
       return "0";
     case "long":
@@ -186,8 +180,8 @@ function $_typeMap(t: string) {
   return "null";
 }
 
-function $_modifierMap(t: string, r: string) {
-  switch (t) {
+function modifierDefaultValue(type: string, customTypeName: string) {
+  switch (type) {
     case "list":
       return "[]";
     case "array":
@@ -195,19 +189,19 @@ function $_modifierMap(t: string, r: string) {
     case "option":
       return "None";
     case "System.Nullable":
-      return `(new (${r})())`;
+      return `(new (${customTypeName})())`;
   }
   return "null";
 }
 
-function $_isString($property: FSharpProperty) {
-  if ($property.type === "string") {
+function propertyIsStringType(property: FSharpProperty) {
+  if (property.type === "string") {
     return true;
-  } else if (typeof $property.type === "object") {
+  } else if (typeof property.type === "object") {
     if (
-      $property.type.namespace === "" &&
-      $property.type.name === "string" &&
-      !$property.type.modifier
+      property.type.namespace === "" &&
+      property.type.name === "string" &&
+      !property.type.modifier
     ) {
       return true;
     }
@@ -222,29 +216,25 @@ export function typeDefaultValue(
   $nschema: NSchemaInterface,
   namespace: string
 ) {
-  let $_result: string;
+  let result: string;
 
   if (
     typeof $property !== "undefined" &&
     typeof $property.defaultValue !== "undefined"
   ) {
-    $_result = $property.defaultValue;
-    if ($_isString($property)) {
-      $_result = `"${$_result}"`;
+    result = $property.defaultValue;
+    if (propertyIsStringType($property)) {
+      result = `"${result}"`;
     }
   } else if (typeof $property !== "undefined" && $property.init) {
-    $_result = `(new (${$fsharp.typeName(
-      $nschemaType,
-      $nschema,
-      namespace
-    )})())`;
+    result = `(new (${$fsharp.typeName($nschemaType, $nschema, namespace)})())`;
   } else if (typeof $nschemaType === "string") {
-    $_result = $_typeMap($nschemaType);
+    result = defaultValueType($nschemaType);
   } else if (typeof $nschemaType === "object") {
     if ($nschemaType.modifier) {
       const $modifier = $nschemaType.modifier;
       if (typeof $modifier === "string") {
-        $_result = $_modifierMap(
+        result = modifierDefaultValue(
           $modifier,
           $fsharp.typeName($nschemaType, $nschema, namespace)
         );
@@ -252,7 +242,7 @@ export function typeDefaultValue(
         const $mods = isArray($modifier) ? $modifier : [$modifier];
         const mod = $mods[$mods.length - 1];
 
-        $_result = $_modifierMap(
+        result = modifierDefaultValue(
           typeof mod === "string"
             ? mod
             : fsharp.typeName(mod, $nschema, namespace),
@@ -260,23 +250,16 @@ export function typeDefaultValue(
         );
       }
     } else {
-      $_result = `Unchecked.defaultof<${$fsharp.typeName(
+      result = `Unchecked.defaultof<${$fsharp.typeName(
         $nschemaType,
         $nschema,
         namespace
       )}>`;
-      /*                if ((typeof($nschemaType) === 'object') && ($registeredType) && ($registeredType.subType === 'enumeration')) {
-                  $_result = 'Unchecked.defaultof<' + $registeredType.namespace + '.' + $registeredType.name + '>';
-              }
-              else {
-                  $_result = 'null';
-              }
-*/
     }
   } else {
-    $_result = $_typeMap("string");
+    result = defaultValueType("string");
   }
-  return ``;
+  return result;
 }
 
 export function messageType() {

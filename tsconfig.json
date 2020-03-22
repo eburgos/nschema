@@ -6,7 +6,7 @@
     "removeComments": true,
     "preserveConstEnums": true,
     "sourceMap": false,
-    "target": "es6",
+    "target": "es2017",
     "importHelpers": true,
     "isolatedModules": false,
     "moduleResolution": "node",

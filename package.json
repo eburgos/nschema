@@ -9,6 +9,8 @@
   },
   "main": "lib/nschema",
   "dependencies": {
+    "@types/js-yaml": "^3.12.2",
+    "@types/prettier": "^1.19.0",
     "chalk": "^3.0.0",
     "immutability-helper": "^3.0.1",
     "js-yaml": "^3.13.1",
@@ -20,9 +22,7 @@
   "devDependencies": {
     "@angular/core": "^4.0.2",
     "@angular/http": "^4.0.2",
-    "@types/js-yaml": "^3.12.2",
     "@types/node": "^13.9.2",
-    "@types/prettier": "^1.19.0",
     "@types/yargs": "^15.0.4",
     "@typescript-eslint/eslint-plugin": "^2.24.0",
     "@typescript-eslint/parser": "^2.24.0",

@@ -32,17 +32,10 @@ module.exports = {
       }
     ],
     "@typescript-eslint/ban-ts-ignore": ["error"],
-    // "@typescript-eslint/no-floating-promises": ["error"],
+    "@typescript-eslint/no-floating-promises": ["error"],
     "@typescript-eslint/no-inferrable-types": ["error"],
     "@typescript-eslint/no-magic-numbers": 0,
-    "@typescript-eslint/no-this-alias": ["error"]
-    // "@typescript-eslint/prefer-string-starts-ends-with": ["error"],
-    // "@typescript-eslint/promise-function-async": ["error"]
-    // "@typescript-eslint/require-await": ["error"]
-  },
-  settings: {
-    react: {
-      version: "latest"
-    }
+    "@typescript-eslint/no-this-alias": ["error"],
+    "@typescript-eslint/prefer-string-starts-ends-with": ["error"]
   }
 };

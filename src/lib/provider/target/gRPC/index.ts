@@ -171,19 +171,18 @@ export class GRPC {
       });
     } else {
       const location = target.location;
-      const filepath =
-        location.indexOf(".") === 0
-          ? pathResolve(
-              process.cwd(),
-              location,
-              config.namespace || "",
-              target.$fileName || `${config.name}.proto`
-            )
-          : pathResolve(
-              location,
-              config.namespace || "",
-              config.$fileName || `${config.name}.proto`
-            );
+      const filepath = location.startsWith(".")
+        ? pathResolve(
+            process.cwd(),
+            location,
+            config.namespace || "",
+            target.$fileName || `${config.name}.proto`
+          )
+        : pathResolve(
+            location,
+            config.namespace || "",
+            config.$fileName || `${config.name}.proto`
+          );
 
       writeLog(LogLevel.Default, `gRPC: writing to file: ${filepath}`);
       await nschema.writeFile(filepath, result);

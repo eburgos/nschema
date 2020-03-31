@@ -87,19 +87,18 @@ export class TypeScript {
       });
     } else {
       const location = target.location;
-      const filepath =
-        location.indexOf(".") === 0
-          ? pathResolve(
-              process.cwd(),
-              location,
-              config.namespace || "",
-              target.$fileName || `${config.name}.ts`
-            )
-          : pathResolve(
-              location,
-              config.namespace || "",
-              config.$fileName || `${config.name}.ts`
-            );
+      const filepath = location.startsWith(".")
+        ? pathResolve(
+            process.cwd(),
+            location,
+            config.namespace || "",
+            target.$fileName || `${config.name}.ts`
+          )
+        : pathResolve(
+            location,
+            config.namespace || "",
+            config.$fileName || `${config.name}.ts`
+          );
 
       writeLog(
         LogLevel.Default,

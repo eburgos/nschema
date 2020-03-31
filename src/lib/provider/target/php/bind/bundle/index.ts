@@ -117,17 +117,16 @@ namespace ${(parentConfig.namespace || "").replace(/\./g, "\\")};
 ${result}`;
 
   const location = target.location;
-  const filepath =
-    location.indexOf(".") === 0
-      ? pathResolve(
-          process.cwd(),
-          location,
-          target.$fileName || config.$fileName || `${config.namespace}.php`
-        )
-      : pathResolve(
-          location,
-          target.$fileName || config.$fileName || `${config.namespace}.php`
-        );
+  const filepath = location.startsWith(".")
+    ? pathResolve(
+        process.cwd(),
+        location,
+        target.$fileName || config.$fileName || `${config.namespace}.php`
+      )
+    : pathResolve(
+        location,
+        target.$fileName || config.$fileName || `${config.namespace}.php`
+      );
 
   writeLog(
     LogLevel.Default,

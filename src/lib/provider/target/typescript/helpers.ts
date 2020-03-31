@@ -67,8 +67,8 @@ function renderImportLine(
 }
 
 function renderImport(importNames: string[], modulePath: string) {
-  const starred = importNames.filter(name => name.startsWith("*"));
-  const normalExports = importNames.filter(name => !name.startsWith("*"));
+  const starred = importNames.filter((name) => name.startsWith("*"));
+  const normalExports = importNames.filter((name) => !name.startsWith("*"));
 
   return `${
     starred.length ? renderImportLine(starred, modulePath, noWrap) : ""
@@ -93,22 +93,22 @@ export function computeImportMatrix(
   const rootContext = {
     imports: {} as { [name: string]: { [name: string]: string | boolean } }
   };
-  Object.keys(context.imports).forEach(contextImport => {
+  Object.keys(context.imports).forEach((contextImport) => {
     if (!rootContext.imports[contextImport]) {
       rootContext.imports[contextImport] = {};
     }
     const namespace = context.imports[contextImport];
-    Object.keys(namespace).forEach(name => {
+    Object.keys(namespace).forEach((name) => {
       rootContext.imports[contextImport][name] =
         context.imports[contextImport][name];
     });
   });
 
   const sortedImports = Object.keys(rootContext.imports)
-    .filter(contextImport => {
+    .filter((contextImport) => {
       return contextImport !== localNamespace;
     })
-    .map(contextImport => {
+    .map((contextImport) => {
       return {
         imports: rootContext.imports[contextImport],
         modulePath:
@@ -124,10 +124,10 @@ export function computeImportMatrix(
 
   sortedImports.sort(moduleSort);
 
-  const lines = sortedImports.map(sortedImport => {
+  const lines = sortedImports.map((sortedImport) => {
     const sorted = Object.keys(sortedImport.imports);
     sorted.sort(importsSort);
-    const importNames = sorted.map(importName =>
+    const importNames = sorted.map((importName) =>
       typeof sortedImport.imports[importName] === "string"
         ? `${importName} as ${sortedImport.imports[importName]}`
         : importName
@@ -299,7 +299,7 @@ function getDataItems(
       nsMessage.extends.name
     );
     if (parent) {
-      getDataItems(parent, $nschema).forEach(dataItem => {
+      getDataItems(parent, $nschema).forEach((dataItem) => {
         dataItems.push(dataItem);
       });
     } else {
@@ -311,7 +311,7 @@ function getDataItems(
       throw new Error("Could not find parent message");
     }
   }
-  (nsMessage.data || []).forEach(item => {
+  (nsMessage.data || []).forEach((item) => {
     dataItems.push(item);
   });
   return dataItems;

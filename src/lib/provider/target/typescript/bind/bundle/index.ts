@@ -125,17 +125,16 @@ ${imports}`
   });
 
   const location = newTarget.location;
-  const filepath =
-    location.indexOf(".") === 0
-      ? pathResolve(
-          process.cwd(),
-          location,
-          newTarget.$fileName || config.$fileName || `${config.namespace}.ts`
-        )
-      : pathResolve(
-          location,
-          newTarget.$fileName || config.$fileName || `${config.namespace}.ts`
-        );
+  const filepath = location.startsWith(".")
+    ? pathResolve(
+        process.cwd(),
+        location,
+        newTarget.$fileName || config.$fileName || `${config.namespace}.ts`
+      )
+    : pathResolve(
+        location,
+        newTarget.$fileName || config.$fileName || `${config.namespace}.ts`
+      );
 
   writeLog(
     LogLevel.Default,

@@ -16,6 +16,7 @@
     "js-yaml": "^3.13.1",
     "prettier": "^2.0.1",
     "prettify-json": "^1.0.0",
+    "redoc": "^2.0.0-rc.24",
     "tslib": "^1.11.1",
     "yargs": "^15.3.1"
   },
@@ -39,9 +40,8 @@
     "scripts": {}
   },
   "scripts": {
-    "lint": "./node_modules/.bin/eslint . --ext .ts,.tsx --fix",
-    "tsc": "npx tsc",
-    "build": "yarn run tsc && yarn run ts-lint"
+    "lint": "yarn run eslint . --ext .ts,.tsx --fix",
+    "build": "yarn run tsc && yarn run lint"
   },
   "contributors": [
     "Eduardo Burgos <eburgos@gmail.com> (http://www.eduardoburgos.com/)"

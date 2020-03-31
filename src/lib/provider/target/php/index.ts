@@ -77,15 +77,14 @@ export async function phpGenerate(
     });
   } else {
     const location = target.location;
-    const filepath =
-      location.indexOf(".") === 0
-        ? pathResolve(
-            process.cwd(),
-            location,
-            config.namespace || "",
-            target.$fileName || `${config.name}.php`
-          )
-        : pathResolve(location, config.namespace || "", `${config.name}.php`);
+    const filepath = location.startsWith(".")
+      ? pathResolve(
+          process.cwd(),
+          location,
+          config.namespace || "",
+          target.$fileName || `${config.name}.php`
+        )
+      : pathResolve(location, config.namespace || "", `${config.name}.php`);
 
     writeLog(
       LogLevel.Default,

@@ -49,19 +49,18 @@ const fsharp: FSharp = {
     const config = deepClone(nsconfig);
     const result = template(config, nschema, {}, target);
     const location = target.location;
-    const filepath =
-      location.indexOf(".") === 0
-        ? pathResolve(
-            process.cwd(),
-            location,
-            config.namespace || "",
-            target.$fileName || `${config.name}.fs`
-          )
-        : pathResolve(
-            location,
-            config.namespace || "",
-            config.$fileName || `${config.name}.fs`
-          );
+    const filepath = location.startsWith(".")
+      ? pathResolve(
+          process.cwd(),
+          location,
+          config.namespace || "",
+          target.$fileName || `${config.name}.fs`
+        )
+      : pathResolve(
+          location,
+          config.namespace || "",
+          config.$fileName || `${config.name}.fs`
+        );
 
     writeLog(
       LogLevel.Default,

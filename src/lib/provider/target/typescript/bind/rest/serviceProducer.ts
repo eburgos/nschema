@@ -25,9 +25,11 @@ import {
   sortAlphabetically
 } from "./common";
 
-function requestArgsType(method: string) {
+function requestArgsType(method: string, encoding: "json" | "querystring") {
   return `{
-      data: any | undefined;
+      data: ${
+        encoding === "json" ? `string` : `{ [name:string]: any } | undefined`
+      };
       handleAs: string;
       headers: { [name: string]: string };
       method: "${method}";
@@ -290,7 +292,7 @@ const requestOptionsPart = {
     encoding: "json" | "querystring",
     context: TypeScriptContext
   ) => {
-    return `: ${requestArgsType(method)} = ${buildRequest(
+    return `: ${requestArgsType(method, encoding)} = ${buildRequest(
       method,
       route,
       routePrefix,
@@ -721,7 +723,7 @@ ${Object.keys(config.operations)
   .map((operationName) => {
     const operation = config.operations[operationName];
     const outMessage = operation.outMessage;
-    return `  ${operationName}?(error: any): ${deferredType}<${messageType(
+    return `  ${operationName}?(error: Error): ${deferredType}<${messageType(
       nschema,
       context,
       false,

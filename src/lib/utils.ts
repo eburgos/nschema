@@ -38,7 +38,7 @@ export function caseInsensitiveSorter<T>(mapper: (s: T) => string) {
 }
 
 export function isRelativePath(path: string) {
-  return path[0] === "." || path[0] === "/";
+  return path.startsWith(".") || path.startsWith("/");
 }
 
 export function wrap(left: string, right: string) {
@@ -132,7 +132,7 @@ export function indent(amount: number, seed: string) {
 }
 
 export function isValidCriteriaProperty(key: string) {
-  return key !== "location" && key.indexOf("$") !== 0;
+  return key !== "location" && !key.startsWith("$");
 }
 
 export function prettyJson(obj: any) {

@@ -136,7 +136,7 @@ export class NObject {
     }
     const grpc = this.grpc;
 
-    nschema.registerTarget({
+    await nschema.registerTarget({
       description: "Generate gRPC models for your nineschema definitions",
       language: "gRPC",
       name: "gRPC/object",
@@ -158,7 +158,7 @@ export class NObject {
       }
     });
 
-    nschema.registerTarget({
+    await nschema.registerTarget({
       description: "Generate gRPC services for your nineschema definitions",
       language: "gRPC",
       name: "gRPC/service",

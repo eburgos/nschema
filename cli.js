@@ -10,13 +10,13 @@ if (argv.logLevel) {
     logging_1.setLogLevel(argv.logLevel);
 }
 if (argv.features) {
-    nschema_1.features();
+    nschema_1.features().then(undefined, console.error);
 }
 else {
     files
         .reduce(async (acc, item) => {
         return acc.then(async () => {
-            if (item.indexOf("/") !== 0) {
+            if (!item.startsWith("/")) {
                 item = path_1.resolve(process.cwd(), item);
             }
             const requiredItem = require(item);

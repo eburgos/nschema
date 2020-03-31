@@ -118,14 +118,13 @@ ${imports}${"\n"}
 ${result}`;
 
   const location = newTarget.location;
-  const filepath =
-    location.indexOf(".") === 0
-      ? pathResolve(
-          process.cwd(),
-          location,
-          newTarget.$fileName || `${config.namespace}.proto`
-        )
-      : pathResolve(location, config.$fileName || `${config.namespace}.proto`);
+  const filepath = location.startsWith(".")
+    ? pathResolve(
+        process.cwd(),
+        location,
+        newTarget.$fileName || `${config.namespace}.proto`
+      )
+    : pathResolve(location, config.$fileName || `${config.namespace}.proto`);
 
   writeLog(
     LogLevel.Default,

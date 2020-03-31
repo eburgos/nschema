@@ -345,7 +345,7 @@ ${
 };
 
 async function init(nschema: NSchemaInterface) {
-  nschema.registerTarget({
+  await nschema.registerTarget({
     bind: "rest",
     description: "Generate php services from your nineschema definitions",
     language: "php",
@@ -370,7 +370,7 @@ async function init(nschema: NSchemaInterface) {
       );
     }
   });
-  return Promise.resolve(true);
+  return true;
 }
 
 export default { init };

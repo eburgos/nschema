@@ -15,7 +15,6 @@ async function baseGenerate(
   config: ServiceTask,
   nschema: NSchemaInterface,
   target: Target,
-  // TODO: Remove any
   template: TemplateFunction<any, TypeScriptContext>,
   typescript: TypeScript,
   context: object
@@ -276,7 +275,7 @@ export class AmqpRpc {
     }
     const typescript = this.typescript;
 
-    [
+    await [
       {
         name: "typescript/amqpRpc-server",
         serviceType: "consumer",
@@ -287,8 +286,8 @@ export class AmqpRpc {
         serviceType: "producer",
         template: templates.producer
       }
-    ].forEach(({ template, serviceType, name }) => {
-      nschema.registerTarget({
+    ].map(({ template, serviceType, name }) => {
+      return nschema.registerTarget({
         bind: "amqpRpc",
         description:
           "Generates a service layer where messages get sent over an AMQP protocol",
@@ -313,7 +312,6 @@ export class AmqpRpc {
         }
       });
     });
-    return Promise.resolve(null);
   }
 }
 

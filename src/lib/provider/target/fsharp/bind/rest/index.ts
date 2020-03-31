@@ -488,11 +488,11 @@ const templates: {
 
 const rest = {
   async init(nschema: NSchemaInterface) {
-    [
+    await [
       { template: templates.consumer, serviceType: "consumer" },
       { template: templates.producer, serviceType: "producer" }
-    ].forEach(({ template, serviceType }) => {
-      nschema.registerTarget({
+    ].map(({ template, serviceType }) => {
+      return nschema.registerTarget({
         bind: "rest",
         description: "Rest services in fsharp",
         language: "fsharp",
@@ -508,7 +508,6 @@ const rest = {
         }
       });
     });
-    return Promise.resolve(null);
   }
 };
 

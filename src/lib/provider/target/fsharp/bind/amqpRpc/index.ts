@@ -262,11 +262,11 @@ const templates: {
 
 const amqprpc = {
   async init(nschema: NSchemaInterface) {
-    [
+    await [
       { template: templates.consumer, serviceType: "consumer" },
       { template: templates.producer, serviceType: "producer" }
-    ].forEach(({ template, serviceType }) => {
-      nschema.registerTarget({
+    ].map(({ template, serviceType }) => {
+      return nschema.registerTarget({
         bind: "amqpRpc",
         description:
           "Generates a service layer where messages get sent over an AMQP protocol",
@@ -283,7 +283,6 @@ const amqprpc = {
         }
       });
     });
-    return Promise.resolve(null);
   }
 };
 

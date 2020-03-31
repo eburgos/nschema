@@ -65,8 +65,8 @@ function renderImportLine(
 }
 
 function renderImport(importNames: string[], modulePath: string) {
-  const starred = importNames.filter((name) => name[0] === "*");
-  const normalExports = importNames.filter((name) => name[0] !== "*");
+  const starred = importNames.filter((name) => name.startsWith("*"));
+  const normalExports = importNames.filter((name) => !name.startsWith("*"));
 
   return `${
     starred.length ? renderImportLine(starred, modulePath, noWrap) : ""
@@ -108,8 +108,7 @@ export function computeImportMatrix(
       return {
         imports: rootContext.imports[importName],
         modulePath:
-          importName.indexOf("{") === 0 &&
-          importName.lastIndexOf("}") === importName.length - 1
+          importName.startsWith("{") && importName.endsWith("}")
             ? importName.slice(1, importName.length - 1)
             : namespaceMapping[importName] ||
               (isRelativePath(importName) ? importName : `./${importName}`),

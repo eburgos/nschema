@@ -147,7 +147,7 @@ const objectTemplate: TemplateFunction<
 
 const obj = {
   async init(nschema: NSchemaInterface) {
-    nschema.registerTarget({
+    await nschema.registerTarget({
       description: "Generate fsharp models for your nineschema definitions",
       language: "fsharp",
       name: "fsharp/object",

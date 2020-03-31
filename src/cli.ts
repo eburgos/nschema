@@ -14,12 +14,12 @@ if (argv.logLevel) {
 }
 
 if (argv.features) {
-  features();
+  features().then(undefined, console.error);
 } else {
   files
     .reduce(async (acc, item) => {
       return acc.then(async () => {
-        if (item.indexOf("/") !== 0) {
+        if (!item.startsWith("/")) {
           item = pathResolve(process.cwd(), item);
         }
         const requiredItem = require(item);

@@ -140,7 +140,7 @@ async function serverlessPostGen(
   }
   const yamlPath: string = serverless.yamlPath;
   let routePrefix = config.routePrefix || "";
-  if (routePrefix.indexOf("/") === 0) {
+  if (routePrefix.startsWith("/")) {
     routePrefix = routePrefix.substr(1);
   }
   const realYamlPath = path.resolve(tgt.location, yamlPath);
@@ -192,19 +192,18 @@ async function serverlessPostGen(
   result.generated = `${imports}${"\n"}${result.generated}`;
 
   const location = target.location;
-  const filepath =
-    location.indexOf(".") === 0
-      ? path.resolve(
-          process.cwd(),
-          location,
-          config.namespace || "",
-          target.$fileName || `${config.name}.ts`
-        )
-      : path.resolve(
-          location,
-          config.namespace || "",
-          config.$fileName || `${config.name}.ts`
-        );
+  const filepath = location.startsWith(".")
+    ? path.resolve(
+        process.cwd(),
+        location,
+        config.namespace || "",
+        target.$fileName || `${config.name}.ts`
+      )
+    : path.resolve(
+        location,
+        config.namespace || "",
+        config.$fileName || `${config.name}.ts`
+      );
 
   writeLog(
     LogLevel.Default,

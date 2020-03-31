@@ -164,7 +164,7 @@ export class NObject {
     }
     const typescript = this.typescript;
 
-    nschema.registerTarget({
+    await nschema.registerTarget({
       description: "Generate typescript models for your nineschema definitions",
       language: "typescript",
       name: "typescript/object",
@@ -188,7 +188,7 @@ export class NObject {
         );
       }
     });
-    return Promise.resolve(true);
+    return true;
   }
 }
 const obj = new NObject();

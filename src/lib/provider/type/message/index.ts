@@ -103,8 +103,7 @@ const message: NSchemaPlugin = {
   execute,
   name: "message",
   async init(nschema: NSchemaInterface) {
-    nschema.register("type", this);
-    return Promise.resolve(null);
+    await nschema.register("type", this);
   },
   type: "type"
 };

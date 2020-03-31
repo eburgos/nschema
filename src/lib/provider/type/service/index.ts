@@ -135,8 +135,7 @@ const service: NSchemaPlugin = {
   name: "service",
   type: "type",
   async init(nschema: NSchemaInterface) {
-    nschema.register("type", this);
-    return Promise.resolve(null);
+    await nschema.register("type", this);
   }
 };
 

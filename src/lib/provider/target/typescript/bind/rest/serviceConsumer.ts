@@ -118,9 +118,9 @@ function renderConstructorForClass(
         route || operationName
       ).replace(/\{([^}]+?)\}/g, (_match, firstGroup) => {
         return `:${firstGroup}`;
-      })}"${
-        operation.cors ? `, cors()` : ""
-      }, bodyParser.json(), async (expressRequest, expressResponse) => {
+      })}"${operation.cors ? `, cors()` : ""}, bodyParser.json(${
+        operation.requestLimit ? `{ limit: "${operation.requestLimit}" }` : ""
+      }), async (expressRequest, expressResponse) => {
 
 ${routeArguments
   .map((argument) => {
@@ -136,7 +136,7 @@ ${routeArguments
           `expressRequest.query${renderPropertyAccessor(argument.name)}`
         )};
         `;
-      }).join(`,
+      }).join(`
         `)}${headerArguments.map((argument) => {
         return `const input${argument.name} = ${realTypeMap(
           argument,
@@ -167,7 +167,12 @@ ${routeArguments
         .join(", ")}, { request: expressRequest, response: expressResponse }));
             }
             catch (exception: { statusCode: number, message: string, stack: string }) {
-              expressResponse.status(exception.statusCode || 400).send(\`Bad request - $\{exception.message}\`);
+              if (exception.statusCode) {
+                expressResponse.sendStatus(exception.statusCode);
+              }
+              else {
+                expressResponse.status(400).send(\`Bad request - $\{exception.message}\`);
+              }
             }
         });`;
     })

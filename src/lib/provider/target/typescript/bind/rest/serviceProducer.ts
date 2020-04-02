@@ -28,7 +28,11 @@ import {
 function requestArgsType(method: string, encoding: "json" | "querystring") {
   return `{
       data: ${
-        encoding === "json" ? `string` : `{ [name:string]: any } | undefined`
+        method === "get"
+          ? "undefined"
+          : encoding === "json"
+          ? `string`
+          : `{ [name:string]: any } | undefined`
       };
       handleAs: string;
       headers: { [name: string]: string };

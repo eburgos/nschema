@@ -230,7 +230,7 @@ export function findTypeMap(
     case "bool":
       return "boolean";
     case "date":
-      return isParameter ? "Date | number" : "number";
+      return isParameter ? "Date" : "number";
     default:
       shouldNever(primitiveType, skipError);
       return undefined;

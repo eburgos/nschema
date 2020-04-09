@@ -24,7 +24,7 @@ export function realTypeMap(argument: RestMessageArgument, expr: string) {
     case "bool":
       return `(${expr} === "true")`;
     case "date":
-      return `(new Date(${expr}))`;
+      return `(Number.isNaN(Number.parseFloat(${expr})) ? new Date(${expr}) : new Date(Number.parseFloat(${expr})))`;
     default:
       return null;
   }

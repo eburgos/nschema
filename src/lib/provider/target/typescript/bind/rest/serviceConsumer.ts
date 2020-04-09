@@ -112,7 +112,7 @@ function renderConstructorForClass(
         context.imports["{cors}"]["default"] = "cors";
       }
 
-      return `    expressApp.${getHttpVerb(
+      return `    expressRouter.${getHttpVerb(
         operations[operationName].method || "get"
       ).toLowerCase()}("/${_config.routePrefix}${(
         route || operationName
@@ -198,7 +198,7 @@ export function render(
   if (!context.imports["{express}"]) {
     context.imports["{express}"] = {};
   }
-  context.imports["{express}"].Express = true;
+  context.imports["{express}"].Router = true;
   context.imports["{express}"].Request = true;
   context.imports["{express}"].Response = true;
 
@@ -214,7 +214,7 @@ ${renderOperationsInterface(
 
 export function ${camelize(
     config.name
-  )}Controller(expressApp: Express, implementation: ${config.name}) {
+  )}Controller(expressRouter: Router, implementation: ${config.name}) {
 
 
 ${renderConstructorForClass(nschema, context, config, config.operations)}

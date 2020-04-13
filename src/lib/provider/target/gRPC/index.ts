@@ -30,8 +30,7 @@ export function typeName(
   _nschema?: NSchemaInterface,
   namespace?: string,
   _name?: string,
-  context?: GRPCContext,
-  addFlowComment?: boolean
+  context?: GRPCContext
 ) {
   let result: string;
   const typeMap = (primitiveType: NSchemaPrimitiveType) => {
@@ -83,11 +82,8 @@ export function typeName(
       result = `(${result} ${modifierMap(item)})`;
     });
   }
-  if (addFlowComment) {
-    return `${result} /* :${result} */`;
-  } else {
-    return result;
-  }
+
+  return result;
 }
 
 function modifierMap(modifier: NSchemaModifier): string {
@@ -274,7 +270,6 @@ function getDataItems(
 export function messageType(
   nschema: NSchemaInterface,
   $context: GRPCContext,
-  addFlowComment: boolean,
   message: MessageTask
 ): string {
   const typeSeparator = ", ";
@@ -284,7 +279,7 @@ export function messageType(
     return "void";
   } else if (dataItems.length === 1) {
     const item = dataItems[0];
-    return `${typeName(item.type, nschema, "", "", $context, addFlowComment)}`;
+    return `${typeName(item.type, nschema, "", "", $context)}`;
   } else {
     return (
       `{ ${dataItems
@@ -294,8 +289,7 @@ export function messageType(
             nschema,
             "",
             "",
-            $context,
-            addFlowComment
+            $context
           )}`;
         })
         .join(typeSeparator)} }` || "void"

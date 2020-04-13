@@ -61,8 +61,6 @@ function renderImport(importNames: string[], modulePath: string) {
   }`;
 }
 
-const surroundWithFlow = wrap("/*:: ", " */");
-
 export function computeImportMatrix(
   localNamespace: string,
   namespaceMapping: { [name: string]: string },
@@ -109,9 +107,7 @@ export function computeImportMatrix(
     );
     return renderImport(importNames, importName.modulePath);
   });
-  return `${lines.join("\n")}${"\n"}${lines
-    .map(surroundWithFlow)
-    .join("\n")}${"\n"}`;
+  return `${lines.join("\n")}${"\n"}`;
 }
 
 const unQuotedPropertyRegex = /^[a-zA-Z_$][a-zA-Z0-9$_]*$/;

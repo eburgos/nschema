@@ -29,6 +29,10 @@ export { TypeScriptObject, TypeScriptMessage };
 
 declare let require: (name: string) => any;
 
+export interface TypeScriptTarget extends Target {
+  $header?: string;
+}
+
 export interface TypeScriptContext {
   hasTypeScript: true;
   id: number;
@@ -46,11 +50,19 @@ export interface TypeScriptContext {
   typescript: TypeScript;
 }
 
-export interface TypeScriptBundle extends BundleTask, HasFilenameMixin {}
+export function enableImport(context: TypeScriptContext, name: string) {
+  if (!context.imports[`{${name}}`]) {
+    context.imports[`{${name}}`] = {};
+  }
+  context.imports[`{${name}}`]["*"] = name;
+}
+
+export interface TypeScriptBundle
+  extends BundleTask<TypeScriptTarget>,
+    HasFilenameMixin {}
 
 export enum RestClientStrategy {
-  Default = "Default",
-  Angular2 = "Angular2"
+  Default = "Default"
 }
 
 export class TypeScript {
@@ -104,20 +116,18 @@ export class TypeScript {
         LogLevel.Default,
         `${blue("typescript")}: writing to file: ${green(filepath)}`
       );
-      return nschema
-        .writeFile(filepath, prettier.format(result, { parser: "typescript" }))
-        .then(
-          () => {
-            return {
-              config,
-              context,
-              generated: result
-            };
-          },
-          (err) => {
-            throw new Error(err);
-          }
-        );
+      return nschema.writeFile(filepath, formatCode(result)).then(
+        () => {
+          return {
+            config,
+            context,
+            generated: result
+          };
+        },
+        (err) => {
+          throw new Error(err);
+        }
+      );
     }
   }
   public async init(nschema: NSchemaInterface) {
@@ -213,7 +223,6 @@ function getDataItems(
 export function messageType(
   nschema: NSchemaInterface,
   context: TypeScriptContext,
-  addFlowComment: boolean,
   message: AnonymousMessage
 ): string {
   const typeSeparator = ", ";
@@ -223,16 +232,7 @@ export function messageType(
     return "void";
   } else if (dataItems.length === 1) {
     const item = dataItems[0];
-    return `${typeName(
-      item.type,
-      nschema,
-      "",
-      "",
-      context,
-      addFlowComment,
-      false,
-      true
-    )}`;
+    return `${typeName(item.type, nschema, "", "", context, false, true)}`;
   } else {
     return (
       `{ ${dataItems
@@ -243,7 +243,6 @@ export function messageType(
             "",
             "",
             context,
-            addFlowComment,
             false,
             true
           )}`;
@@ -251,6 +250,10 @@ export function messageType(
         .join(typeSeparator)} }` || "void"
     );
   }
+}
+
+export function formatCode(result: string) {
+  return prettier.format(result, { parser: "typescript" });
 }
 
 export default typescript;

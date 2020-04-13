@@ -176,7 +176,6 @@ export function renderFileHeader(
  * @param {(string | undefined)} namespace
  * @param {string} name
  * @param {PHPContext} context
- * @param {boolean} addFlowComment
  * @param {boolean} isParameter
  * @param {boolean} isRootTypeCall true if this function is not being called from within itself
  * @returns
@@ -187,7 +186,6 @@ export function typeName(
   namespace: string | undefined,
   name: string,
   context: PHPContext,
-  addFlowComment: boolean,
   isParameter: boolean,
   isRootTypeCall: boolean
 ) {
@@ -243,11 +241,8 @@ export function typeName(
       }
     });
   }
-  if (addFlowComment) {
-    return `${result} /* :${result} */`;
-  } else {
-    return result;
-  }
+
+  return result;
 }
 
 function modifierMap(
@@ -271,7 +266,6 @@ function modifierMap(
         namespace,
         name,
         context,
-        false,
         false,
         false
       );
@@ -330,7 +324,6 @@ export function messageType(
             nschemaMessage.name,
             context,
             true,
-            false,
             true
           )
         ]
@@ -342,7 +335,6 @@ export function messageType(
             nschemaMessage.name,
             context,
             true,
-            false,
             true
           )}`;
         });

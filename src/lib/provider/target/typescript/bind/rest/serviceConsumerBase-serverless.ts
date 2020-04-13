@@ -43,7 +43,7 @@ ${(inMessage.data || [])
        .map((argument) => {
          return (argument.description || "").replace(/\n/g, "\n   * ");
        })
-       .join(", ") || `{${messageType(nschema, context, false, outMessage)}}`
+       .join(", ") || `{${messageType(nschema, context, outMessage)}}`
    }
    */
   ${operationName}(${(inMessage.data || [])
@@ -55,7 +55,6 @@ ${(inMessage.data || [])
             name,
             context,
             true,
-            true,
             true
           )}`;
         })
@@ -64,7 +63,6 @@ ${(inMessage.data || [])
       }${contextVariable}: { event: any, context: any }): Promise<${messageType(
         nschema,
         context,
-        true,
         outMessage
       )}>;`;
     })
@@ -102,7 +100,7 @@ ${(inMessage.data || [])
        .map((argument) => {
          return (argument.description || "").replace(/\n/g, "\n   * ");
        })
-       .join(", ") || `{${messageType(nschema, context, false, outMessage)}}`
+       .join(", ") || `{${messageType(nschema, context, outMessage)}}`
    }
    */
   public abstract async ${operationName}(${(inMessage.data || [])
@@ -114,7 +112,6 @@ ${(inMessage.data || [])
             name,
             context,
             true,
-            true,
             true
           )}`;
         })
@@ -123,7 +120,6 @@ ${(inMessage.data || [])
       }$ctx?: { event: any, context: any } /*: { event: any, context: any } */): Promise<${messageType(
         nschema,
         context,
-        true,
         outMessage
       )}>;
 `;
@@ -153,7 +149,7 @@ ${(inMessage.data || [])
        .map((argument) => {
          return (argument.description || "").replace(/\n/g, "\n   * ");
        })
-       .join(", ") || `{${messageType(nschema, context, false, outMessage)}}`
+       .join(", ") || `{${messageType(nschema, context, outMessage)}}`
    }
    */
   protected async $raw${operationName}(${(inMessage.data || [])
@@ -165,7 +161,6 @@ ${(inMessage.data || [])
             name,
             context,
             true,
-            true,
             true
           )}`;
         })
@@ -174,7 +169,6 @@ ${(inMessage.data || [])
       }$ctx?: { event: any, context: any } /*: { event: any, context: any } */): Promise<${messageType(
         nschema,
         context,
-        true,
         outMessage
       )}> {
     this.emit("callStarted", { name: "${operationName}", timestamp: new Date() });

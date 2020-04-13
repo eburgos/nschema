@@ -48,9 +48,9 @@ export interface NSchemaProperty {
   type: NSchemaType;
 }
 
-export type NSchemaTask =
+export type NSchemaTask<T extends Target = Target> =
   | CleanTask
-  | BundleTask
+  | BundleTask<T>
   | ImportTask
   | ObjectTask
   | MessageTask
@@ -107,8 +107,8 @@ export interface HasFilenameMixin {
   $fileName?: string;
 }
 
-export interface HasTargetMixin {
-  target?: Target | Target[];
+export interface HasTargetMixin<T extends Target = Target> {
+  target?: T[];
 }
 
 export interface AppendableMixin {
@@ -127,11 +127,12 @@ export interface RestAnonymousMessage extends AnonymousMessage {
 }
 
 export interface NSchemaRestOperation extends NSchemaOperation {
+  cancellable?: boolean;
   cors?: boolean;
-  requestLimit?: number;
   inMessage: RestAnonymousMessage;
   method?: string;
   outMessage: RestAnonymousMessage;
+  requestLimit?: number;
   route?: string;
 }
 
@@ -147,7 +148,7 @@ export interface NSchemaContext {
 }
 
 export interface NSchemaTypeDefinition {
-  modifier?: NSchemaModifier | NSchemaModifier[];
+  modifier?: NSchemaModifier[];
   name: string;
   namespace?: string;
 }
@@ -162,7 +163,7 @@ export type NSchemaPrimitiveType = "string" | "int" | "float" | "bool" | "date";
 
 export interface NSchemaLiteralsUnionType {
   literals: string[];
-  modifier?: NSchemaModifier;
+  modifier?: NSchemaModifier[];
   name: "string";
   namespace: "";
 }
@@ -172,7 +173,7 @@ export type NSchemaType =
   | NSchemaPrimitiveType
   | NSchemaLiteralsUnionType;
 
-export interface AppendableProperties {
+export interface AppendableProperties<T extends Target = Target> {
   /*
    * append namespace. Part of the namespace that has to be appended to the parent's
    */
@@ -181,7 +182,7 @@ export interface AppendableProperties {
   /*
    * append target. Part of the target that has to be appended to the parent's
    */
-  $target?: Target | Target[];
+  $target?: T[];
 }
 
 export interface Target extends HasFilenameMixin {

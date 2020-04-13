@@ -83,8 +83,6 @@ function renderImport(importNames: string[], modulePath: string) {
   }`;
 }
 
-const surroundWithFlow = wrap("/*:: ", " */");
-
 export function computeImportMatrix(
   localNamespace: string,
   namespaceMapping: { [name: string]: string },
@@ -138,7 +136,6 @@ export function computeImportMatrix(
     return "";
   }
   return `${lines.join("\n")}
-${lines.map(surroundWithFlow).join("\n")}
 `;
 }
 
@@ -196,7 +193,6 @@ function modifierMap(
         name,
         context,
         false,
-        false,
         false
       );
   }
@@ -211,7 +207,6 @@ function modifierMap(
  * @param {(string | undefined)} namespace
  * @param {string} name
  * @param {TypeScriptContext} context
- * @param {boolean} addFlowComment
  * @param {boolean} isParameter
  * @param {boolean} isRootTypeCall true if this function is not being called from within itself
  * @returns
@@ -222,7 +217,6 @@ export function typeName(
   namespace: string | undefined,
   name: string,
   context: TypeScriptContext,
-  addFlowComment: boolean,
   isParameter: boolean,
   isRootTypeCall: boolean
 ) {
@@ -281,11 +275,8 @@ export function typeName(
       }
     });
   }
-  if (addFlowComment) {
-    return `${result} /* :${result} */`;
-  } else {
-    return result;
-  }
+
+  return result;
 }
 
 function getDataItems(
@@ -343,7 +334,6 @@ export function messageType(
             nschemaMessage.name,
             context,
             true,
-            false,
             true
           )
         ]
@@ -355,7 +345,6 @@ export function messageType(
             nschemaMessage.name,
             context,
             true,
-            false,
             true
           )}`;
         });

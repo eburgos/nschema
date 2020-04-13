@@ -15,11 +15,7 @@ const bundle: BundleTask = {
       location: "./generated/test1/schema"
     },
     {
-      $namespaceMapping: {
-        "@angular/core": "@angular/core",
-        "@angular/http": "@angular/http",
-        "rxjs/Rx": "rxjs/Rx"
-      },
+      $namespaceMapping: {},
       $restClientStrategy: "Default",
       bind: "rest",
       language: "typescript",
@@ -62,7 +58,7 @@ const bundle: BundleTask = {
               // Custom types can be defined as an object
               type: {
                 // This tells that 'details' is a list of InvoiceDetail
-                modifier: "list",
+                modifier: ["list"],
                 name: "InvoiceDetail",
                 // If namespace is not present it is assumed as if the type belongs to your namespace.
                 // Empty namespaces must be defined as ''
@@ -128,11 +124,7 @@ const bundle: BundleTask = {
       $namespace: "Services",
       $target: [
         {
-          $namespaceMapping: {
-            "@angular/core": "@angular/core",
-            "@angular/http": "@angular/http",
-            "rxjs/Rx": "rxjs/Rx"
-          },
+          $namespaceMapping: {},
           $restClientStrategy: "Default",
           bind: "rest",
           language: "typescript",
@@ -158,11 +150,7 @@ const bundle: BundleTask = {
               serviceType: "consumer"
             },
             {
-              $namespaceMapping: {
-                "@angular/core": "@angular/core",
-                "@angular/http": "@angular/http",
-                "rxjs/Rx": "rxjs/Rx"
-              },
+              $namespaceMapping: {},
               bind: "rest",
               language: "typescript",
               location: "./generated/typescriptClient/schema/client",
@@ -229,7 +217,7 @@ const bundle: BundleTask = {
                   {
                     description: "List of invoices",
                     type: {
-                      modifier: "list",
+                      modifier: ["list"],
                       name: "Invoice",
                       namespace: "NSchema.Model.Invoicing"
                     }
@@ -288,7 +276,7 @@ const bundle: BundleTask = {
                     description: "List of invoices",
                     name: "invoiceList",
                     type: {
-                      modifier: "list",
+                      modifier: ["list"],
                       name: "Invoice",
                       namespace: "NSchema.Model.Invoicing"
                     }

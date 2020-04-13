@@ -50,6 +50,7 @@ function renderOperations(
     })();
 ${routeArguments.map((argument) => {
   return `    input${renderPropertyAccessor(argument.name)} = ${realTypeMap(
+    context,
     argument,
     `unescape(event.pathParameters${renderPropertyAccessor(argument.name)})`
   )};
@@ -58,6 +59,7 @@ ${routeArguments.map((argument) => {
         return `    input${renderPropertyAccessor(
           argument.name
         )} = ${realTypeMap(
+          context,
           argument,
           `event.queryStringParameters${renderPropertyAccessor(argument.name)}`
         )};`;
@@ -65,6 +67,7 @@ ${routeArguments.map((argument) => {
 ${headerArguments
   .map((argument) => {
     return `    input${renderPropertyAccessor(argument.name)} = ${realTypeMap(
+      context,
       argument,
       `event.headers${renderPropertyAccessor(
         argument.headerName || `X-${argument.name}`
@@ -86,12 +89,11 @@ ${
         .join("\n")
 }
 
-    const $req = input as ${messageType(nschema, context, true, inMessage)};
+    const $req = input as ${messageType(nschema, context, inMessage)};
 
     const $result: ${messageType(
       nschema,
       context,
-      true,
       outMessage
     )} = await $service.${operationName}(${
         (inMessage.data || []).length === 1

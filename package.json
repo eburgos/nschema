@@ -21,8 +21,6 @@
     "yargs": "^15.3.1"
   },
   "devDependencies": {
-    "@angular/core": "^4.0.2",
-    "@angular/http": "^4.0.2",
     "@types/node": "^13.9.2",
     "@types/yargs": "^15.0.4",
     "@typescript-eslint/eslint-plugin": "^2.24.0",
@@ -30,7 +28,6 @@
     "eslint": "^6.8.0",
     "eslint-config-prettier": "^6.10.0",
     "eslint-plugin-prettier": "^3.1.2",
-    "rxjs": "^6.2.2",
     "typescript": "^3.8.3"
   },
   "bin": {

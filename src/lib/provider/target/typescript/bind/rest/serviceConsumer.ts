@@ -48,7 +48,7 @@ ${(inMessage.data || [])
        .map((argument) => {
          return (argument.description || "").replace(/\n/g, "\n   * ");
        })
-       .join(", ") || `{${messageType(nschema, context, false, outMessage)}}`
+       .join(", ") || `{${messageType(nschema, context, outMessage)}}`
    }
    */
   ${operationName}(${(inMessage.data || [])
@@ -60,7 +60,6 @@ ${(inMessage.data || [])
             name,
             context,
             true,
-            true,
             true
           )}`;
         })
@@ -69,7 +68,6 @@ ${(inMessage.data || [])
       }${contextVarName}: { request: Request, response: Response }): Promise<${messageType(
         nschema,
         context,
-        true,
         outMessage
       )}>;`;
     })
@@ -125,6 +123,7 @@ function renderConstructorForClass(
 ${routeArguments
   .map((argument) => {
     return `      const input${argument.name} = ${realTypeMap(
+      context,
       argument,
       `expressRequest.params${renderPropertyAccessor(argument.name)}`
     )};
@@ -132,6 +131,7 @@ ${routeArguments
   })
   .join("")}${queryArguments.map((argument) => {
         return `        const input${argument.name} = ${realTypeMap(
+          context,
           argument,
           `expressRequest.query${renderPropertyAccessor(argument.name)}`
         )};
@@ -139,6 +139,7 @@ ${routeArguments
       }).join(`
         `)}${headerArguments.map((argument) => {
         return `const input${argument.name} = ${realTypeMap(
+          context,
           argument,
           `expressRequest.header('${
             argument.headerName || `X-${argument.name}`

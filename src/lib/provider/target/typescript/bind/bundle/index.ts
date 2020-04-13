@@ -1,10 +1,11 @@
 import * as chalk from "chalk";
 import { resolve as pathResolve } from "path";
-import { isArray } from "util";
 import {
   buildTypeScriptContext,
   TypeScriptBundle,
-  TypeScriptContext
+  TypeScriptContext,
+  TypeScriptTarget,
+  formatCode
 } from "../..";
 import {
   LogLevel,
@@ -20,7 +21,6 @@ import {
 import { updateNamespace } from "../../../../../utils";
 import { computeImportMatrix } from "../../helpers";
 import { checkAndFixTarget } from "../rest";
-import * as prettier from "prettier";
 
 const { yellow, blue, green } = chalk;
 
@@ -48,7 +48,7 @@ function computeBundleImportMatrix(
 }
 
 async function execute(
-  parentConfig: NSchemaTask | TypeScriptBundle,
+  parentConfig: NSchemaTask<TypeScriptTarget> | TypeScriptBundle,
   nschema: NSchemaInterface
 ) {
   if (parentConfig.type !== "bundle") {
@@ -63,9 +63,7 @@ async function execute(
     ...parentConfig,
     $fileName: parentConfigAny.$fileName
   });
-  const target = isArray(parentConfig.target)
-    ? parentConfig.target[0]
-    : parentConfig.target;
+  const target = parentConfig.target[0];
 
   const namespaceMapping = target.$namespaceMapping || {};
 
@@ -114,15 +112,18 @@ async function execute(
     namespaceMapping
   );
 
-  result = `/* @flow */${
+  result = `${
+    newTarget.$header
+      ? `/* ${newTarget.$header} */
+`
+      : ""
+  }${
     imports
       ? `
 ${imports}`
       : ""
   }${result}`;
-  result = prettier.format(result, {
-    parser: "typescript"
-  });
+  result = formatCode(result);
 
   const location = newTarget.location;
   const filepath = location.startsWith(".")

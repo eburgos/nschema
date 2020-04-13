@@ -21,8 +21,10 @@ import {
 
 const { magenta } = chalk;
 
-export interface BundleTask extends HasTargetMixin, AppendableProperties {
-  list: NSchemaTask[];
+export interface BundleTask<T extends Target = Target>
+  extends HasTargetMixin<T>,
+    AppendableProperties<T> {
+  list: Array<NSchemaTask<T>>;
   namespace?: string;
   nschemaLocation?: string;
   type: "bundle";

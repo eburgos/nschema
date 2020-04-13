@@ -211,7 +211,6 @@ export function typeName(
   namespace: string | undefined,
   name: string,
   context: PHPContext,
-  addFlowComment: boolean,
   isParameter: boolean,
   isRootTypeCall: boolean
 ) {
@@ -271,17 +270,13 @@ export function typeName(
       }
     });
   }
-  if (addFlowComment) {
-    return `${result} /* :${result} */`;
-  } else {
-    return result;
-  }
+
+  return result;
 }
 
 export function messageType(
   nschema: NSchemaInterface,
   context: PHPContext,
-  addFlowComment: boolean,
   message: AnonymousMessage
 ): string {
   const typeSeparator = ", ";
@@ -291,16 +286,7 @@ export function messageType(
     return "void";
   } else if (dataItems.length === 1) {
     const item = dataItems[0];
-    return `${typeName(
-      item.type,
-      nschema,
-      "",
-      "",
-      context,
-      addFlowComment,
-      false,
-      true
-    )}`;
+    return `${typeName(item.type, nschema, "", "", context, false, true)}`;
   } else {
     return (
       `{ ${dataItems
@@ -311,7 +297,6 @@ export function messageType(
             "",
             "",
             context,
-            addFlowComment,
             false,
             true
           )}`;
@@ -342,7 +327,6 @@ function modifierMap(
         namespace,
         name,
         context,
-        false,
         false,
         false
       );

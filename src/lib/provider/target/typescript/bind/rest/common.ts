@@ -7,8 +7,13 @@ import {
   caseInsensitiveSorter,
   isPrimitiveTypeString
 } from "../../../../../utils";
+import { TypeScriptContext, enableImport } from "../..";
 
-export function realTypeMap(argument: RestMessageArgument, expr: string) {
+export function realTypeMap(
+  context: TypeScriptContext,
+  argument: RestMessageArgument,
+  expr: string
+) {
   const realType =
     typeof argument.realType === "string"
       ? { name: argument.realType }
@@ -26,7 +31,8 @@ export function realTypeMap(argument: RestMessageArgument, expr: string) {
     case "date":
       return `(Number.isNaN(Number.parseFloat(${expr})) ? new Date(${expr}) : new Date(Number.parseFloat(${expr})))`;
     default:
-      return null;
+      enableImport(context, "qs");
+      return `qs.parse(${expr})`;
   }
 }
 export function getHttpVerb(verb: string) {
@@ -42,19 +48,6 @@ export function getType(argument: RestMessageArgument) {
     : argument.type;
 }
 
-function isPrimitiveOptional(argument: RestMessageArgument) {
-  const type = getType(argument);
-
-  return (
-    type.namespace === "" &&
-    isPrimitiveTypeString(type.name) &&
-    (type.modifier === "option" ||
-      (isArray(type.modifier) &&
-        type.modifier.length === 1 &&
-        type.modifier[0] === "option"))
-  );
-}
-
 export function includeInRoute(argument: RestMessageArgument, route: string) {
   const type = getType(argument);
 
@@ -68,19 +61,7 @@ export function includeInRoute(argument: RestMessageArgument, route: string) {
   );
 }
 export function includeInQuery(argument: RestMessageArgument) {
-  const type = getType(argument);
-  return (
-    argument.paramType === "query" &&
-    (!type.modifier ||
-      (isArray(type.modifier) && !type.modifier.length) ||
-      isPrimitiveOptional(argument)) &&
-    type.namespace === "" &&
-    (type.name === "string" ||
-      type.name === "int" ||
-      type.name === "float" ||
-      type.name === "bool" ||
-      type.name === "date")
-  );
+  return argument.paramType === "query";
 }
 export function includeInHeader(argument: RestMessageArgument) {
   return argument.paramType === "header";

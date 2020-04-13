@@ -10,7 +10,8 @@ import {
   buildTypeScriptContext,
   RestClientStrategy,
   TypeScript,
-  TypeScriptContext
+  TypeScriptContext,
+  TypeScriptTarget
 } from "../..";
 import { LogLevel, writeDebugLog, writeLog } from "../../../../../logging";
 import {
@@ -29,7 +30,7 @@ import { render as renderServerlessConsumer } from "./serviceConsumer-serverless
 import { render as renderServerlessConsumerBase } from "./serviceConsumerBase-serverless";
 import { render as renderProducer } from "./serviceProducer";
 
-export interface TypeScriptRestTarget extends Target {
+export interface TypeScriptRestTarget extends TypeScriptTarget {
   $restClientStrategy?: RestClientStrategy;
   $typeScriptRest?: {
     requestModule: string;

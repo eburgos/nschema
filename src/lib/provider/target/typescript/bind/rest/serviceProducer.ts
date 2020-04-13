@@ -1,6 +1,11 @@
 import { isArray } from "util";
 import { isRestTarget, TypeScriptRestTarget } from ".";
-import { messageType, RestClientStrategy, TypeScriptContext } from "../..";
+import {
+  messageType,
+  RestClientStrategy,
+  TypeScriptContext,
+  enableImport
+} from "../..";
 import {
   NSchemaInterface,
   NSchemaMessageArgument,
@@ -14,7 +19,8 @@ import {
   findNonCollidingName,
   isOptional,
   wrap,
-  isPrimitiveTypeString
+  isPrimitiveTypeString,
+  isPrimitiveType
 } from "../../../../../utils";
 import { AnonymousMessage } from "../../../../type/message";
 import { computeImportMatrix, typeName } from "../../helpers";
@@ -67,7 +73,7 @@ function isSingleDate(type: NSchemaType) {
   return false;
 }
 
-function getValueOf(parameter: RestMessageArgument) {
+function getValueOf(parameter: RestMessageArgument): string {
   const type = parameter.realType || parameter.type;
   if (isSingleDate(type)) {
     return `${parameter.name} instanceof Date? ${parameter.name}.getTime() : ${parameter.name}`;
@@ -89,10 +95,7 @@ function buildRequest(
   context: TypeScriptContext
 ) {
   if (encoding === "querystring") {
-    if (!context.imports["{qs}"]) {
-      context.imports["{qs}"] = {};
-    }
-    context.imports["{qs}"]["*"] = "qs";
+    enableImport(context, "qs");
   }
   return `{
       data: ${
@@ -155,42 +158,30 @@ function buildRequest(
     paramsInQuery.length
       ? `?\${[${`${paramsInQuery
           .map((argument) => {
-            return `{ name: \`${argument.name}\`, value: ${getValueOf(
-              argument
-            )} }`;
-            //return `\`${p.name}=\${encodeURIComponent(\`\${${p.name}}\`)}\`}`;
+            // If the argument is an object we must handle it differently for query params
+            const type = argument.realType || argument.type;
+            if (
+              argument.paramType === "query" &&
+              !isPrimitiveType(type) &&
+              typeof type !== "string"
+            ) {
+              enableImport(context, "qs");
+              return `qs.stringify(${argument.name})`;
+            } else {
+              return `{ name: \`${argument.name}\`, value: ${getValueOf(
+                argument
+              )} }`;
+            }
           })
           .join(
             `, `
-          )}].filter(item => typeof(item.value) !== "undefined").map(item => \`\${item.name}=\${encodeURIComponent(\`\${item.value}\`)}\`).join("&")}`}`
+          )}].filter(item => (typeof item === "string")? item : (typeof(item.value) !== "undefined")).map(item => typeof item === "string"? item : \`\${item.name}=\${encodeURIComponent(\`\${item.value}\`)}\`).join("&")}`}`
       : ``
   }\`
     }`;
 }
 
 const prepareImports = {
-  [RestClientStrategy.Angular2]: (context: TypeScriptContext) => {
-    if (!context.imports["@angular/core"]) {
-      context.imports["@angular/core"] = {};
-    }
-    context.imports["@angular/core"].Injectable = true;
-
-    if (!context.imports["@angular/http"]) {
-      context.imports["@angular/http"] = {};
-    }
-    context.imports["@angular/http"].Http = false;
-    context.imports["@angular/http"].Response = false;
-    context.imports["@angular/http"].Headers = false;
-    context.imports["@angular/http"].RequestOptions = false;
-    context.imports["@angular/http"].URLSearchParams = false;
-
-    if (!context.imports["rxjs/Rx"]) {
-      context.imports["rxjs/Rx"] = {};
-    }
-    context.imports["rxjs/Rx"].Observable = false;
-
-    return "Observable";
-  },
   [RestClientStrategy.Default]: (
     context: TypeScriptContext,
     target: TypeScriptRestTarget
@@ -209,21 +200,6 @@ const prepareImports = {
 };
 
 const classHeader = {
-  [RestClientStrategy.Angular2]: (context: TypeScriptContext) => {
-    if (!context.imports["rxjs/add/operator/map"]) {
-      context.imports["rxjs/add/operator/map"] = {};
-    }
-    if (!context.imports["rxjs/add/operator/catch"]) {
-      context.imports["rxjs/add/operator/catch"] = {};
-    }
-    return `
-const $toJson = (res: Response) => {
-  const body = res.json();
-  return body;
-};
-
-@Injectable()`;
-  },
   [RestClientStrategy.Default]: (
     _context: TypeScriptContext,
     config: NSchemaRestService
@@ -238,16 +214,6 @@ const $toJson = (res: Response) => {
 };
 
 const constructorPart = {
-  [RestClientStrategy.Angular2]: (endpointPropertyName: string) => {
-    return `  /**
-   * Base url for this http service
-   */
-  ${endpointPropertyName}: string;
-
-  public constructor(private http: Http) {
-  }
-`;
-  },
   [RestClientStrategy.Default]: (
     endpointPropertyName: string,
     errorHandlerPropertyName: string,
@@ -272,18 +238,6 @@ const constructorPart = {
 };
 
 const requestOptionsPart = {
-  [RestClientStrategy.Angular2]: () =>
-    /*_method: string,
-    _route: string,
-    _routePrefix: string,
-    _endpointPropertyName: string,
-    _paramsInQuery: NSchemaMessageArgument[],
-    _paramsInBody: NSchemaMessageArgument[],
-    _paramsInHeader: NSchemaMessageArgument[],
-    _paramsInRoute: NSchemaMessageArgument[]*/
-    {
-      return ` = new RequestOptions();`;
-    },
   [RestClientStrategy.Default]: (
     method: string,
     route: string,
@@ -312,78 +266,14 @@ const requestOptionsPart = {
 };
 
 const bodyPart = {
-  [RestClientStrategy.Angular2]: (
-    method: string,
-    route: string,
-    paramsInQuery: RestMessageArgument[],
-    paramsInBody: RestMessageArgument[],
-    paramsInHeader: RestMessageArgument[],
-    paramsInRoute: RestMessageArgument[],
-    _nschema: NSchemaInterface,
-    _context: TypeScriptContext,
-    _outMessage: AnonymousMessage,
-    operationName: string,
-    optionsVarName: string,
-    endpointPropertyName: string
-  ) => {
-    return `${
-      paramsInQuery.length
-        ? `        let $queryParams: URLSearchParams = new URLSearchParams();
-    ${paramsInQuery.map((argument) => {
-      return `        if (typeof(${argument.name}) !== undefined) {
-                $queryParams.set("${argument.name}", ${argument.name}.toString());
-            }`;
-    })}        ${optionsVarName}.params = $queryParams;`
-        : ``
-    }
-    ${optionsVarName}.headers =  new Headers({
-      "Content-Type": "application/json",
-      ${paramsInHeader
-        .map((argument) => {
-          return `"${argument.headerName || `X-${argument.name}`}": ${
-            argument.name
-          }`;
-        })
-        .join(",\n                ")}
-    });
-${
-  ["get", "delete", "head"].indexOf(method.toLowerCase()) < 0
-    ? `${
-        paramsInBody.length
-          ? `
-let $body = JSON.stringify(${paramsInBody.length > 1 ? `[` : ``}${paramsInBody
-              .map((argument) => {
-                return argument.name;
-              })
-              .join(", ")}${paramsInBody.length > 1 ? `]` : ``});`
-          : `let $body = "";`
-      }`
-    : ``
-}
-
-    return this.http.${method.toLowerCase()}(this.${endpointPropertyName} + [${paramsInRoute
-      .map((argument) => {
-        return `\`${argument.name}\``;
-      })
-      .join(
-        ", "
-      )}].reduce((acc, next: string) => acc.split(\`{\${next}}\`).join(next), "${route}"),${
-      ["get", "delete", "head"].indexOf(method.toLowerCase()) < 0
-        ? ` $body,`
-        : ``
-    } ${optionsVarName})
-                    .map($toJson)
-                    .catch((error) => {
-                        return this.$errorHandler(error, "${operationName}");
-                    });`;
-  },
   [RestClientStrategy.Default]: (
+    operation: NSchemaRestOperation,
     method: string,
     _route: string,
-    _paramsInQuery: NSchemaMessageArgument[],
-    _paramsInBody: NSchemaMessageArgument[],
-    _paramsInHeader: NSchemaMessageArgument[],
-    _paramsInRoute: NSchemaMessageArgument[],
+    paramsInQuery: NSchemaMessageArgument[],
+    paramsInBody: NSchemaMessageArgument[],
+    paramsInHeader: NSchemaMessageArgument[],
+    paramsInRoute: NSchemaMessageArgument[],
     nschema: NSchemaInterface,
     context: TypeScriptContext,
     outMessage: AnonymousMessage,
@@ -395,26 +285,29 @@ let $body = JSON.stringify(${paramsInBody.length > 1 ? `[` : ``}${paramsInBody
     const responseVarName = findNonCollidingName(
       "response",
       [
-        ..._paramsInBody,
-        ..._paramsInHeader,
-        ..._paramsInQuery,
-        ..._paramsInRoute
+        ...paramsInBody,
+        ...paramsInHeader,
+        ...paramsInQuery,
+        ...paramsInRoute
       ].map((argument) => argument.name)
     );
     return `try {
       const ${responseVarName} = await request.${method.toLowerCase()}${
       ["delete"].indexOf(method.toLowerCase()) < 0
-        ? `<${messageType(nschema, context, false, outMessage)}>`
+        ? `<${messageType(nschema, context, outMessage)}>`
         : ``
     }(${optionsVarName}.url, ${
       ["delete", "head", "get"].indexOf(method.toLowerCase()) < 0
         ? `${optionsVarName}.data, `
         : ``
+    }{ ...${optionsVarName}${
+      (outMessage.data || []).length ? "" : `, responseType: "text"`
     }${
-      (outMessage.data || []).length
-        ? optionsVarName
-        : `{ ...${optionsVarName}, responseType: "text" }`
-    });
+      operation.cancellable
+        ? `, cancelToken: typeof requestCancelOperation !== "undefined"? new request.CancelToken(requestCancelOperation) : undefined`
+        : ""
+    } 
+});
       return ${responseVarName}.data;
     } catch (err) {
       if (this.${errorHandlerPropertyName} && this.${errorHandlerPropertyName}.${operationName}) {
@@ -427,11 +320,6 @@ let $body = JSON.stringify(${paramsInBody.length > 1 ? `[` : ``}${paramsInBody
 };
 
 const errorHandlerPart = {
-  [RestClientStrategy.Angular2]: () => {
-    return `$errorHandler (error:any, operationName: string) {
-        return Observable.throw(error.json().error || "Server error");
-    };`;
-  },
   [RestClientStrategy.Default]: () => {
     return ``;
   }
@@ -461,15 +349,6 @@ function renderOperations(
         queryArguments
       } = getOperationDetails(operation, operationName);
 
-      if (method === "get" && bodyArguments.length) {
-        throw new Error(
-          `Service "${
-            config.name
-          }" : operation "${operationName}" has method GET and body parameters "${bodyArguments
-            .map((argument) => argument.name)
-            .join("\n")}". Fix this to continue.`
-        );
-      }
       const optionsVarName = findNonCollidingName(
         "options",
         (inMessage.data || []).map((argument) => argument.name)
@@ -508,21 +387,18 @@ ${(inMessage.data || [])
             config.name,
             context,
             true,
-            true,
             true
           )}`;
         })
-        .join(", ")}): ${deferredType}<${messageType(
+        .join(", ")}${
+        operation.cancellable
+          ? `, requestCancelOperation?: (cancelOperation: () => void) => void`
+          : ""
+      }): ${deferredType}<${messageType(
         nschema,
         context,
-        false,
         outMessage
-      )}> /* :${deferredType}<${messageType(
-        nschema,
-        context,
-        false,
-        outMessage
-      )}> */ {
+      )}> /* :${deferredType}<${messageType(nschema, context, outMessage)}> */ {
     const ${optionsVarName}${requestOptionsPart[restClientStrategy](
         method,
         route,
@@ -536,6 +412,7 @@ ${(inMessage.data || [])
         context
       )}
     ${bodyPart[restClientStrategy](
+      operation,
       method,
       route,
       queryArguments,
@@ -607,7 +484,6 @@ ${Object.keys(config.producerContexts || {})
             config.name,
             context,
             true,
-            true,
             true
           );
           if (
@@ -666,7 +542,6 @@ ${Object.keys(contextOperations)
             config.name,
             context,
             true,
-            true,
             true
           )}`
       )
@@ -715,12 +590,16 @@ export function render(
   return `${
     context.skipWrite
       ? ``
-      : `/* @flow */
-${computeImportMatrix(
-  config.namespace || "",
-  target.$namespaceMapping || {},
-  context
-)}`
+      : `${
+          target.$header
+            ? `/* ${target.$header} */
+`
+            : ""
+        }${computeImportMatrix(
+          config.namespace || "",
+          target.$namespaceMapping || {},
+          context
+        )}`
   }
 export interface ${config.name}ErrorHandler {
 ${Object.keys(config.operations)
@@ -730,7 +609,6 @@ ${Object.keys(config.operations)
     return `  ${operationName}?(error: Error): ${deferredType}<${messageType(
       nschema,
       context,
-      false,
       outMessage
     )}>;`;
   })

@@ -244,7 +244,6 @@ function renderClass(
               data.name,
               context,
               false,
-              false,
               true
             )
           )
@@ -268,7 +267,6 @@ ${Object.keys(data.properties || {})
       data.namespace,
       data.name,
       context,
-      false,
       false,
       true
     )}

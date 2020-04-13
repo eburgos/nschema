@@ -7,11 +7,7 @@ const bundle = {
             location: "./generated/test1/schema"
         },
         {
-            $namespaceMapping: {
-                "@angular/core": "@angular/core",
-                "@angular/http": "@angular/http",
-                "rxjs/Rx": "rxjs/Rx"
-            },
+            $namespaceMapping: {},
             $restClientStrategy: "Default",
             bind: "rest",
             language: "typescript",
@@ -37,7 +33,7 @@ const bundle = {
                         details: {
                             description: "Invoice details",
                             type: {
-                                modifier: "list",
+                                modifier: ["list"],
                                 name: "InvoiceDetail",
                                 namespace: "NSchema.Model.InvoicingDetail"
                             }
@@ -101,11 +97,7 @@ const bundle = {
             $namespace: "Services",
             $target: [
                 {
-                    $namespaceMapping: {
-                        "@angular/core": "@angular/core",
-                        "@angular/http": "@angular/http",
-                        "rxjs/Rx": "rxjs/Rx"
-                    },
+                    $namespaceMapping: {},
                     $restClientStrategy: "Default",
                     bind: "rest",
                     language: "typescript",
@@ -130,11 +122,7 @@ const bundle = {
                             serviceType: "consumer"
                         },
                         {
-                            $namespaceMapping: {
-                                "@angular/core": "@angular/core",
-                                "@angular/http": "@angular/http",
-                                "rxjs/Rx": "rxjs/Rx"
-                            },
+                            $namespaceMapping: {},
                             bind: "rest",
                             language: "typescript",
                             location: "./generated/typescriptClient/schema/client",
@@ -198,7 +186,7 @@ const bundle = {
                                     {
                                         description: "List of invoices",
                                         type: {
-                                            modifier: "list",
+                                            modifier: ["list"],
                                             name: "Invoice",
                                             namespace: "NSchema.Model.Invoicing"
                                         }
@@ -255,7 +243,7 @@ const bundle = {
                                         description: "List of invoices",
                                         name: "invoiceList",
                                         type: {
-                                            modifier: "list",
+                                            modifier: ["list"],
                                             name: "Invoice",
                                             namespace: "NSchema.Model.Invoicing"
                                         }

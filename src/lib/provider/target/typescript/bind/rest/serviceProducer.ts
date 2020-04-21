@@ -175,7 +175,7 @@ function buildRequest(
           })
           .join(
             `, `
-          )}].filter((item: string | { name: string; value: string | number | undefined }) => (typeof item === "string")? item : (typeof(item.value) !== "undefined")).map(item => typeof item === "string"? item : \`\${item.name}=\${encodeURIComponent(\`\${item.value}\`)}\`).join("&")}`}`
+          )}].filter((item: string | { name: string; value: string | number | undefined }) => (typeof item === "string")? item : (typeof(item.value) !== "undefined")).map((item: string | { name: string; value: string | number | undefined }) => typeof item === "string"? item : \`\${item.name}=\${encodeURIComponent(\`\${item.value}\`)}\`).join("&")}`}`
       : ``
   }\`
     }`;

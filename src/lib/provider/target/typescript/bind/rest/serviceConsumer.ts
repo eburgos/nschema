@@ -75,9 +75,9 @@ ${(inMessage.data || [])
 }
 
 function renderConstructorForClass(
-  _nschema: NSchemaInterface,
+  nschema: NSchemaInterface,
   context: TypeScriptContext,
-  _config: NSchemaRestService,
+  config: NSchemaRestService,
   operations: { [name: string]: NSchemaRestOperation }
 ) {
   return Object.keys(operations)
@@ -87,7 +87,7 @@ function renderConstructorForClass(
         bodyArguments,
         headerArguments,
         inMessage,
-        //        outMessage,
+        outMessage,
         route,
         routeArguments,
         queryArguments
@@ -112,11 +112,45 @@ function renderConstructorForClass(
 
       return `    expressRouter.${getHttpVerb(
         operations[operationName].method || "get"
-      ).toLowerCase()}("/${_config.routePrefix}${(
-        route || operationName
-      ).replace(/\{([^}]+?)\}/g, (_match, firstGroup) => {
-        return `:${firstGroup}`;
-      })}"${operation.cors ? `, cors()` : ""}, bodyParser.json(${
+      ).toLowerCase()}<ParamsDictionary, ${messageType(
+        nschema,
+        context,
+        outMessage
+      )} | string, /* ${bodyArguments.length} */ ${
+        bodyArguments.length === 1
+          ? `${typeName(
+              bodyArguments[0].realType || bodyArguments[0].type,
+              nschema,
+              config.namespace,
+              config.name,
+              context,
+              true,
+              true
+            )}`
+          : `${
+              bodyArguments.length
+                ? `[${bodyArguments.map((argument) => {
+                    return `${typeName(
+                      argument.realType || argument.type,
+                      nschema,
+                      config.namespace,
+                      config.name,
+                      context,
+                      true,
+                      true
+                    )}`;
+                  }).join(`
+            `)}]`
+                : `undefined`
+            }`
+      }, {${queryArguments
+        .map((queryArg) => `${queryArg.name}: string`)
+        .join(`;`)}}>("/${config.routePrefix}${(route || operationName).replace(
+        /\{([^}]+?)\}/g,
+        (_match, firstGroup) => {
+          return `:${firstGroup}`;
+        }
+      )}"${operation.cors ? `, cors()` : ""}, bodyParser.json(${
         operation.requestLimit ? `{ limit: "${operation.requestLimit}" }` : ""
       }), async (expressRequest, expressResponse) => {
 
@@ -199,9 +233,16 @@ export function render(
   if (!context.imports["{express}"]) {
     context.imports["{express}"] = {};
   }
+
+  if (!context.imports["{express-serve-static-core}"]) {
+    context.imports["{express-serve-static-core}"] = {};
+  }
+
   context.imports["{express}"].Router = true;
   context.imports["{express}"].Request = true;
   context.imports["{express}"].Response = true;
+
+  context.imports["{express-serve-static-core}"].ParamsDictionary = true;
 
   return `export interface ${config.name} {
 ${renderOperationsInterface(

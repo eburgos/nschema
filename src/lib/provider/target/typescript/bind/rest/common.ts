@@ -29,7 +29,7 @@ export function realTypeMap(
     case "bool":
       return `(${expr} === "true")`;
     case "date":
-      return `(Number.isNaN(Number.parseFloat(${expr})) ? new Date(${expr}) : new Date(Number.parseFloat(${expr})))`;
+      return `isNaN(new Date(${expr}).getTime())? new Date(parseInt(${expr}, 10)) : new Date(${expr})`;
     default:
       enableImport(context, "qs");
       return `qs.parse(${expr})`;

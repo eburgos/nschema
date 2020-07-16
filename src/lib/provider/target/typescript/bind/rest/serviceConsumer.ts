@@ -199,7 +199,9 @@ ${routeArguments
         inMessage.data || []
       )
         .map((arg) => `input${arg.name}`)
-        .join(", ")}, { request: expressRequest, response: expressResponse }));
+        .join(", ")}${
+        (inMessage.data || []).length ? ", " : ""
+      }{ request: expressRequest, response: expressResponse }));
             }
             catch (exception: { statusCode: number, message: string, stack: string }) {
               if (exception.statusCode) {

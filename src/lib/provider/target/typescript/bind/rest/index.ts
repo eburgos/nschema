@@ -146,7 +146,15 @@ async function serverlessPostGen(
   }
   const realYamlPath = path.resolve(tgt.location, yamlPath);
   const realLocation = path.resolve(tgt.location);
-  const serverlessYml = yaml.safeLoad(fs.readFileSync(realYamlPath, "utf8"));
+  const serverlessYml: any = yaml.safeLoad(
+    fs.readFileSync(realYamlPath, "utf8")
+  );
+  if (!serverlessYml) {
+    throw new Error(`Invalid serverless yml file ${realYamlPath}`);
+  }
+  if (typeof serverlessYml === "string") {
+    throw new Error(`Invalid serverless yml file ${realYamlPath}`);
+  }
   if (!serverlessYml.functions) {
     serverlessYml.functions = {};
   }

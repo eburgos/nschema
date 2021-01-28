@@ -42,7 +42,7 @@ ${(inMessage.data || [])
     )}`;
   })
   .join("\n")}
-   * @param ${contextVarName} - Operation context. Optional argument (The service always sends it but you may not implement it in your class)
+   * @param ${contextVarName} - Operation context. Optional argument (The service always sends it but you may not implement it in your message consumer)
    * @returns ${
      (outMessage.data || [])
        .map((argument) => {
@@ -203,12 +203,13 @@ ${routeArguments
         (inMessage.data || []).length ? ", " : ""
       }{ request: expressRequest, response: expressResponse }));
             }
-            catch (exception: { statusCode: number, message: string, stack: string }) {
-              if (exception.statusCode) {
-                expressResponse.status(exception.statusCode).send(exception.message);
+            catch (exception) {
+              const exc = exception as { statusCode: number, message: string, stack: string };
+              if (exc.statusCode) {
+                expressResponse.status(exc.statusCode).send(exc.message);
               }
               else {
-                expressResponse.status(400).send(\`Bad request - $\{exception.message}\`);
+                expressResponse.status(400).send(\`Bad request - $\{exc.message}\`);
               }
             }
         });`;

@@ -46,6 +46,22 @@ export interface ServiceTask
       operations: string[];
     };
   };
+
+  /**
+   * Only applicable to message consumers (servers).
+   *
+   * @type {{
+   *     [name: string]: { arguments: string[]; description?: string; operations: string[] };
+   *   }}
+   * @memberof ServiceTask
+   */
+  consumerContexts?: {
+    [name: string]: {
+      arguments: string[];
+      description?: string;
+      operations: string[];
+    };
+  };
   type: "service";
 }
 

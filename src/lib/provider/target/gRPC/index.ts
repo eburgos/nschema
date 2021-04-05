@@ -94,6 +94,8 @@ function modifierMap(modifier: NSchemaModifier): string {
       return "[]";
     case "option":
       return "| undefined";
+    case "map":
+      throw new Error("`map` not implemented in gRPC");
     default:
       return typeName(modifier);
   }

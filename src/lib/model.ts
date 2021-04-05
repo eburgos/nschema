@@ -157,6 +157,7 @@ export type NSchemaModifier =
   | "list"
   | "array"
   | "option"
+  | "map"
   | NSchemaTypeDefinition;
 
 export type NSchemaPrimitiveType = "string" | "int" | "float" | "bool" | "date";

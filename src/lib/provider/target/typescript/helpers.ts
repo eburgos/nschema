@@ -172,6 +172,7 @@ export function renderFileHeader(
 }
 
 function modifierMap(
+  result: string,
   modifier: NSchemaModifier,
   nschema: NSchemaInterface,
   namespace: string | undefined,
@@ -180,11 +181,13 @@ function modifierMap(
 ): string {
   switch (modifier) {
     case "list":
-      return "[]";
+      return `${result}[]`;
     case "array":
-      return "[]";
+      return `${result}[]`;
     case "option":
-      return " | undefined";
+      return `${result} | undefined`;
+    case "map":
+      return `{ [key: string]: ${result} }`;
     default:
       return typeName(
         modifier,
@@ -263,13 +266,7 @@ export function typeName(
       : $modifier;
 
     modifierArr.forEach((item, itemIndex, arr) => {
-      result = `${result}${modifierMap(
-        item,
-        nschema,
-        namespace,
-        name,
-        context
-      )}`;
+      result = modifierMap(result, item, nschema, namespace, name, context);
       if (!isRootTypeCall || itemIndex + 1 < arr.length) {
         result = `(${result})`;
       }

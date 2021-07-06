@@ -139,13 +139,17 @@ function renderConstructorForClass(
                       true,
                       true
                     )}`;
-                  }).join(`
+                  }).join(`,
             `)}]`
                 : `undefined`
             }`
-      }, {${queryArguments
-        .map((queryArg) => `${queryArg.name}: string`)
-        .join(`;`)}}>("/${config.routePrefix}${(route || operationName).replace(
+      }, ${
+        queryArguments.length === 0
+          ? "Record<string, never>"
+          : `{${queryArguments
+              .map((queryArg) => `${queryArg.name}: string`)
+              .join(`;`)}}`
+      }>("/${config.routePrefix}${(route || operationName).replace(
         /\{([^}]+?)\}/g,
         (_match, firstGroup) => {
           return `:${firstGroup}`;

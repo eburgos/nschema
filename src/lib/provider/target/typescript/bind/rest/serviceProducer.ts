@@ -37,7 +37,7 @@ function requestArgsType(method: string, encoding: "json" | "querystring") {
         method === "get"
           ? "undefined"
           : encoding === "json"
-          ? `string`
+          ? `string | undefined`
           : `{ [name:string]: any } | undefined`
       };
       handleAs: string;
